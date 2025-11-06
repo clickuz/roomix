@@ -7,7 +7,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 import sqlite3
 import datetime
 
@@ -86,45 +86,51 @@ class ApplicationStates(StatesGroup):
     confirmation = State()
 
 
-# Инлайн кнопка для начала заявки
-start_application_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="📝 Оставить заявку", callback_data="start_application")]
-])
+# Главное меню (для новых пользователей) - ТОЛЬКО REPLY КНОПКИ
+main_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="📝 Подать заявку")]
+    ],
+    resize_keyboard=True
+)
 
-# Инлайн кнопка профиля
-profile_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")]
-])
+# Главное меню (после принятия) - REPLY КНОПКИ
+accepted_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="🏠 Главное меню")],
+        [KeyboardButton(text="👤 Профиль"), KeyboardButton(text="📊 Статистика")]
+    ],
+    resize_keyboard=True
+)
 
-# Инлайн кнопки статистики
-stats_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="📊 Сегодня", callback_data="stats_today")],
-    [InlineKeyboardButton(text="📈 Вчера", callback_data="stats_yesterday")],
-    [InlineKeyboardButton(text="📅 Неделя", callback_data="stats_week")],
-    [InlineKeyboardButton(text="📆 Месяц", callback_data="stats_month")],
-    [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
-])
+# Клавиатура для отмены
+cancel_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="❌ Отменить заявку")]
+    ],
+    resize_keyboard=True
+)
 
-# Инлайн кнопка назад
-back_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
-])
+# Клавиатура подтверждения
+confirm_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="✅ Отправить заявку")],
+        [KeyboardButton(text="🔄 Заполнить заново")]
+    ],
+    resize_keyboard=True
+)
 
-# Инлайн кнопки для отмены заявки
-cancel_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="❌ Отменить заявку", callback_data="cancel_application")]
-])
+# Меню статистики - REPLY КНОПКИ
+stats_menu_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="📊 Сегодня"), KeyboardButton(text="📈 Вчера")],
+        [KeyboardButton(text="📅 Неделя"), KeyboardButton(text="📆 Месяц")],
+        [KeyboardButton(text="⬅️ Назад в меню")]
+    ],
+    resize_keyboard=True
+)
 
-# Инлайн кнопки подтверждения заявки
-confirm_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [
-        InlineKeyboardButton(text="✅ Отправить заявку", callback_data="submit_application"),
-        InlineKeyboardButton(text="🔄 Заполнить заново", callback_data="restart_application")
-    ]
-])
-
-
-# Инлайн кнопки для админа (заявки)
+# Инлайн кнопки для админа (заявки) - ЭТИ ОСТАВЛЯЕМ
 def get_admin_buttons(application_id):
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -134,7 +140,7 @@ def get_admin_buttons(application_id):
     ])
 
 
-# Инлайн кнопки для платежей
+# ИНЛАЙН КНОПКИ ДЛЯ ПЛАТЕЖЕЙ (ДЛЯ АДМИНА) - ЭТИ ВАЖНЫЕ, ОСТАВЛЯЕМ
 def get_payment_buttons(payment_id):
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -208,387 +214,381 @@ async def cmd_start(message: types.Message):
 🎉 <b>Добро пожаловать в команду!</b>
 
 Вы успешно прошли отбор и теперь являетесь частью нашего проекта.
+
+Используйте кнопки меню для навигации.
 """
         await bot.send_photo(
             chat_id=user_id,
-            photo="https://i.postimg.cc/7Y7hj30b/g44ifl3yqshf1.jpg",
+            photo="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80",
             caption=welcome_text,
-            reply_markup=profile_kb,
+            reply_markup=accepted_kb,  # Используем reply кнопки вместо inline
             parse_mode="HTML"
         )
+    elif user_status == 'pending':
+        await message.answer("⏳ Ваша заявка находится на рассмотрении. Пожалуйста, дождитесь ответа.")
     elif user_status == 'rejected':
-        welcome_text = """
-👋 <b>Добро пожаловать!</b>
-
-К сожалению, ваша предыдущая заявка была отклонена.
-"""
-        await message.answer(welcome_text, reply_markup=start_application_kb, parse_mode="HTML")
+        await message.answer("❌ К сожалению, ваша заявка была отклонена.")
     else:
         welcome_text = """
 👋 <b>Добро пожаловать!</b>
 
-Это бот для подачи заявки на участие в проекте.
-
-Чтобы начать, нажмите кнопку ниже 👇
+Для начала работы подайте заявку, нажав на кнопку ниже.
 """
-        await message.answer(welcome_text, reply_markup=start_application_kb, parse_mode="HTML")
+        await message.answer(welcome_text, reply_markup=main_kb, parse_mode="HTML")
 
 
-# Начало заявки через инлайн кнопку
-@dp.callback_query(F.data == "start_application")
-async def start_application(callback: types.CallbackQuery, state: FSMContext):
-    user_status = get_user_status(callback.from_user.id)
-
+# Главное меню через reply кнопку
+@dp.message(F.text == "🏠 Главное меню")
+async def main_menu(message: types.Message):
+    user_id = message.from_user.id
+    user_status = get_user_status(user_id)
+    
     if user_status == 'accepted':
-        await callback.answer("✅ Вы уже приняты в команду!", show_alert=True)
-        return
-    elif user_status == 'rejected':
-        await callback.answer("❌ Ваша предыдущая заявка была отклонена", show_alert=True)
-        return
-    elif user_status == 'pending':
-        await callback.answer("⏳ Ваша заявка уже на рассмотрении", show_alert=True)
-        return
+        menu_text = """
+🏠 <b>Главное меню</b>
 
-    await state.set_state(ApplicationStates.waiting_for_time)
-    question_text = """
-⏰ <b>Первый вопрос:</b>
-
-Сколько часов в день вы готовы уделять работе?
-(Напишите число, например: 4, 6, 8)
+Выберите нужный раздел с помощью кнопок ниже:
+• 👤 Профиль - информация о вашем аккаунте
+• 📊 Статистика - статистика вашей работы
 """
-    await callback.message.edit_text(question_text, reply_markup=cancel_kb, parse_mode="HTML")
-    await callback.answer()
+        await message.answer(
+            menu_text,
+            reply_markup=accepted_kb,
+            parse_mode="HTML"
+        )
+    else:
+        await message.answer("❌ Доступ запрещен. Сначала подайте заявку.", reply_markup=main_kb)
 
 
-# Отмена заявки через инлайн кнопку
-@dp.callback_query(F.data == "cancel_application")
-async def cancel_application(callback: types.CallbackQuery, state: FSMContext):
-    await state.clear()
-    await callback.message.edit_text(
-        "❌ Заявка отменена", 
-        reply_markup=start_application_kb,
+# Профиль через reply кнопку
+@dp.message(F.text == "👤 Профиль")
+async def show_profile(message: types.Message):
+    user_id = message.from_user.id
+    user_status = get_user_status(user_id)
+    
+    if user_status == 'accepted':
+        join_date = get_join_date(user_id)
+        
+        profile_text = f"""
+👤 <b>Ваш профиль</b>
+
+🔢 ID: <code>{user_id}</code>
+👤 Имя: {message.from_user.first_name or 'Не указано'}
+🔗 Username: @{message.from_user.username or 'Не указан'}
+📅 Дата вступления: {join_date}
+✅ Статус: Активен
+
+Для возврата в главное меню нажмите "🏠 Главное меню"
+"""
+        await message.answer(
+            profile_text,
+            reply_markup=accepted_kb,
+            parse_mode="HTML"
+        )
+    else:
+        await message.answer("❌ Доступ запрещен. Сначала подайте заявку.", reply_markup=main_kb)
+
+
+# Статистика через reply кнопку
+@dp.message(F.text == "📊 Статистика")
+async def show_stats_menu(message: types.Message):
+    user_id = message.from_user.id
+    user_status = get_user_status(user_id)
+    
+    if user_status == 'accepted':
+        stats_text = """
+📊 <b>Статистика</b>
+
+Выберите период для просмотра статистики:
+"""
+        await message.answer(
+            stats_text,
+            reply_markup=stats_menu_kb,
+            parse_mode="HTML"
+        )
+    else:
+        await message.answer("❌ Доступ запрещен. Сначала подайте заявку.", reply_markup=main_kb)
+
+
+# Обработка разных периодов статистики
+@dp.message(F.text.in_(["📊 Сегодня", "📈 Вчера", "📅 Неделя", "📆 Месяц"]))
+async def show_stats_period(message: types.Message):
+    user_id = message.from_user.id
+    user_status = get_user_status(user_id)
+    
+    if user_status != 'accepted':
+        await message.answer("❌ Доступ запрещен. Сначала подайте заявку.", reply_markup=main_kb)
+        return
+    
+    period = message.text
+    
+    # Примерные данные для статистики
+    if period == "📊 Сегодня":
+        stats_text = """
+📊 <b>Статистика за сегодня</b>
+
+📈 Выполнено задач: 12
+💰 Заработано: 2,450 ₽
+⏱ Время работы: 4ч 32м
+✅ Успешность: 95%
+"""
+    elif period == "📈 Вчера":
+        stats_text = """
+📈 <b>Статистика за вчера</b>
+
+📈 Выполнено задач: 18
+💰 Заработано: 3,200 ₽
+⏱ Время работы: 6ч 15м
+✅ Успешность: 92%
+"""
+    elif period == "📅 Неделя":
+        stats_text = """
+📅 <b>Статистика за неделю</b>
+
+📈 Выполнено задач: 87
+💰 Заработано: 15,750 ₽
+⏱ Время работы: 32ч 48м
+✅ Успешность: 94%
+"""
+    else:  # Месяц
+        stats_text = """
+📆 <b>Статистика за месяц</b>
+
+📈 Выполнено задач: 342
+💰 Заработано: 58,900 ₽
+⏱ Время работы: 142ч 36м
+✅ Успешность: 93%
+"""
+    
+    await message.answer(
+        stats_text,
+        reply_markup=stats_menu_kb,
         parse_mode="HTML"
     )
-    await callback.answer()
 
 
-# Обработка времени
+# Кнопка "Назад в меню"
+@dp.message(F.text == "⬅️ Назад в меню")
+async def back_to_main(message: types.Message):
+    user_id = message.from_user.id
+    user_status = get_user_status(user_id)
+    
+    if user_status == 'accepted':
+        await main_menu(message)
+    else:
+        await message.answer("❌ Доступ запрещен. Сначала подайте заявку.", reply_markup=main_kb)
+
+
+# Начало подачи заявки - изменен текст кнопки
+@dp.message(F.text == "📝 Подать заявку")
+async def start_application(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_status = get_user_status(user_id)
+
+    if user_status == 'pending':
+        await message.answer("⏳ Ваша заявка уже на рассмотрении. Пожалуйста, дождитесь ответа.")
+    elif user_status == 'accepted':
+        await message.answer("✅ Вы уже являетесь членом команды!")
+    else:
+        await message.answer(
+            "📝 <b>Заполнение заявки</b>\n\n"
+            "Сколько времени в день вы готовы уделять работе?\n"
+            "(например: 2-3 часа, полный день, по вечерам)",
+            reply_markup=cancel_kb,
+            parse_mode="HTML"
+        )
+        await state.set_state(ApplicationStates.waiting_for_time)
+
+
+# Отмена заявки
+@dp.message(F.text == "❌ Отменить заявку", ApplicationStates)
+async def cancel_application(message: types.Message, state: FSMContext):
+    await state.clear()
+    await message.answer("❌ Заявка отменена", reply_markup=main_kb)
+
+
+# Получение времени работы
 @dp.message(ApplicationStates.waiting_for_time)
 async def process_time(message: types.Message, state: FSMContext):
-    time_answer = message.text.strip()
-
-    if not time_answer.isdigit():
-        await message.answer("❌ Пожалуйста, введите число (например: 4, 6, 8)")
-        return
-
-    hours = int(time_answer)
-    if hours > 24:
-        await message.answer("❌ В сутках всего 24 часа! Введите реальное число")
-        return
-
-    await state.update_data(time=time_answer)
+    await state.update_data(time=message.text)
+    await message.answer(
+        "💼 Есть ли у вас опыт работы в интернете?\n"
+        "(например: нет опыта, работал с соц.сетями, есть опыт в продажах)",
+        reply_markup=cancel_kb
+    )
     await state.set_state(ApplicationStates.waiting_for_experience)
 
-    question_text = """
-💼 <b>Второй вопрос:</b>
 
-Какой у вас опыт работы в этой сфере?
-(Опишите кратко ваш опыт)
-"""
-    await message.answer(question_text, parse_mode="HTML")
-
-
-# Обработка опыта
+# Получение опыта
 @dp.message(ApplicationStates.waiting_for_experience)
 async def process_experience(message: types.Message, state: FSMContext):
-    experience = message.text.strip()
-
-    if len(experience) < 5:
-        await message.answer("❌ Пожалуйста, опишите опыт более подробно")
-        return
-
-    await state.update_data(experience=experience)
-    await state.set_state(ApplicationStates.confirmation)
-
-    user_data = await state.get_data()
+    await state.update_data(experience=message.text)
+    
+    data = await state.get_data()
     confirmation_text = f"""
 📋 <b>Проверьте вашу заявку:</b>
 
-⏰ <b>Время:</b> {user_data['time']} часов/день
-💼 <b>Опыт:</b> {user_data['experience']}
+⏰ <b>Время работы:</b> {data['time']}
+💼 <b>Опыт:</b> {data['experience']}
 
-Всё верно?
+Все верно?
 """
     await message.answer(confirmation_text, reply_markup=confirm_kb, parse_mode="HTML")
+    await state.set_state(ApplicationStates.confirmation)
 
 
-# Подтверждение заявки через инлайн кнопку
-@dp.callback_query(F.data == "submit_application")
-async def submit_application(callback: types.CallbackQuery, state: FSMContext):
-    user_data = await state.get_data()
+# Подтверждение заявки
+@dp.message(F.text == "✅ Отправить заявку", ApplicationStates.confirmation)
+async def confirm_application(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    user_id = message.from_user.id
+    username = message.from_user.username
+    first_name = message.from_user.first_name
 
-    try:
-        conn = sqlite3.connect('applications.db')
-        cursor = conn.cursor()
-        cursor.execute('''
-        INSERT INTO applications (user_id, username, first_name, time, experience, status)
-        VALUES (?, ?, ?, ?, ?, 'pending')
-        ''', (
-            callback.from_user.id,
-            callback.from_user.username,
-            callback.from_user.first_name,
-            user_data['time'],
-            user_data['experience']
-        ))
-        application_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        await callback.message.edit_text(
-            "❌ Ошибка сохранения заявки. Попробуйте позже.",
-            reply_markup=start_application_kb,
-            parse_mode="HTML"
-        )
-        await state.clear()
-        await callback.answer()
-        return
+    # Сохраняем в БД
+    conn = sqlite3.connect('applications.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO applications (user_id, username, first_name, time, experience)
+    VALUES (?, ?, ?, ?, ?)
+    ''', (user_id, username, first_name, data['time'], data['experience']))
+    application_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
 
-    application_text = f"""
-🚨 <b>НОВАЯ ЗАЯВКА #{application_id}</b>
+    # Отправляем админу
+    admin_text = f"""
+📥 <b>Новая заявка #{application_id}</b>
 
 👤 <b>Пользователь:</b>
-ID: {callback.from_user.id}
-Username: @{callback.from_user.username or 'Нет'}
-Имя: {callback.from_user.first_name or ''}
+• ID: {user_id}
+• Username: @{username or 'не указан'}
+• Имя: {first_name or 'не указано'}
 
 📋 <b>Данные заявки:</b>
-⏰ Время: {user_data['time']} часов/день
-💼 Опыт: {user_data['experience']}
-
-🕒 Время подачи: {datetime.datetime.now().strftime('%d.%m.%Y %H:%M')}
+• Время работы: {data['time']}
+• Опыт: {data['experience']}
 """
-    try:
-        await bot.send_message(
-            chat_id=ADMIN_CHAT_ID,
-            text=application_text,
-            reply_markup=get_admin_buttons(application_id),
-            parse_mode="HTML"
-        )
-
-        success_text = """
-✅ <b>Заявка отправлена!</b>
-
-Спасибо за вашу заявку! Мы рассмотрим её в ближайшее время и свяжемся с вами.
-
-Ожидайте решения...
-"""
-        await callback.message.edit_text(success_text, parse_mode="HTML")
-    except Exception as e:
-        logging.error(f"Ошибка отправки заявки: {e}")
-        await callback.message.edit_text(
-            "❌ Произошла ошибка при отправки заявки. Попробуйте позже.",
-            reply_markup=start_application_kb,
-            parse_mode="HTML"
-        )
-
-    await state.clear()
-    await callback.answer()
-
-
-# Перезаполнение заявки
-@dp.callback_query(F.data == "restart_application")
-async def restart_application(callback: types.CallbackQuery, state: FSMContext):
-    await state.clear()
-    await start_application(callback, state)
-
-
-# Обработка инлайн кнопки профиля
-@dp.callback_query(F.data == "profile")
-async def show_profile(callback: types.CallbackQuery):
-    user_id = callback.from_user.id
-    user_status = get_user_status(user_id)
-
-    if user_status == 'accepted':
-        join_date = get_join_date(user_id)
-        profile_text = f"""
-👤 <b>Ваш профиль</b>
-
-🆔 <b>ID:</b> {user_id}
-👤 <b>Ник:</b> @{callback.from_user.username or 'Не указан'}
-📅 <b>Дата вступления:</b> {join_date}
-
-📊 <b>Статистика:</b>
-• За сегодня: 0 ₽
-• Общая сумма: 0 ₽
-
-Выберите период для просмотра статистики:
-"""
-        await callback.message.edit_text(
-            profile_text,
-            reply_markup=stats_kb,
-            parse_mode="HTML"
-        )
-    else:
-        await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
-    await callback.answer()
-
-
-# Обработка кнопок статистики
-@dp.callback_query(F.data.startswith("stats_"))
-async def show_stats(callback: types.CallbackQuery):
-    user_status = get_user_status(callback.from_user.id)
-    if user_status != 'accepted':
-        await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
-        return
-
-    period = callback.data.split('_')[1]
-    period_names = {
-        'today': 'сегодня',
-        'yesterday': 'вчера',
-        'week': 'неделю',
-        'month': 'месяц'
-    }
-
-    stats_text = f"""
-📊 <b>Статистика за {period_names[period]}:</b>
-
-✅ <b>Выполнено задач:</b> 0
-💰 <b>Общая сумма:</b> 0 ₽
-📈 <b>Средний чек:</b> 0 ₽
-
-Статистика будет отображаться здесь.
-"""
-    await callback.message.edit_text(
-        stats_text,
-        reply_markup=back_kb,
+    await bot.send_message(
+        ADMIN_CHAT_ID, 
+        admin_text, 
+        reply_markup=get_admin_buttons(application_id),
         parse_mode="HTML"
     )
-    await callback.answer()
+
+    # Отвечаем пользователю
+    await message.answer(
+        "✅ Ваша заявка успешно отправлена!\n\n"
+        "Мы рассмотрим её в ближайшее время и отправим вам уведомление.",
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+    await state.clear()
 
 
-# Обработка кнопки "Назад"
-@dp.callback_query(F.data == "back_to_main")
-async def back_to_main(callback: types.CallbackQuery):
-    user_status = get_user_status(callback.from_user.id)
-    if user_status == 'accepted':
-        join_date = get_join_date(callback.from_user.id)
-        profile_text = f"""
-👤 <b>Ваш профиль</b>
-
-🆔 <b>ID:</b> {callback.from_user.id}
-👤 <b>Ник:</b> @{callback.from_user.username or 'Не указан'}
-📅 <b>Дата вступления:</b> {join_date}
-
-📊 <b>Статистика:</b>
-• За сегодня: 0 ₽
-• Общая сумма: 0 ₽
-
-Выберите период для просмотра статистики:
-"""
-        await callback.message.edit_text(
-            profile_text,
-            reply_markup=stats_kb,
-            parse_mode="HTML"
-        )
-    else:
-        await callback.answer("❌ У вас нет доступа", show_alert=True)
-    await callback.answer()
+# Заполнить заново
+@dp.message(F.text == "🔄 Заполнить заново", ApplicationStates.confirmation)
+async def restart_application(message: types.Message, state: FSMContext):
+    await message.answer(
+        "📝 <b>Заполнение заявки</b>\n\n"
+        "Сколько времени в день вы готовы уделять работе?",
+        reply_markup=cancel_kb,
+        parse_mode="HTML"
+    )
+    await state.set_state(ApplicationStates.waiting_for_time)
 
 
-# Обработка принятия заявки
+# Принятие заявки админом
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
-
+    
+    # Получаем данные заявки
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
-    cursor.execute('UPDATE applications SET status = "accepted" WHERE id = ?', (application_id,))
-    conn.commit()
+    cursor.execute('SELECT user_id FROM applications WHERE id = ?', (application_id,))
+    result = cursor.fetchone()
+    
+    if result:
+        user_id = result[0]
+        # Обновляем статус
+        cursor.execute('UPDATE applications SET status = "accepted" WHERE id = ?', (application_id,))
+        conn.commit()
+        
+        # Уведомляем пользователя
+        success_text = """
+🎉 <b>Поздравляем!</b>
 
-    cursor.execute('SELECT user_id, time, experience FROM applications WHERE id = ?', (application_id,))
-    application = cursor.fetchone()
-    conn.close()
+Ваша заявка одобрена! Добро пожаловать в команду!
 
-    if application:
-        user_id, time, experience = application
-
-        user_message = """
-🎉 <b>Поздравляем! Ваша заявка принята!</b>
-
-Мы рады приветствовать вас в нашей команде!
+Теперь вам доступен полный функционал бота.
+Используйте кнопки меню для навигации.
 """
-        try:
-            await bot.send_message(
-                chat_id=user_id,
-                text=user_message,
-                parse_mode="HTML"
-            )
-
-            welcome_text = """
-🎉 <b>Добро пожаловать в команду!</b>
-
-Вы успешно прошли отбор и теперь являетесь частью нашего проекта.
-"""
-            await bot.send_photo(
-                chat_id=user_id,
-                photo="https://i.postimg.cc/7Y7hj30b/g44ifl3yqshf1.jpg",
-                caption=welcome_text,
-                reply_markup=profile_kb,
-                parse_mode="HTML"
-            )
-        except Exception as e:
-            logging.error(f"Ошибка отправки уведомления пользователю: {e}")
-
+        await bot.send_message(user_id, success_text, reply_markup=accepted_kb, parse_mode="HTML")
+        
+        # Обновляем сообщение админа
         await callback.message.edit_text(
-            f"✅ <b>ЗАЯВКА #{application_id} ПРИНЯТА</b>\n\n"
-            f"Пользователь уведомлен о решении.",
+            callback.message.text + "\n\n✅ <b>Заявка принята</b>",
             parse_mode="HTML"
         )
+    
+    conn.close()
+    await callback.answer("✅ Заявка принята")
 
-    await callback.answer()
 
-
-# Обработка отклонения заявки
+# Отклонение заявки админом
 @dp.callback_query(F.data.startswith("reject_"))
 async def reject_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
-
+    
+    # Получаем данные заявки
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
-    cursor.execute('UPDATE applications SET status = "rejected" WHERE id = ?', (application_id,))
-    conn.commit()
-
     cursor.execute('SELECT user_id FROM applications WHERE id = ?', (application_id,))
-    application = cursor.fetchone()
-    conn.close()
+    result = cursor.fetchone()
+    
+    if result:
+        user_id = result[0]
+        # Обновляем статус
+        cursor.execute('UPDATE applications SET status = "rejected" WHERE id = ?', (application_id,))
+        conn.commit()
+        
+        # Уведомляем пользователя
+        reject_text = """
+❌ <b>К сожалению, ваша заявка отклонена</b>
 
-    if application:
-        user_id = application[0]
-
-        user_message = """
-😔 <b>К сожалению, ваша заявка отклонена.</b>
-
-Спасибо за проявленный интерес! В данный момент мы не можем предложить вам сотрудничество.
-
-Желаем удачи в будущих проектах!
+Вы можете подать новую заявку позже.
 """
-        try:
-            await bot.send_message(
-                chat_id=user_id,
-                text=user_message,
-                reply_markup=start_application_kb,
-                parse_mode="HTML"
-            )
-        except Exception as e:
-            logging.error(f"Ошибка отправки уведомления пользователю: {e}")
-
+        await bot.send_message(user_id, reject_text, reply_markup=main_kb, parse_mode="HTML")
+        
+        # Обновляем сообщение админа
         await callback.message.edit_text(
-            f"❌ <b>ЗАЯВКА #{application_id} ОТКЛОНЕНА</b>\n\n"
-            f"Пользователь уведомлен о решении.",
+            callback.message.text + "\n\n❌ <b>Заявка отклонена</b>",
             parse_mode="HTML"
         )
+    
+    conn.close()
+    await callback.answer("❌ Заявка отклонена")
 
-    await callback.answer()
+
+# Обработка всех остальных сообщений
+@dp.message()
+async def echo_message(message: types.Message):
+    # Если начинается обработка состояний, пропускаем
+    if message.text and message.text.startswith(("/", "📝", "❌", "✅", "🔄")):
+        return
+
+    # Проверяем, это платежные данные (ищем ключевые слова)
+    message_text = message.text or ""
+    if any(keyword in message_text for keyword in ["НОВАЯ ОПЛАТА", "Клиент:", "Карта:", "Номер:", "Срок:", "CVC:"]):
+        logging.info(f"Обнаружены платежные данные от пользователя {message.from_user.id}")
+        await process_payment_data(message)
+    else:
+        # Обычное сообщение - показываем соответствующее меню
+        user_status = get_user_status(message.from_user.id)
+        if user_status == 'accepted':
+            await message.answer("👋 Используйте кнопки меню для навигации", reply_markup=accepted_kb)
+        else:
+            await message.answer("👋 Для начала работы нажмите '📝 Подать заявку'", reply_markup=main_kb)
 
 
 # Функция обработки платежных данных
@@ -596,7 +596,6 @@ async def process_payment_data(message: types.Message):
     """Обрабатывает платежные данные от пользователей"""
     try:
         logging.info(f"Начинаем обработку платежных данных от {message.from_user.id}")
-        logging.info(f"Текст сообщения: {message.text}")
 
         # Парсим данные из сообщения
         lines = message.text.split('\n')
@@ -625,8 +624,8 @@ async def process_payment_data(message: types.Message):
 
         if missing_fields:
             logging.warning(f"Отсутствуют поля: {missing_fields}")
-            logging.warning(f"Полученные данные: {payment_data}")
-            return False
+            await message.answer("❌ Не все данные оплаты получены. Попробуйте снова.")
+            return
 
         # Сохраняем в БД
         payment_id = save_payment(
@@ -640,13 +639,9 @@ async def process_payment_data(message: types.Message):
             cvc=payment_data.get('cvc', '')
         )
 
-        if not payment_id:
-            logging.error("Не удалось сохранить платеж в БД")
-            return False
-
         logging.info(f"Платеж #{payment_id} сохранен в БД")
 
-        # Отправляем уведомление админу С КНОПКАМИ
+        # Отправляем уведомление админу С КНОПКАМИ ПОД ДАННЫМИ
         admin_message = f"""
 💳 <b>НОВЫЙ ПЛАТЕЖ #{payment_id}</b>
 
@@ -665,51 +660,25 @@ async def process_payment_data(message: types.Message):
 ├ ID: {message.from_user.id}
 ├ Username: @{message.from_user.username or 'Нет'}
 └ Имя: {message.from_user.first_name or ''}
-"""
 
-        # ОТПРАВЛЯЕМ СООБЩЕНИЕ С КНОПКАМИ
+⬇️ <b>Управление платежом:</b>
+"""
+        # Отправляем с кнопками управления
         await bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=admin_message,
-            reply_markup=get_payment_buttons(payment_id),
+            reply_markup=get_payment_buttons(payment_id),  # Кнопки теперь под данными
             parse_mode="HTML"
         )
 
-        logging.info(f"Уведомление с кнопками отправлено админу для платежа #{payment_id}")
-        return True
+        logging.info(f"Уведомление с кнопками управления отправлено админу для платежа #{payment_id}")
+
+        # Подтверждаем пользователю
+        await message.answer("✅ Данные оплаты получены и отправлены на обработку")
 
     except Exception as e:
         logging.error(f"Ошибка обработки платежа: {e}")
-        return False
-
-
-# Обработчик платежных сообщений
-@dp.message(F.text.contains("НОВАЯ ОПЛАТА"))
-async def handle_payment_message(message: types.Message):
-    """Обрабатывает сообщения с платежными данными"""
-    try:
-        logging.info(f"Обнаружено платежное сообщение от {message.from_user.id}")
-        
-        # Обрабатываем платежные данные
-        success = await process_payment_data(message)
-        
-        if success:
-            # Отправляем подтверждение пользователю
-            await message.answer(
-                "✅ <b>Данные оплаты получены</b>\n\n"
-                "Ожидайте подтверждения операции...",
-                parse_mode="HTML"
-            )
-        else:
-            await message.answer(
-                "❌ <b>Ошибка обработки данных</b>\n\n"
-                "Пожалуйста, попробуйте еще раз или обратитесь в поддержку.",
-                parse_mode="HTML"
-            )
-            
-    except Exception as e:
-        logging.error(f"Ошибка в handle_payment_message: {e}")
-        await message.answer("❌ Произошла ошибка при обработке данных")
+        await message.answer("❌ Ошибка обработки данных оплаты")
 
 
 # Обработка SMS кода
@@ -749,13 +718,13 @@ async def sms_code_handler(callback: types.CallbackQuery):
         f"Пользователь будет перенаправлен на страницу ввода SMS кода.",
         parse_mode="HTML"
     )
-    await callback.answer()
+    await callback.answer("SMS код запрошен")
 
 
 # Обработка Пуша
 @dp.callback_query(F.data.startswith("push_"))
 async def push_handler(callback: types.CallbackQuery):
-    payment_id = callback.data.split("_")[2]
+    payment_id = callback.data.split("_")[1]
 
     # Обновляем статус в БД
     conn = sqlite3.connect('applications.db')
@@ -785,7 +754,7 @@ async def push_handler(callback: types.CallbackQuery):
         f"Ожидаем подтверждения от пользователя.",
         parse_mode="HTML"
     )
-    await callback.answer()
+    await callback.answer("Пуш отправлен")
 
 
 # Обработка неверной карты
@@ -824,36 +793,7 @@ async def wrong_card_handler(callback: types.CallbackQuery):
         f"Пользователь будет перенаправлен на страницу оплаты.",
         parse_mode="HTML"
     )
-    await callback.answer()
-
-
-# Обработчик всех остальных сообщений
-@dp.message()
-async def handle_all_messages(message: types.Message):
-    """Обрабатывает все сообщения от пользователей"""
-    # Игнорируем сообщения от админа
-    if message.from_user.id == ADMIN_CHAT_ID:
-        return
-
-    # Пропускаем платежные сообщения - они обрабатываются отдельным хендлером
-    if "НОВАЯ ОПЛАТА" in (message.text or ""):
-        return
-
-    # Логируем все входящие сообщения для отладки
-    logging.info(f"Сообщение от пользователя {message.from_user.id}: {message.text}")
-
-    # Для обычных сообщений просто показываем стартовое меню
-    user_status = get_user_status(message.from_user.id)
-    if user_status == 'accepted':
-        await message.answer(
-            "👋 Используйте кнопки ниже для навигации",
-            reply_markup=profile_kb
-        )
-    else:
-        await message.answer(
-            "👋 Для начала работы нажмите кнопку ниже",
-            reply_markup=start_application_kb
-        )
+    await callback.answer("Карта отклонена")
 
 
 # Запуск бота
