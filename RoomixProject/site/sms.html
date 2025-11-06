@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roomix — Подтверждение SMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #D4AF37;
+            --primary-dark: #B8941F;
+            --primary-light: rgba(212, 175, 55, 0.1);
+            --dark: #121212;
+            --dark-light: #1E1E1E;
+            --text: #FFFFFF;
+            --text-secondary: #B0B0B0;
+            --error: #FF6B6B;
+            --success: #4CAF50;
+            --card-bg: rgba(30, 30, 30, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Анимированный фон с частицами */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.1);
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0.5;
+            }
+            50% {
+                transform: translateY(-20px) translateX(10px) rotate(180deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(0) translateX(0) rotate(360deg);
+                opacity: 0.5;
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Header - ТЕПЕРЬ КАК В INDEX.HTML */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+            font-weight: 800;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .language-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .language-btn {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .language-btn:hover {
+            background: var(--primary);
+            color: var(--dark);
+        }
+
+        .language-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--dark-light);
+            border-radius: 8px;
+            padding: 10px 0;
+            min-width: 150px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .language-dropdown.show {
+            display: block;
+        }
+
+        .language-option {
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .language-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .language-option.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--primary);
+            color: var(--dark);
+            transform: translateY(-2px);
+        }
+
+        /* SMS Form */
+        .main-content {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .card-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 28px;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px 16px 16px 45px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        input.error {
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+        }
+
+        .error-msg {
+            color: var(--error);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Result Message */
+        .result-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-message.success {
+            background: var(--success);
+            color: var(--dark);
+        }
+
+        .result-message.error {
+            background: var(--error);
+            color: var(--dark);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            width: 100%;
+            max-width: 800px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 15px 0;
+            }
+
+            .logo {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: center;
+                flex-direction: row;
+                gap: 15px;
+            }
+
+            .user-actions {
+                gap: 10px;
+            }
+
+            .btn-icon {
+                width: 35px;
+                height: 35px;
+            }
+
+            .language-dropdown {
+                right: auto;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .card {
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .logo-text {
+                font-size: 22px;
+            }
+
+            .header-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .card {
+                padding: 25px;
+            }
+
+            footer {
+                padding: 20px 0;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .logo-text {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">R</div>
+                <div class="logo-text">Roomix</div>
+            </div>
+            <div class="header-controls">
+                <div class="language-selector">
+                    <button class="language-btn">
+                        <i class="fas fa-globe"></i>
+                        <span id="currentLanguage">Русский</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="language-dropdown" id="languageDropdown">
+                        <div class="language-option active" data-lang="ru">Русский</div>
+                        <div class="language-option" data-lang="pl">Polski</div>
+                        <div class="language-option" data-lang="en">English</div>
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <div class="btn-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div class="btn-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="btn-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fas fa-sms"></i></div>
+                    <div class="card-title" id="smsTitle">Подтверждение платежа</div>
+                </div>
+                <p class="sms-description" id="smsDescription" style="color: var(--text-secondary); margin-bottom: 25px; text-align: center;">Мы отправили SMS с кодом подтверждения на ваш номер. Пожалуйста, введите код ниже.</p>
+                <form id="smsForm">
+                    <div class="form-group">
+                        <label for="smsCode" id="smsCodeLabel">Код из SMS</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="text" id="smsCode" placeholder="Введите 6-значный код" maxlength="6" required>
+                        </div>
+                        <div class="error-msg" id="smsCodeError">Неверный код. Попробуйте снова.</div>
+                    </div>
+                    <button type="button" class="btn" id="confirmBtn" disabled>
+                        <span id="confirmBtnText">Подтвердить</span> <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+                <div class="result-message" id="resultMessage"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2025 Roomix. Все права защищены.</p>
+            <p style="margin-top: 10px; font-size: 12px;">Принимаем к оплате:
+                <i class="fab fa-cc-visa" style="margin: 0 5px;"></i>
+                <i class="fab fa-cc-mastercard" style="margin: 0 5px;"></i>
+                <i class="fab fa-cc-paypal" style="margin: 0 5px;"></i>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Создание частиц для анимированного фона
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 15;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+
+                // Случайный размер и позиция
+                const size = Math.random() * 20 + 5;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+
+                // Случайная задержка анимации
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        const translations = {
+            ru: {
+                smsTitle: 'Подтверждение платежа',
+                smsDescription: 'Мы отправили SMS с кодом подтверждения на ваш номер. Пожалуйста, введите код ниже.',
+                smsCodeLabel: 'Код из SMS',
+                smsCodePlaceholder: 'Введите 6-значный код',
+                smsCodeError: 'Неверный код. Попробуйте снова.',
+                confirmBtnText: 'Подтвердить',
+                successMessage: 'Платеж успешно подтвержден! Бронирование завершено.',
+                errorMessage: 'Ошибка подтверждения. Попробуйте снова.'
+            },
+            pl: {
+                smsTitle: 'Potwierdzenie płatności',
+                smsDescription: 'Wysłaliśmy SMS z kodem potwierdzenia na Twój numer. Proszę wprowadź kod poniżej.',
+                smsCodeLabel: 'Kod z SMS',
+                smsCodePlaceholder: 'Wprowadź 6-cyfrowy kod',
+                smsCodeError: 'Nieprawidłowy kod. Spróbuj ponownie.',
+                confirmBtnText: 'Potwierdź',
+                successMessage: 'Płatność potwierdzona pomyślnie! Rezerwacja zakończona.',
+                errorMessage: 'Błąd potwierdzenia. Spróbuj ponownie.'
+            },
+            en: {
+                smsTitle: 'Payment Confirmation',
+                smsDescription: 'We sent an SMS with a confirmation code to your number. Please enter the code below.',
+                smsCodeLabel: 'SMS Code',
+                smsCodePlaceholder: 'Enter 6-digit code',
+                smsCodeError: 'Invalid code. Try again.',
+                confirmBtnText: 'Confirm',
+                successMessage: 'Payment confirmed successfully! Booking completed.',
+                errorMessage: 'Confirmation error. Try again.'
+            }
+        };
+
+        let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            sessionStorage.setItem('selectedLanguage', lang);
+            const t = translations[lang];
+
+            document.getElementById('smsTitle').textContent = t.smsTitle;
+            document.getElementById('smsDescription').textContent = t.smsDescription;
+            document.getElementById('smsCodeLabel').textContent = t.smsCodeLabel;
+            document.getElementById('smsCode').placeholder = t.smsCodePlaceholder;
+            document.getElementById('smsCodeError').textContent = t.smsCodeError;
+            document.getElementById('confirmBtnText').textContent = t.confirmBtnText;
+            document.getElementById('currentLanguage').textContent = lang === 'ru' ? 'Русский' : lang === 'pl' ? 'Polski' : 'English';
+
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.classList.toggle('active', option.getAttribute('data-lang') === lang);
+            });
+        }
+
+        // Валидация и обработка
+        const smsCode = document.getElementById('smsCode');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const smsCodeError = document.getElementById('smsCodeError');
+        const resultMessage = document.getElementById('resultMessage');
+
+        smsCode.addEventListener('input', () => {
+            const value = smsCode.value.trim();
+            const isValid = /^\d{6}$/.test(value);
+            smsCode.classList.toggle('error', !isValid);
+            smsCodeError.style.display = !isValid ? 'block' : 'none';
+            confirmBtn.disabled = !isValid;
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            const t = translations[currentLanguage];
+            // Симуляция проверки (заменить на реальную логику)
+            const isSuccess = Math.random() > 0.2; // 80% успех
+            resultMessage.style.display = 'block';
+            resultMessage.classList.toggle('success', isSuccess);
+            resultMessage.classList.toggle('error', !isSuccess);
+            resultMessage.textContent = isSuccess ? t.successMessage : t.errorMessage;
+            if (isSuccess) {
+                confirmBtn.disabled = true;
+            }
+        });
+
+        // Языковой переключатель
+        document.querySelector('.language-btn').addEventListener('click', () => {
+            document.getElementById('languageDropdown').classList.toggle('show');
+        });
+
+        document.querySelectorAll('.language-option').forEach(option => {
+            option.addEventListener('click', () => {
+                changeLanguage(option.getAttribute('data-lang'));
+                document.getElementById('languageDropdown').classList.remove('show');
+            });
+        });
+
+        window.addEventListener('click', e => {
+            if (!e.target.closest('.language-selector')) {
+                document.getElementById('languageDropdown').classList.remove('show');
+            }
+        });
+
+        // Инициализация
+        createParticles();
+        changeLanguage(currentLanguage);
+    </script>
+</body>
+</html>

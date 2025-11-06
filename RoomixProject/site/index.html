@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roomix — Бронирование Premium</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #D4AF37;
+            --primary-dark: #B8941F;
+            --primary-light: rgba(212, 175, 55, 0.1);
+            --dark: #121212;
+            --dark-light: #1E1E1E;
+            --text: #FFFFFF;
+            --text-secondary: #B0B0B0;
+            --error: #FF6B6B;
+            --success: #4CAF50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header - ИСПРАВЛЕННАЯ ШАПКА */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+        }
+
+        .logo:visited, .logo:hover, .logo:active {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+            font-weight: 800;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .language-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .language-btn {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .language-btn:hover {
+            background: var(--primary);
+            color: var(--dark);
+        }
+
+        .language-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--dark-light);
+            border-radius: 8px;
+            padding: 10px 0;
+            min-width: 150px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .language-dropdown.show {
+            display: block;
+        }
+
+        .language-option {
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .language-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .language-option.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--primary);
+            color: var(--dark);
+            transform: translateY(-2px);
+        }
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            margin-right: 15px;
+            font-size: 18px;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Form Styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 16px 16px 16px 45px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Улучшенные стили для select (чтобы "гости" было видно) */
+        .input-with-icon select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            padding: 16px 40px 16px 45px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 3;
+            position: relative;
+        }
+
+        /* Убрать стандартную стрелку IE */
+        .input-with-icon select::-ms-expand {
+            display: none;
+        }
+
+        /* Наша кастомная стрелка справа (видно всегда) */
+        .input-with-icon .select-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            pointer-events: none;
+            z-index: 4;
+            font-size: 12px;
+        }
+
+        /* Опции в выпадающем списке — явно тёмный фон + светлый текст */
+        .input-with-icon select option {
+            background: var(--dark-light);
+            color: var(--text);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        input.error {
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+        }
+
+        input.success {
+            border-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+
+        .error-msg {
+            color: var(--error);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-msg {
+            color: var(--success);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* Room Gallery */
+        .gallery {
+            position: relative;
+            margin-bottom: 25px;
+            border-radius: 15px;
+            overflow: hidden;
+            height: 300px;
+        }
+
+        .slides {
+            display: flex;
+            height: 100%;
+            transition: transform 0.5s ease;
+        }
+
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-nav {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active {
+            background: var(--primary);
+            transform: scale(1.2);
+        }
+
+        .gallery-controls {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .gallery:hover .gallery-controls {
+            opacity: 1;
+        }
+
+        .gallery-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .gallery-btn:hover {
+            background: var(--primary);
+            color: var(--dark);
+        }
+
+        /* Room Details */
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .room-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .room-location {
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .room-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--primary-light);
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .room-price {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .room-description {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            line-height: 1.7;
+        }
+
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .amenity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .amenity-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        /* Booking Summary */
+        .booking-summary {
+            background: var(--primary-light);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        /* Buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: none;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--dark);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+        /* Responsive - УЛУЧШЕННАЯ МОБИЛЬНАЯ ВЕРСИЯ КАК В PAYMENT */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .amenities-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 15px 0;
+            }
+
+            .logo {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: center;
+                flex-direction: row;
+                gap: 15px;
+            }
+
+            .user-actions {
+                gap: 10px;
+            }
+
+            .btn-icon {
+                width: 35px;
+                height: 35px;
+            }
+
+            .progress-step {
+                padding: 10px 5px;
+                font-size: 12px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .amenities-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .room-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .gallery {
+                height: 250px;
+            }
+
+            .room-name {
+                font-size: 20px;
+            }
+
+            .room-price {
+                font-size: 24px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .room-description {
+                font-size: 14px;
+            }
+
+            .amenity {
+                font-size: 13px;
+            }
+
+            input, select {
+                padding: 14px 14px 14px 45px;
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 14px 20px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .logo-text {
+                font-size: 22px;
+            }
+
+            .header-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .language-btn {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+
+            .progress-step {
+                padding: 8px 3px;
+                font-size: 10px;
+            }
+
+            .card {
+                padding: 15px;
+                border-radius: 15px;
+            }
+
+            .card-header {
+                margin-bottom: 20px;
+                padding-bottom: 12px;
+            }
+
+            .card-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+
+            .card-title {
+                font-size: 18px;
+            }
+
+            .gallery {
+                height: 200px;
+                margin-bottom: 20px;
+            }
+
+            .gallery-controls {
+                padding: 0 10px;
+            }
+
+            .gallery-btn {
+                width: 35px;
+                height: 35px;
+            }
+
+            .room-name {
+                font-size: 18px;
+            }
+
+            .room-rating {
+                font-size: 14px;
+                padding: 4px 8px;
+            }
+
+            .room-price {
+                font-size: 22px;
+                margin: 15px 0;
+            }
+
+            .room-description {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+            .amenities-grid {
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .amenity {
+                gap: 8px;
+            }
+
+            .amenity-icon {
+                width: 25px;
+                height: 25px;
+                font-size: 12px;
+            }
+
+            .booking-summary {
+                padding: 15px;
+                margin-top: 15px;
+            }
+
+            .summary-row {
+                font-size: 14px;
+            }
+
+            .summary-row:last-child {
+                font-size: 16px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            input, select {
+                padding: 12px 12px 12px 40px;
+                font-size: 14px;
+                border-radius: 10px;
+            }
+
+            .input-icon {
+                left: 12px;
+                font-size: 14px;
+            }
+
+            .input-with-icon .select-arrow {
+                right: 10px;
+                font-size: 10px;
+            }
+
+            .btn {
+                padding: 12px 16px;
+                font-size: 14px;
+                border-radius: 10px;
+            }
+
+            .error-msg, .success-msg {
+                font-size: 11px;
+            }
+
+            footer {
+                padding: 20px 0;
+                margin-top: 30px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .logo-text {
+                font-size: 20px;
+            }
+
+            .progress-step {
+                padding: 6px 2px;
+                font-size: 9px;
+            }
+
+            .gallery {
+                height: 180px;
+            }
+
+            .room-name {
+                font-size: 16px;
+            }
+
+            .room-price {
+                font-size: 20px;
+            }
+
+            input, select {
+                padding: 10px 10px 10px 35px;
+                font-size: 13px;
+            }
+
+            .input-icon {
+                left: 10px;
+                font-size: 13px;
+            }
+        }
+
+        /* Mobile-specific improvements */
+        .mobile-only {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .desktop-only {
+                display: none;
+            }
+
+            .mobile-only {
+                display: block;
+            }
+
+            /* Улучшенная галерея для мобильных */
+            .gallery-nav {
+                bottom: 15px;
+            }
+
+            .nav-dot {
+                width: 8px;
+                height: 8px;
+            }
+
+            /* Улучшенные карточки для мобильных */
+            .card {
+                margin-bottom: 20px;
+            }
+
+            /* Улучшенные кнопки для мобильных */
+            .btn {
+                min-height: 44px; /* Минимальная высота для удобного тапа */
+            }
+
+            /* Улучшенные инпуты для мобильных */
+            input, select {
+                min-height: 44px; /* Минимальная высота для удобного тапа */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">R</div>
+                <div class="logo-text">Roomix</div>
+            </div>
+            <div class="header-controls">
+                <div class="language-selector">
+                    <button class="language-btn">
+                        <i class="fas fa-globe"></i>
+                        <span id="currentLanguage">Русский</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="language-dropdown" id="languageDropdown">
+                        <div class="language-option active" data-lang="ru">Русский</div>
+                        <div class="language-option" data-lang="pl">Polski</div>
+                        <div class="language-option" data-lang="en">English</div>
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <div class="btn-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div class="btn-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="btn-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Левая колонка - информация о номере -->
+            <div class="card fade-in">
+                <div class="gallery">
+                    <div class="slides" id="slides">
+                        <!-- Images will be loaded dynamically -->
+                    </div>
+
+                    <div class="gallery-controls">
+                        <div class="gallery-btn prev-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </div>
+                        <div class="gallery-btn next-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <div class="gallery-nav" id="galleryNav">
+                        <!-- Dots will be loaded dynamically -->
+                    </div>
+                </div>
+
+                <div class="room-header">
+                    <div>
+                        <h3 class="room-name" id="roomName">Премиум Люкс с видом на город</h3>
+                        <div class="room-location">
+                            <i class="fas fa-map-marker-alt"></i> <span id="roomLocation">Варшава, Польша</span>
+                        </div>
+                    </div>
+                    <div class="room-rating">
+                        <i class="fas fa-star"></i> <span id="roomRating">4.8</span>
+                    </div>
+                </div>
+
+                <div class="room-price">
+                    <span id="roomPrice">450</span> PLN <span class="price-period" id="pricePeriod">/ за ночь</span>
+                </div>
+
+                <p class="room-description" id="roomDescription">
+                    Просторный номер премиум-класса с панорамным видом на город. В номере есть king-size кровать, рабочая зона, современная ванная комната с джакузи. Идеально подходит для романтического отдыха или деловой поездки.
+                </p>
+
+                <h4 style="margin-bottom: 15px; color: var(--text);" id="amenitiesTitle">Удобства</h4>
+                <div class="amenities-grid" id="amenitiesGrid">
+                    <!-- Amenities will be loaded dynamically -->
+                </div>
+
+                <div class="booking-summary">
+                    <div class="summary-row">
+                        <span id="nightsCount">450 PLN x 2 ночи</span>
+                        <span id="nightsPrice">900 PLN</span>
+                    </div>
+                    <div class="summary-row">
+                        <span id="serviceFeeText">Сбор за услуги</span>
+                        <span>50 PLN</span>
+                    </div>
+                    <div class="summary-row">
+                        <span id="taxesText">Налоги</span>
+                        <span>70 PLN</span>
+                    </div>
+                    <div class="summary-row">
+                        <span id="totalText">Итого</span>
+                        <span id="totalPrice">1020 PLN</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Правая колонка - форма бронирования -->
+            <div class="card fade-in delay-1">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-user-edit"></i>
+                    </div>
+                    <h2 class="card-title" id="formTitle">Ваши данные</h2>
+                </div>
+
+                <form id="bookingForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="firstName" id="firstNameLabel">Имя</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="firstName" placeholder="Введите ваше имя" required>
+                            </div>
+                            <div class="error-msg" id="firstNameError">Пожалуйста, введите корректное имя</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lastName" id="lastNameLabel">Фамилия</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="lastName" placeholder="Введите вашу фамилию" required>
+                            </div>
+                            <div class="error-msg" id="lastNameError">Пожалуйста, введите корректную фамилию</div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="email" id="emailLabel">Email</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input type="email" id="email" placeholder="example@mail.com" required>
+                            </div>
+                            <div class="error-msg" id="emailError">Пожалуйста, введите корректный email</div>
+                            <div class="success-msg" id="emailSuccess">Email корректен</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone" id="phoneLabel">Телефон</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input type="tel" id="phone" placeholder="+48 XXX XXX XXX" required>
+                            </div>
+                            <div class="error-msg" id="phoneError">Пожалуйста, введите корректный номер телефона</div>
+                            <div class="success-msg" id="phoneSuccess">Номер телефона корректен</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="guests" id="guestsLabel">Количество гостей</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-users input-icon"></i>
+                                <select id="guests">
+                                    <!-- Options will be loaded dynamically -->
+                                </select>
+                                <span class="select-arrow"><i class="fas fa-chevron-down"></i></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="checkIn" id="checkInLabel">Дата заезда</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-calendar-day input-icon"></i>
+                                <input type="date" id="checkIn" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="checkOut" id="checkOutLabel">Дата выезда</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-calendar-day input-icon"></i>
+                                <input type="date" id="checkOut" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" id="nextBtn" class="btn btn-primary" disabled style="grid-column: 1 / -1;">
+                            Перейти к оплате <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2025 Roomix. Все права защищены.</p>
+            <p style="margin-top: 10px; font-size: 12px;">Принимаем к оплате:
+                <i class="fab fa-cc-visa" style="margin: 0 5px;"></i>
+                <i class="fab fa-cc-mastercard" style="margin: 0 5px;"></i>
+                <i class="fab fa-cc-paypal" style="margin: 0 5px;"></i>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Данные о номере, которые можно менять через бота
+        let roomData = {
+            name: "Премиум Люкс с видом на город",
+            location: "Варшава, Польша",
+            price: 450, // PLN за ночь
+            rating: 4.8,
+            description: "Просторный номер премиум-класса с панорамным видом на город. В номере есть king-size кровать, рабочая зона, современная ванная комната с джакузи. Идеально подходит для романтического отдыха или деловой поездки.",
+            images: [
+                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+                "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80"
+            ],
+            amenities: [
+                { name: "Бесплатный Wi-Fi", icon: "wifi" },
+                { name: "Завтрак включен", icon: "utensils" },
+                { name: "Джакузи", icon: "hot-tub" },
+                { name: "Smart TV", icon: "tv" },
+                { name: "Кондиционер", icon: "snowflake" },
+                { name: "Парковка", icon: "parking" }
+            ]
+        };
+
+        // Тексты для разных языков
+        const translations = {
+            ru: {
+                "roomDetails": "Детали номера",
+                "yourData": "Ваши данные",
+                "continue": "Продолжить",
+                "back": "Назад",
+                "step1": "1. Данные для бронирования",
+                "step2": "2. Подтверждение и оплата",
+                "firstName": "Имя",
+                "lastName": "Фамилия",
+                "email": "Email",
+                "phone": "Телефон",
+                "guests": "Количество гостей",
+                "checkIn": "Дата заезда",
+                "checkOut": "Дата выезда",
+                "enterFirstName": "Введите ваше имя",
+                "enterLastName": "Введите вашу фамилию",
+                "enterEmail": "example@mail.com",
+                "enterPhone": "+48 XXX XXX XXX",
+                "firstNameError": "Пожалуйста, введите корректное имя",
+                "lastNameError": "Пожалуйста, введите корректную фамилию",
+                "emailError": "Пожалуйста, введите корректный email",
+                "phoneError": "Пожалуйста, введите корректный номер телефона",
+                "emailSuccess": "Email корректен",
+                "phoneSuccess": "Номер телефона корректен",
+                "perNight": "/ за ночь",
+                "amenities": "Удобства",
+                "serviceFee": "Сбор за услуги",
+                "taxes": "Налоги",
+                "total": "Итого",
+                "nights": "ночи",
+                "night": "ночь",
+                "guest": "гость",
+                "guests_1": "гостя",
+                "guests_2": "гостей"
+            },
+            pl: {
+                "roomDetails": "Szczegóły pokoju",
+                "yourData": "Twoje dane",
+                "continue": "Kontynuuj",
+                "back": "Wstecz",
+                "step1": "1. Dane rezerwacji",
+                "step2": "2. Potwierdzenie i płatność",
+                "firstName": "Imię",
+                "lastName": "Nazwisko",
+                "email": "Email",
+                "phone": "Telefon",
+                "guests": "Liczba gości",
+                "checkIn": "Data zameldowania",
+                "checkOut": "Data wymeldowania",
+                "enterFirstName": "Wpisz swoje imię",
+                "enterLastName": "Wpisz swoje nazwisko",
+                "enterEmail": "przyklad@mail.com",
+                "enterPhone": "+48 XXX XXX XXX",
+                "firstNameError": "Proszę podać poprawne imię",
+                "lastNameError": "Proszę podać poprawne nazwisko",
+                "emailError": "Proszę podać poprawny adres email",
+                "phoneError": "Proszę podać poprawny numer telefonu",
+                "emailSuccess": "Email jest poprawny",
+                "phoneSuccess": "Numer telefonu jest poprawny",
+                "perNight": "/ za noc",
+                "amenities": "Udogodnienia",
+                "serviceFee": "Opłata serwisowa",
+                "taxes": "Podatki",
+                "total": "Razem",
+                "nights": "noce",
+                "night": "noc",
+                "guest": "gość",
+                "guests_1": "gości",
+                "guests_2": "gości"
+            },
+            en: {
+                "roomDetails": "Room Details",
+                "yourData": "Your Data",
+                "continue": "Continue",
+                "back": "Back",
+                "step1": "1. Booking Data",
+                "step2": "2. Confirmation and Payment",
+                "firstName": "First Name",
+                "lastName": "Last Name",
+                "email": "Email",
+                "phone": "Phone",
+                "guests": "Number of Guests",
+                "checkIn": "Check-in Date",
+                "checkOut": "Check-out Date",
+                "enterFirstName": "Enter your first name",
+                "enterLastName": "Enter your last name",
+                "enterEmail": "example@mail.com",
+                "enterPhone": "+48 XXX XXX XXX",
+                "firstNameError": "Please enter a valid first name",
+                "lastNameError": "Please enter a valid last name",
+                "emailError": "Please enter a valid email",
+                "phoneError": "Please enter a valid phone number",
+                "emailSuccess": "Email is valid",
+                "phoneSuccess": "Phone number is valid",
+                "perNight": "/ per night",
+                "amenities": "Amenities",
+                "serviceFee": "Service Fee",
+                "taxes": "Taxes",
+                "total": "Total",
+                "nights": "nights",
+                "night": "night",
+                "guest": "guest",
+                "guests_1": "guests",
+                "guests_2": "guests"
+            }
+        };
+
+        // Загружаем сохраненный язык из sessionStorage
+        let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
+
+        // Функция для обновления данных через бота (вызывается извне)
+        function updateRoomData(newData) {
+            roomData = { ...roomData, ...newData };
+            updateRoomDisplay();
+            updatePrice();
+        }
+
+        // Обновление отображения данных о номере
+        function updateRoomDisplay() {
+            document.getElementById('roomName').textContent = roomData.name;
+            document.getElementById('roomLocation').textContent = roomData.location;
+            document.getElementById('roomPrice').textContent = roomData.price;
+            document.getElementById('roomRating').textContent = roomData.rating;
+            document.getElementById('roomDescription').textContent = roomData.description;
+
+            // Обновление галереи
+            const slidesContainer = document.getElementById('slides');
+            const dotsContainer = document.getElementById('galleryNav');
+
+            slidesContainer.innerHTML = '';
+            dotsContainer.innerHTML = '';
+
+            roomData.images.forEach((image, index) => {
+                const slide = document.createElement('img');
+                slide.className = 'slide';
+                slide.src = image;
+                slide.alt = `Room photo ${index + 1}`;
+                if (index === 0) slide.style.display = 'block';
+                slidesContainer.appendChild(slide);
+
+                const dot = document.createElement('div');
+                dot.className = `nav-dot ${index === 0 ? 'active' : ''}`;
+                dotsContainer.appendChild(dot);
+            });
+
+            // Обновление удобств
+            const amenitiesGrid = document.getElementById('amenitiesGrid');
+            amenitiesGrid.innerHTML = '';
+
+            roomData.amenities.forEach(amenity => {
+                const amenityElement = document.createElement('div');
+                amenityElement.className = 'amenity';
+                amenityElement.innerHTML = `
+                    <div class="amenity-icon">
+                        <i class="fas fa-${amenity.icon}"></i>
+                    </div>
+                    <span>${amenity.name}</span>
+                `;
+                amenitiesGrid.appendChild(amenityElement);
+            });
+
+            // Переинициализация галереи
+            initGallery();
+        }
+
+        // Локальный формат даты для input[type=date] (без смещения UTC)
+        function formatDateLocal(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // Парсер даты из input[type=date] как локальная дата (исключаем timezone-сдвиги)
+        function parseDateInputToLocal(value) {
+            if (!value) return null;
+            const parts = value.split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+
+        // Функция для сохранения данных формы
+        function saveFormData() {
+            const formData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value
+            };
+            sessionStorage.setItem('formData', JSON.stringify(formData));
+        }
+
+        // Инициализация дат и данных
+        document.addEventListener('DOMContentLoaded', function() {
+            // Восстанавливаем сохраненный язык
+            const savedLanguage = sessionStorage.getItem('selectedLanguage');
+            if (savedLanguage) {
+                currentLanguage = savedLanguage;
+            }
+
+            // Установка дат по умолчанию
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            document.getElementById('checkIn').value = formatDateLocal(today);
+            document.getElementById('checkOut').value = formatDateLocal(tomorrow);
+            document.getElementById('checkIn').min = formatDateLocal(today);
+            document.getElementById('checkOut').min = formatDateLocal(tomorrow);
+
+            // Инициализация данных о номере
+            updateRoomDisplay();
+
+            // Инициализация выбора языка (после восстановления языка)
+            initLanguageSelector();
+            changeLanguage(currentLanguage); // Применяем сохраненный язык
+
+            // Инициализация выбора гостей
+            updateGuestsSelect();
+
+            // Валидация формы
+            setupFormValidation();
+
+            // Первоначальный расчет цены
+            updatePrice();
+
+            // Восстанавливаем данные формы если есть
+            const savedFormData = sessionStorage.getItem('formData');
+            if (savedFormData) {
+                const formData = JSON.parse(savedFormData);
+                document.getElementById('firstName').value = formData.firstName || '';
+                document.getElementById('lastName').value = formData.lastName || '';
+                document.getElementById('email').value = formData.email || '';
+                document.getElementById('phone').value = formData.phone || '';
+
+                // Триггерим валидацию для обновления состояния кнопки
+                setTimeout(() => {
+                    document.querySelectorAll('input').forEach(input => {
+                        input.dispatchEvent(new Event('input'));
+                    });
+                }, 100);
+            }
+        });
+
+        // Инициализация выбора языка
+        function initLanguageSelector() {
+            const languageBtn = document.querySelector('.language-btn');
+            const languageDropdown = document.getElementById('languageDropdown');
+
+            // Обработчик открытия/закрытия выпадающего списка
+            languageBtn.addEventListener('click', function(event) {
+                event.stopPropagation();
+                languageDropdown.classList.toggle('show');
+            });
+
+            // Обработчик выбора языка
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    changeLanguage(lang);
+                    languageDropdown.classList.remove('show');
+                });
+            });
+
+            // Закрытие выпадающего списка при клике вне его
+            document.addEventListener('click', function(event) {
+                if (!languageBtn.contains(event.target) && !languageDropdown.contains(event.target)) {
+                    languageDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // Смена языка
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            sessionStorage.setItem('selectedLanguage', lang); // Сохраняем язык
+
+            const t = translations[lang];
+
+            // Обновление формы
+            document.getElementById('formTitle').textContent = t.yourData;
+            document.getElementById('firstNameLabel').textContent = t.firstName;
+            document.getElementById('lastNameLabel').textContent = t.lastName;
+            document.getElementById('emailLabel').textContent = t.email;
+            document.getElementById('phoneLabel').textContent = t.phone;
+            document.getElementById('guestsLabel').textContent = t.guests;
+            document.getElementById('checkInLabel').textContent = t.checkIn;
+            document.getElementById('checkOutLabel').textContent = t.checkOut;
+
+            document.getElementById('firstName').placeholder = t.enterFirstName;
+            document.getElementById('lastName').placeholder = t.enterLastName;
+            document.getElementById('email').placeholder = t.enterEmail;
+            document.getElementById('phone').placeholder = t.enterPhone;
+
+            document.getElementById('firstNameError').textContent = t.firstNameError;
+            document.getElementById('lastNameError').textContent = t.lastNameError;
+            document.getElementById('emailError').textContent = t.emailError;
+            document.getElementById('phoneError').textContent = t.phoneError;
+            document.getElementById('emailSuccess').textContent = t.emailSuccess;
+            document.getElementById('phoneSuccess').textContent = t.phoneSuccess;
+
+            document.getElementById('nextBtn').innerHTML = `${t.continue} <i class="fas fa-arrow-right"></i>`;
+
+            // Обновление информации о номере
+            document.getElementById('pricePeriod').textContent = t.perNight;
+            document.getElementById('amenitiesTitle').textContent = t.amenities;
+            document.getElementById('serviceFeeText').textContent = t.serviceFee;
+            document.getElementById('taxesText').textContent = t.taxes;
+            document.getElementById('totalText').textContent = t.total;
+
+            // Обновление текущего языка в интерфейсе
+            document.getElementById('currentLanguage').textContent =
+                lang === 'ru' ? 'Русский' :
+                lang === 'pl' ? 'Polski' : 'English';
+
+            // Обновление активного языка в выпадающем списке
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.classList.remove('active');
+                if (option.getAttribute('data-lang') === lang) {
+                    option.classList.add('active');
+                }
+            });
+
+            // Обновление выбора гостей
+            updateGuestsSelect();
+
+            // Обновление цены
+            updatePrice();
+        }
+
+        // Обновление выбора количества гостей
+        function updateGuestsSelect() {
+            const t = translations[currentLanguage];
+            const guestsSelect = document.getElementById('guests');
+            const selectedValue = parseInt(guestsSelect.value || 2, 10);
+
+            guestsSelect.innerHTML = '';
+
+            for (let i = 1; i <= 4; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+
+                if (i === 1) {
+                    option.textContent = `${i} ${t.guest}`;
+                } else if (i < 5) {
+                    option.textContent = `${i} ${t.guests_1}`;
+                } else {
+                    option.textContent = `${i} ${t.guests_2}`;
+                }
+
+                // inline стили для option — на случай, если браузер игнорирует CSS для option
+                try {
+                    option.style.background = getComputedStyle(document.documentElement).getPropertyValue('--dark-light') || '#1E1E1E';
+                    option.style.color = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#FFFFFF';
+                } catch (e) {
+                    // игнорируем ошибки старых браузеров
+                }
+
+                if (i === selectedValue) {
+                    option.selected = true;
+                }
+
+                guestsSelect.appendChild(option);
+            }
+        }
+
+        // Галерея
+        function initGallery() {
+            const slides = document.querySelectorAll('.slide');
+            const dots = document.querySelectorAll('.nav-dot');
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+            let currentSlide = 0;
+
+            function showSlide(n) {
+                if (!slides.length) return;
+                slides.forEach(slide => slide.style.display = 'none');
+                dots.forEach(dot => dot.classList.remove('active'));
+
+                currentSlide = (n + slides.length) % slides.length;
+
+                slides[currentSlide].style.display = 'block';
+                if (dots[currentSlide]) dots[currentSlide].classList.add('active');
+            }
+
+            function nextSlide() {
+                showSlide(currentSlide + 1);
+            }
+
+            function prevSlide() {
+                showSlide(currentSlide - 1);
+            }
+
+            // Attach dot click handlers here (fix scope)
+            dots.forEach((dot, idx) => {
+                dot.addEventListener('click', () => showSlide(idx));
+            });
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', prevSlide);
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', nextSlide);
+            }
+
+            // Автопрокрутка каждые 5 секунд
+            if (slides.length > 1) {
+                setInterval(nextSlide, 5000);
+            }
+
+            // Показать первый слайд
+            showSlide(0);
+        }
+
+        // Расчет цены - ДОБАВЛЯЕМ СОХРАНЕНИЕ ДАННЫХ
+        function updatePrice() {
+            const checkInVal = document.getElementById('checkIn').value;
+            const checkOutVal = document.getElementById('checkOut').value;
+            const guests = parseInt(document.getElementById('guests').value || '1', 10);
+
+            const checkIn = parseDateInputToLocal(checkInVal);
+            const checkOut = parseDateInputToLocal(checkOutVal);
+
+            if (!checkIn || !checkOut) {
+                document.getElementById('nightsCount').textContent = `${roomData.price} PLN x 0 ${translations[currentLanguage].nights}`;
+                document.getElementById('nightsPrice').textContent = `0 PLN`;
+                document.getElementById('totalPrice').textContent = `0 PLN`;
+                return;
+            }
+
+            const msPerDay = 24 * 60 * 60 * 1000;
+            let nights = Math.floor((checkOut.getTime() - checkIn.getTime()) / msPerDay);
+            nights = Math.max(0, nights);
+
+            if (nights > 0) {
+                const pricePerNight = roomData.price;
+                const nightsTotal = pricePerNight * nights;
+                const serviceFee = 50;
+                const taxes = 70;
+                const total = nightsTotal + serviceFee + taxes;
+
+                const t = translations[currentLanguage];
+                const nightText = nights === 1 ? t.night : t.nights;
+
+                document.getElementById('nightsCount').textContent = `${pricePerNight} PLN x ${nights} ${nightText}`;
+                document.getElementById('nightsPrice').textContent = `${nightsTotal} PLN`;
+                document.getElementById('totalPrice').textContent = `${total} PLN`;
+
+                // СОХРАНЯЕМ ДАННЫЕ ДЛЯ ПЕРЕДАЧИ НА СТРАНИЦУ ОПЛАТЫ
+                const bookingData = {
+                    roomName: roomData.name,
+                    pricePerNight: pricePerNight,
+                    nights: nights,
+                    total: total,
+                    checkIn: checkInVal,
+                    checkOut: checkOutVal,
+                    guests: guests
+                };
+
+                // Сохраняем в sessionStorage
+                sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+
+                // Сохраняем текущий язык
+                sessionStorage.setItem('selectedLanguage', currentLanguage);
+
+                // Сохраняем данные формы
+                saveFormData();
+            } else {
+                const t = translations[currentLanguage];
+                document.getElementById('nightsCount').textContent = `${roomData.price} PLN x 0 ${t.nights}`;
+                document.getElementById('nightsPrice').textContent = `0 PLN`;
+                document.getElementById('totalPrice').textContent = `0 PLN`;
+            }
+        }
+
+        // Валидация формы - ИСПРАВЛЯЕМ ПЕРЕХОД НА ОПЛАТУ
+        function setupFormValidation() {
+            const form = document.getElementById('bookingForm');
+            const inputs = form.querySelectorAll('input[required]');
+            const nextBtn = document.getElementById('nextBtn');
+
+            // Ограничение ввода только цифр для телефона (и символ +)
+            document.getElementById('phone').addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^\d+]/g, '');
+                saveFormData(); // Сохраняем при изменении
+            });
+
+            function validateForm() {
+                let isValid = true;
+
+                inputs.forEach(input => {
+                    const value = input.value.trim();
+                    let fieldValid = true;
+
+                    if (!value) {
+                        fieldValid = false;
+                    } else if (input.type === 'email' && !isValidEmail(value)) {
+                        fieldValid = false;
+                    } else if (input.id === 'phone' && !isValidPhone(value)) {
+                        fieldValid = false;
+                    } else if ((input.id === 'firstName' || input.id === 'lastName') && !isValidName(value)) {
+                        fieldValid = false;
+                    }
+
+                    const errorMsg = document.getElementById(`${input.id}Error`);
+                    const successMsg = document.getElementById(`${input.id}Success`);
+
+                    if (input.id === 'email' || input.id === 'phone') {
+                        if (fieldValid && value) {
+                            input.classList.remove('error');
+                            input.classList.add('success');
+                            if (errorMsg) errorMsg.style.display = 'none';
+                            if (successMsg) successMsg.style.display = 'block';
+                        } else if (!fieldValid && value) {
+                            input.classList.remove('success');
+                            input.classList.add('error');
+                            if (errorMsg) errorMsg.style.display = 'block';
+                            if (successMsg) successMsg.style.display = 'none';
+                        } else {
+                            input.classList.remove('error', 'success');
+                            if (errorMsg) errorMsg.style.display = 'none';
+                            if (successMsg) successMsg.style.display = 'none';
+                        }
+                    } else {
+                        if (!fieldValid && value) {
+                            input.classList.add('error');
+                            if (errorMsg) errorMsg.style.display = 'block';
+                        } else {
+                            input.classList.remove('error');
+                            if (errorMsg) errorMsg.style.display = 'none';
+                        }
+                    }
+
+                    if (!fieldValid) isValid = false;
+                });
+
+                // Проверка дат
+                const checkIn = parseDateInputToLocal(document.getElementById('checkIn').value);
+                const checkOut = parseDateInputToLocal(document.getElementById('checkOut').value);
+
+                if (checkIn && checkOut && checkOut <= checkIn) {
+                    isValid = false;
+                    alert(currentLanguage === 'ru' ?
+                        'Дата выезда должна быть позже даты заезда' :
+                        currentLanguage === 'pl' ?
+                        'Data wymeldowania musi być późniejsza niż data zameldowania' :
+                        'Check-out date must be after check-in date');
+                }
+
+                nextBtn.disabled = !isValid;
+                return isValid;
+            }
+
+            function isValidEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+
+            function isValidPhone(phone) {
+                const re = /^(\+48)?\d{9}$/;
+                return re.test(phone.replace(/\s/g, ''));
+            }
+
+            function isValidName(name) {
+                const re = /^[a-zA-Zа-яА-ЯёЁ\s\-]+$/;
+                return re.test(name);
+            }
+
+            // Обработчики событий для обновления цены и валидации
+            document.getElementById('checkIn').addEventListener('change', function() {
+                const checkInDate = parseDateInputToLocal(this.value);
+                const nextDay = new Date(checkInDate);
+                nextDay.setDate(nextDay.getDate() + 1);
+
+                document.getElementById('checkOut').min = formatDateLocal(nextDay);
+
+                const checkOutDate = parseDateInputToLocal(document.getElementById('checkOut').value);
+                if (!checkOutDate || checkOutDate <= checkInDate) {
+                    document.getElementById('checkOut').value = formatDateLocal(nextDay);
+                }
+
+                validateForm();
+                updatePrice();
+                saveFormData();
+            });
+
+            document.getElementById('checkOut').addEventListener('change', function() {
+                validateForm();
+                updatePrice();
+                saveFormData();
+            });
+
+            document.getElementById('guests').addEventListener('change', function() {
+                validateForm();
+                updatePrice();
+                saveFormData();
+            });
+
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateForm();
+                    saveFormData();
+                });
+                input.addEventListener('change', function() {
+                    validateForm();
+                    saveFormData();
+                });
+            });
+
+            nextBtn.addEventListener('click', function() {
+                if (!this.disabled) {
+                    // Сохраняем все данные перед переходом
+                    saveFormData();
+                    updatePrice();
+
+                    // ПЕРЕХОДИМ НА СТРАНИЦУ ОПЛАТЫ
+                    window.location.href = 'payment.html';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
