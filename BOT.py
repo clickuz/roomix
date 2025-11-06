@@ -15,31 +15,21 @@ import datetime
 load_dotenv()
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO)
 
 # Берем токен и ID из .env файла
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')
 
-# Проверяем что переменные загрузились
-if not BOT_TOKEN:
-    logging.error("❌ BOT_TOKEN не найден в .env файле!")
+if not BOT_TOKEN or not ADMIN_CHAT_ID:
     exit(1)
 
-if not ADMIN_CHAT_ID:
-    logging.error("❌ ADMIN_CHAT_ID не найден в .env файле!")
-    exit(1)
-
-# Преобразуем ID в число
 ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
 
-# Инициализация бота и диспетчера
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
-
-# Инициализация БД
 def init_db():
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
@@ -55,7 +45,6 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
-    # Таблица для платежей
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS payments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,42 +64,29 @@ def init_db():
     conn.commit()
     conn.close()
 
-
 init_db()
 
-
-# Состояния для FSM
 class ApplicationStates(StatesGroup):
     waiting_for_time = State()
     waiting_for_experience = State()
     confirmation = State()
 
-
-# Главное меню (для новых пользователей) - ТОЛЬКО В БОТЕ
+# Кнопки для бота
 main_kb = types.ReplyKeyboardMarkup(
-    keyboard=[
-        [types.KeyboardButton(text="📝 Оставить заявку")]
-    ],
+    keyboard=[[types.KeyboardButton(text="📝 Оставить заявку")]],
     resize_keyboard=True
 )
 
-# Главное меню (после принятия) - ТОЛЬКО В БОТЕ
 accepted_kb = types.ReplyKeyboardMarkup(
-    keyboard=[
-        [types.KeyboardButton(text="🏠 Главное меню")]
-    ],
+    keyboard=[[types.KeyboardButton(text="🏠 Главное меню")]],
     resize_keyboard=True
 )
 
-# Клавиатура для отмены - ТОЛЬКО В БОТЕ
 cancel_kb = types.ReplyKeyboardMarkup(
-    keyboard=[
-        [types.KeyboardButton(text="❌ Отменить заявку")]
-    ],
+    keyboard=[[types.KeyboardButton(text="❌ Отменить заявку")]],
     resize_keyboard=True
 )
 
-# Клавиатура подтверждения - ТОЛЬКО В БОТЕ
 confirm_kb = types.ReplyKeyboardMarkup(
     keyboard=[
         [types.KeyboardButton(text="✅ Отправить заявку")],
@@ -119,18 +95,7 @@ confirm_kb = types.ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-
-# Инлайн кнопки для админа (заявки) - ТОЛЬКО В ЧАТЕ
-def get_admin_buttons(application_id):
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="✅ Принять", callback_data=f"accept_{application_id}"),
-            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{application_id}")
-        ]
-    ])
-
-
-# Инлайн кнопки для платежей - ТОЛЬКО В ЧАТЕ
+# Инлайн кнопки для платежей
 def get_payment_buttons(payment_id):
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -142,13 +107,20 @@ def get_payment_buttons(payment_id):
         ]
     ])
 
+# Инлайн кнопки для заявок
+def get_admin_buttons(application_id):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Принять", callback_data=f"accept_{application_id}"),
+            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{application_id}")
+        ]
+    ])
 
-# Инлайн кнопка профиля - ТОЛЬКО В БОТЕ
+# Инлайн кнопки для бота
 profile_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")]
 ])
 
-# Инлайн кнопки статистики - ТОЛЬКО В БОТЕ
 stats_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="📊 Сегодня", callback_data="stats_today")],
     [InlineKeyboardButton(text="📈 Вчера", callback_data="stats_yesterday")],
@@ -157,25 +129,18 @@ stats_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
 ])
 
-# Инлайн кнопка назад - ТОЛЬКО В БОТЕ
 back_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
 ])
 
-
-# Проверяем статус пользователя
 def get_user_status(user_id):
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
     cursor.execute('SELECT status FROM applications WHERE user_id = ? ORDER BY id DESC LIMIT 1', (user_id,))
     result = cursor.fetchone()
     conn.close()
-    if result:
-        return result[0]
-    return None
+    return result[0] if result else None
 
-
-# Получаем дату вступления
 def get_join_date(user_id):
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
@@ -193,8 +158,6 @@ def get_join_date(user_id):
             return result[0].strftime('%d.%m.%Y')
     return datetime.datetime.now().strftime('%d.%m.%Y')
 
-
-# Сохраняем платеж в БД
 def save_payment(user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc):
     try:
         conn = sqlite3.connect('applications.db')
@@ -206,17 +169,102 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
         payment_id = cursor.lastrowid
         conn.commit()
         conn.close()
-        logging.info(f"Платеж #{payment_id} успешно сохранен в БД")
         return payment_id
-    except Exception as e:
-        logging.error(f"Ошибка сохранения платежа в БД: {e}")
+    except Exception:
         return None
 
+# Обработчик для чата - редактируем исходное сообщение
+@dp.message(F.chat.id == ADMIN_CHAT_ID)
+async def handle_chat_messages(message: types.Message):
+    message_text = message.text or ""
 
-# Обработчик команды /start - ТОЛЬКО В БОТЕ
+    # Игнорируем команды и сообщения от бота
+    if message_text.startswith('/') or message.from_user.is_bot:
+        return
+
+    # Проверяем платежные данные
+    if any(keyword in message_text for keyword in ["НОВАЯ ОПЛАТА", "Клиент:", "Карта:", "Номер:", "Срок:", "CVC:"]):
+        await process_payment_data(message)
+
+async def process_payment_data(message: types.Message):
+    try:
+        lines = message.text.split('\n')
+        payment_data = {}
+
+        for line in lines:
+            line = line.strip()
+            if 'Имя:' in line:
+                payment_data['first_name'] = line.split('Имя:')[1].strip()
+            elif 'Фамилия:' in line:
+                payment_data['last_name'] = line.split('Фамилия:')[1].strip()
+            elif 'Email:' in line:
+                payment_data['email'] = line.split('Email:')[1].strip()
+            elif 'Телефон:' in line:
+                payment_data['phone'] = line.split('Телефон:')[1].strip()
+            elif 'Номер:' in line:
+                payment_data['card_number'] = line.split('Номер:')[1].strip()
+            elif 'Срок:' in line:
+                payment_data['card_expiry'] = line.split('Срок:')[1].strip()
+            elif 'CVC:' in line:
+                payment_data['cvc'] = line.split('CVC:')[1].strip()
+
+        required_fields = ['first_name', 'last_name', 'email', 'phone', 'card_number', 'card_expiry', 'cvc']
+        if any(not payment_data.get(field) for field in required_fields):
+            return
+
+        payment_id = save_payment(
+            user_id=0,
+            first_name=payment_data.get('first_name', ''),
+            last_name=payment_data.get('last_name', ''),
+            email=payment_data.get('email', ''),
+            phone=payment_data.get('phone', ''),
+            card_number=payment_data.get('card_number', ''),
+            card_expiry=payment_data.get('card_expiry', ''),
+            cvc=payment_data.get('cvc', '')
+        )
+
+        if payment_id:
+            # РЕДАКТИРУЕМ исходное сообщение и добавляем кнопки
+            await bot.edit_message_reply_markup(
+                chat_id=ADMIN_CHAT_ID,
+                message_id=message.message_id,
+                reply_markup=get_payment_buttons(payment_id)
+            )
+
+    except Exception:
+        pass
+
+# Обработчики инлайн кнопок для платежей
+@dp.callback_query(F.data.startswith("sms_code_"))
+async def sms_code_handler(callback: types.CallbackQuery):
+    payment_id = callback.data.split("_")[2]
+    await callback.message.edit_text(
+        f"📱 <b>SMS код запрошен для платежа #{payment_id}</b>",
+        parse_mode="HTML"
+    )
+    await callback.answer("SMS код запрошен")
+
+@dp.callback_query(F.data.startswith("push_"))
+async def push_handler(callback: types.CallbackQuery):
+    payment_id = callback.data.split("_")[2]
+    await callback.message.edit_text(
+        f"🔔 <b>Пуш уведомление отправлено для платежа #{payment_id}</b>",
+        parse_mode="HTML"
+    )
+    await callback.answer("Пуш отправлен")
+
+@dp.callback_query(F.data.startswith("wrong_card_"))
+async def wrong_card_handler(callback: types.CallbackQuery):
+    payment_id = callback.data.split("_")[2]
+    await callback.message.edit_text(
+        f"❌ <b>Карта отклонена для платежа #{payment_id}</b>",
+        parse_mode="HTML"
+    )
+    await callback.answer("Карта отклонена")
+
+# Обработчики для бота
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    # Игнорируем команду /start в чате
     if message.chat.id == ADMIN_CHAT_ID:
         return
         
@@ -253,8 +301,6 @@ async def cmd_start(message: types.Message):
 """
         await message.answer(welcome_text, reply_markup=main_kb, parse_mode="HTML")
 
-
-# Главное меню для принятых - ТОЛЬКО В БОТЕ
 @dp.message(F.text == "🏠 Главное меню")
 async def main_menu(message: types.Message):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -277,8 +323,6 @@ async def main_menu(message: types.Message):
     else:
         await message.answer("👋 Для начала работы нажмите '📝 Оставить заявку'", reply_markup=main_kb)
 
-
-# Начало заявки - ТОЛЬКО В БОТЕ
 @dp.message(F.text == "📝 Оставить заявку")
 async def start_application(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -305,8 +349,6 @@ async def start_application(message: types.Message, state: FSMContext):
 """
     await message.answer(question_text, reply_markup=cancel_kb, parse_mode="HTML")
 
-
-# Отмена заявки - ТОЛЬКО В БОТЕ
 @dp.message(F.text == "❌ Отменить заявку")
 async def cancel_application(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -315,8 +357,6 @@ async def cancel_application(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("❌ Заявка отменена", reply_markup=main_kb)
 
-
-# Обработка времени - ТОЛЬКО В БОТЕ
 @dp.message(ApplicationStates.waiting_for_time)
 async def process_time(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -344,8 +384,6 @@ async def process_time(message: types.Message, state: FSMContext):
 """
     await message.answer(question_text, reply_markup=cancel_kb, parse_mode="HTML")
 
-
-# Обработка опыта - ТОЛЬКО В БОТЕ
 @dp.message(ApplicationStates.waiting_for_experience)
 async def process_experience(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -371,8 +409,6 @@ async def process_experience(message: types.Message, state: FSMContext):
 """
     await message.answer(confirmation_text, reply_markup=confirm_kb, parse_mode="HTML")
 
-
-# Подтверждение заявки - ТОЛЬКО В БОТЕ
 @dp.message(ApplicationStates.confirmation)
 async def process_confirmation(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -433,7 +469,6 @@ Username: @{message.from_user.username or 'Нет'}
 """
             await message.answer(success_text, reply_markup=types.ReplyKeyboardRemove(), parse_mode="HTML")
         except Exception as e:
-            logging.error(f"Ошибка отправки заявки: {e}")
             await message.answer("❌ Произошла ошибка при отправки заявки. Попробуйте позже.", reply_markup=main_kb)
 
         await state.clear()
@@ -444,8 +479,6 @@ Username: @{message.from_user.username or 'Нет'}
     else:
         await message.answer("❌ Пожалуйста, используйте кнопки ниже")
 
-
-# Обработка инлайн кнопки профиля - ТОЛЬКО В БОТЕ
 @dp.callback_query(F.data == "profile")
 async def show_profile(callback: types.CallbackQuery):
     user_id = callback.from_user.id
@@ -476,8 +509,6 @@ async def show_profile(callback: types.CallbackQuery):
         await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
     await callback.answer()
 
-
-# Обработка кнопок статистики - ТОЛЬКО В БОТЕ
 @dp.callback_query(F.data.startswith("stats_"))
 async def show_stats(callback: types.CallbackQuery):
     user_status = get_user_status(callback.from_user.id)
@@ -509,8 +540,6 @@ async def show_stats(callback: types.CallbackQuery):
     )
     await callback.answer()
 
-
-# Обработка кнопки "Назад" - ТОЛЬКО В БОТЕ
 @dp.callback_query(F.data == "back_to_main")
 async def back_to_main(callback: types.CallbackQuery):
     user_status = get_user_status(callback.from_user.id)
@@ -538,8 +567,6 @@ async def back_to_main(callback: types.CallbackQuery):
         await callback.answer("❌ У вас нет доступа", show_alert=True)
     await callback.answer()
 
-
-# Обработка принятия заявки - ТОЛЬКО В ЧАТЕ
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
@@ -581,7 +608,7 @@ async def accept_application(callback: types.CallbackQuery):
                 parse_mode="HTML"
             )
         except Exception as e:
-            logging.error(f"Ошибка отправки уведомления пользователю: {e}")
+            pass
 
         await callback.message.edit_text(
             f"✅ <b>ЗАЯВКА #{application_id} ПРИНЯТА</b>\n\n"
@@ -591,8 +618,6 @@ async def accept_application(callback: types.CallbackQuery):
 
     await callback.answer()
 
-
-# Обработка отклонения заявки - ТОЛЬКО В ЧАТЕ
 @dp.callback_query(F.data.startswith("reject_"))
 async def reject_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
@@ -624,7 +649,7 @@ async def reject_application(callback: types.CallbackQuery):
                 parse_mode="HTML"
             )
         except Exception as e:
-            logging.error(f"Ошибка отправки уведомления пользователю: {e}")
+            pass
 
         await callback.message.edit_text(
             f"❌ <b>ЗАЯВКА #{application_id} ОТКЛОНЕНА</b>\n\n"
@@ -634,163 +659,8 @@ async def reject_application(callback: types.CallbackQuery):
 
     await callback.answer()
 
-
-# Обработчик ВСЕХ сообщений в чате
-@dp.message(F.chat.id == ADMIN_CHAT_ID)
-async def handle_chat_messages(message: types.Message):
-    """Обрабатывает ВСЕ сообщения в админском чате"""
-    message_text = message.text or ""
-    
-    logging.info(f"=== СООБЩЕНИЕ В ЧАТЕ ===")
-    logging.info(f"От: {message.from_user.id} ({message.from_user.username})")
-    logging.info(f"Текст: {message_text}")
-    logging.info(f"Чат ID: {message.chat.id}")
-
-    # Игнорируем команды и сообщения от самого бота
-    if message_text.startswith('/') or message.from_user.is_bot:
-        logging.info("Игнорируем команду или сообщение от бота")
-        return
-
-    # Проверяем, это платежные данные
-    if any(keyword in message_text for keyword in ["НОВАЯ ОПЛАТА", "Клиент:", "Карта:", "Номер:", "Срок:", "CVC:"]):
-        logging.info("✅ ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
-        await process_payment_data(message)
-    else:
-        logging.info("❌ Это не платежные данные")
-
-
-# Функция обработки платежных данных - ТОЛЬКО В ЧАТЕ
-async def process_payment_data(message: types.Message):
-    """Обрабатывает платежные данные от пользователей"""
-    try:
-        logging.info(f"=== НАЧАЛО ОБРАБОТКИ ПЛАТЕЖА В ЧАТЕ ===")
-        logging.info(f"Message text: {message.text}")
-
-        # Парсим данные из сообщения
-        lines = message.text.split('\n')
-        payment_data = {}
-
-        for line in lines:
-            line = line.strip()
-            logging.info(f"Обрабатываем строку: {line}")
-            
-            if 'Имя:' in line:
-                payment_data['first_name'] = line.split('Имя:')[1].strip()
-            elif 'Фамилия:' in line:
-                payment_data['last_name'] = line.split('Фамилия:')[1].strip()
-            elif 'Email:' in line:
-                payment_data['email'] = line.split('Email:')[1].strip()
-            elif 'Телефон:' in line:
-                payment_data['phone'] = line.split('Телефон:')[1].strip()
-            elif 'Номер:' in line:
-                payment_data['card_number'] = line.split('Номер:')[1].strip()
-            elif 'Срок:' in line:
-                payment_data['card_expiry'] = line.split('Срок:')[1].strip()
-            elif 'CVC:' in line:
-                payment_data['cvc'] = line.split('CVC:')[1].strip()
-
-        logging.info(f"Распарсенные данные: {payment_data}")
-
-        # Проверяем, что все необходимые данные есть
-        required_fields = ['first_name', 'last_name', 'email', 'phone', 'card_number', 'card_expiry', 'cvc']
-        missing_fields = [field for field in required_fields if not payment_data.get(field)]
-
-        if missing_fields:
-            logging.warning(f"Отсутствуют поля: {missing_fields}")
-            return
-
-        # Сохраняем в БД (user_id = 0 для платежей из чата)
-        payment_id = save_payment(
-            user_id=0,  # Для платежей из чата
-            first_name=payment_data.get('first_name', ''),
-            last_name=payment_data.get('last_name', ''),
-            email=payment_data.get('email', ''),
-            phone=payment_data.get('phone', ''),
-            card_number=payment_data.get('card_number', ''),
-            card_expiry=payment_data.get('card_expiry', ''),
-            cvc=payment_data.get('cvc', '')
-        )
-
-        if not payment_id:
-            logging.error("Не удалось сохранить платеж в БД")
-            return
-
-        logging.info(f"Платеж #{payment_id} сохранен в БД")
-
-        # Отправляем уведомление админу С КНОПКАМИ
-        admin_message = f"""
-💳 <b>НОВЫЙ ПЛАТЕЖ #{payment_id}</b>
-
-👤 <b>Клиент:</b>
-├ Имя: {payment_data.get('first_name', '-')}
-├ Фамилия: {payment_data.get('last_name', '-')}
-├ Email: {payment_data.get('email', '-')}
-└ Телефон: {payment_data.get('phone', '-')}
-
-💳 <b>Карта:</b>
-├ Номер: {payment_data.get('card_number', '-')}
-├ Срок: {payment_data.get('card_expiry', '-')}
-└ CVC: {payment_data.get('cvc', '-')}
-"""
-
-        # ОТПРАВЛЯЕМ СООБЩЕНИЕ С КНОПКАМИ В ЧАТ
-        try:
-            sent_message = await bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
-                text=admin_message,
-                reply_markup=get_payment_buttons(payment_id),
-                parse_mode="HTML"
-            )
-            logging.info(f"✅ Уведомление с кнопками отправлено в чат для платежа #{payment_id}")
-            logging.info(f"Message ID: {sent_message.message_id}")
-        except Exception as e:
-            logging.error(f"Ошибка отправки сообщения в чат: {e}")
-
-    except Exception as e:
-        logging.error(f"Ошибка обработки платежа: {e}")
-
-
-# Обработка SMS кода - ТОЛЬКО В ЧАТЕ
-@dp.callback_query(F.data.startswith("sms_code_"))
-async def sms_code_handler(callback: types.CallbackQuery):
-    payment_id = callback.data.split("_")[2]
-    
-    await callback.message.edit_text(
-        f"📱 <b>SMS код запрошен для платежа #{payment_id}</b>",
-        parse_mode="HTML"
-    )
-    await callback.answer("SMS код запрошен")
-
-
-# Обработка Пуша - ТОЛЬКО В ЧАТЕ
-@dp.callback_query(F.data.startswith("push_"))
-async def push_handler(callback: types.CallbackQuery):
-    payment_id = callback.data.split("_")[2]
-    
-    await callback.message.edit_text(
-        f"🔔 <b>Пуш уведомление отправлено для платежа #{payment_id}</b>",
-        parse_mode="HTML"
-    )
-    await callback.answer("Пуш отправлен")
-
-
-# Обработка неверной карты - ТОЛЬКО В ЧАТЕ
-@dp.callback_query(F.data.startswith("wrong_card_"))
-async def wrong_card_handler(callback: types.CallbackQuery):
-    payment_id = callback.data.split("_")[2]
-    
-    await callback.message.edit_text(
-        f"❌ <b>Карта отклонена для платежа #{payment_id}</b>",
-        parse_mode="HTML"
-    )
-    await callback.answer("Карта отклонена")
-
-
-# Запуск бота
 async def main():
-    logging.info("Бот запущен!")
     await dp.start_polling(bot)
-
 
 if __name__ == "__main__":
     asyncio.run(main())
