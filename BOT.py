@@ -869,12 +869,24 @@ async def reject_application(callback: types.CallbackQuery):
     await callback.answer()
 
 async def main():
-    logger.info("🚀 Бот запускается...")
-    logger.info("🌐 SSE сервер запущен на порту 8080")
-    await dp.start_polling(bot)
+    try:
+        logger.info("🚀 Бот запускается...")
+        logger.info("🌐 SSE сервер запущен с CORS для GitHub Pages")
+        
+        # Явно закрываем старую сессию
+        await bot.session.close()
+        
+        # Небольшая задержка перед запуском
+        await asyncio.sleep(2)
+        
+        # Запускаем polling
+        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        
+    except Exception as e:
+        logger.error(f"💥 Ошибка запуска бота: {e}")
+    finally:
+        await bot.session.close()
 
-if __name__ == "__main__":
-    asyncio.run(main())
 
 
 
