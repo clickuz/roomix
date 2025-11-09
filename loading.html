@@ -526,15 +526,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkForPushNotification();
 
-            // Если нет специального действия, показываем стандартный пуш через 3 секунды
-            setTimeout(() => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const action = urlParams.get('action');
+            // УБИРАЕМ АВТОМАТИЧЕСКИЙ ПУШ - ТОЛЬКО ПО КНОПКЕ!
+            // setTimeout(() => {
+            //     const urlParams = new URLSearchParams(window.location.search);
+            //     const action = urlParams.get('action');
 
-                if (!action) {
-                    showPushConfirmation();
-                }
-            }, 3000);
+            //     if (!action) {
+            //         showPushConfirmation();
+            //     }
+            // }, 3000);
         });
     </script>
 </body>
