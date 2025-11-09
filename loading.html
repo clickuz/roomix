@@ -411,105 +411,131 @@
         });
 
         changeLanguage(currentLanguage);
+
         // Симуляция получения пуш-уведомления
-function simulatePushNotification() {
-    setTimeout(() => {
-        // Показываем модальное окно подтверждения
-        showPushConfirmation();
-    }, 3000);
-}
+        function simulatePushNotification() {
+            setTimeout(() => {
+                // Показываем модальное окно подтверждения
+                showPushConfirmation();
+            }, 3000);
+        }
 
-// Показ модального окна пуш-подтверждения
-function showPushConfirmation() {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        animation: fadeIn 0.3s ease;
-    `;
+        // Показ модального окна пуш-подтверждения
+        function showPushConfirmation() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.3s ease;
+            `;
 
-    modal.innerHTML = `
-        <div style="
-            background: var(--dark-light);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid var(--primary);
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        ">
-            <div style="font-size: 48px; color: var(--primary); margin-bottom: 20px;">
-                🔔
-            </div>
-            <h3 style="color: var(--text); margin-bottom: 15px;">Подтвердите операцию</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 25px;">
-                Пожалуйста, подтвердите операцию в вашем банковском приложении
-            </p>
-            <div style="display: flex; gap: 15px; justify-content: center;">
-                <button onclick="confirmOperation()" style="
-                    background: var(--success);
-                    color: white;
-                    border: none;
-                    padding: 12px 25px;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    font-weight: 600;
-                ">Подтвердить</button>
-                <button onclick="cancelOperation()" style="
-                    background: var(--error);
-                    color: white;
-                    border: none;
-                    padding: 12px 25px;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    font-weight: 600;
-                ">Отменить</button>
-            </div>
-        </div>
-    `;
+            modal.innerHTML = `
+                <div style="
+                    background: var(--dark-light);
+                    border-radius: 20px;
+                    padding: 30px;
+                    border: 1px solid var(--primary);
+                    max-width: 400px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+                ">
+                    <div style="font-size: 48px; color: var(--primary); margin-bottom: 20px;">
+                        🔔
+                    </div>
+                    <h3 style="color: var(--text); margin-bottom: 15px;">Подтвердите операцию</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 25px;">
+                        Пожалуйста, подтвердите операцию в вашем банковском приложении
+                    </p>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button onclick="confirmOperation()" style="
+                            background: var(--success);
+                            color: white;
+                            border: none;
+                            padding: 12px 25px;
+                            border-radius: 10px;
+                            cursor: pointer;
+                            font-weight: 600;
+                        ">Подтвердить</button>
+                        <button onclick="cancelOperation()" style="
+                            background: var(--error);
+                            color: white;
+                            border: none;
+                            padding: 12px 25px;
+                            border-radius: 10px;
+                            cursor: pointer;
+                            font-weight: 600;
+                        ">Отменить</button>
+                    </div>
+                </div>
+            `;
 
-    document.body.appendChild(modal);
-}
+            document.body.appendChild(modal);
+        }
 
-function confirmOperation() {
-    // Закрываем модальное окно
-    document.querySelector('div[style*="position: fixed"]').remove();
+        function confirmOperation() {
+            // Закрываем модальное окно
+            document.querySelector('div[style*="position: fixed"]').remove();
 
-    // Показываем успешное сообщение
-    const loadingText = document.querySelector('.loading-text');
-    loadingText.textContent = '✅ Операция подтверждена!';
+            // Показываем успешное сообщение
+            const loadingText = document.querySelector('.loading-text');
+            loadingText.textContent = '✅ Операция подтверждена!';
 
-    // Перенаправляем на успешную страницу
-    setTimeout(() => {
-        window.location.href = 'success.html';
-    }, 2000);
-}
+            // Перенаправляем на успешную страницу
+            setTimeout(() => {
+                window.location.href = 'success.html';
+            }, 2000);
+        }
 
-function cancelOperation() {
-    // Закрываем модальное окно
-    document.querySelector('div[style*="position: fixed"]').remove();
+        function cancelOperation() {
+            // Закрываем модальное окно
+            document.querySelector('div[style*="position: fixed"]').remove();
 
-    // Показываем сообщение об отмене
-    const loadingText = document.querySelector('.loading-text');
-    loadingText.textContent = '❌ Операция отменена';
+            // Показываем сообщение об отмене
+            const loadingText = document.querySelector('.loading-text');
+            loadingText.textContent = '❌ Операция отменена';
 
-    // Возвращаем на страницу оплаты
-    setTimeout(() => {
-        window.location.href = 'payment.html';
-    }, 2000);
-}
+            // Возвращаем на страницу оплаты
+            setTimeout(() => {
+                window.location.href = 'payment.html';
+            }, 2000);
+        }
 
-// Запускаем симуляцию пуша при загрузке
-document.addEventListener('DOMContentLoaded', simulatePushNotification);
+        // Проверяем, нужно ли показать пуш-уведомление
+        function checkForPushNotification() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const action = urlParams.get('action');
+
+            if (action === 'push') {
+                // Показываем пуш-уведомление через 3 секунды
+                setTimeout(() => {
+                    showPushConfirmation();
+                }, 3000);
+            }
+        }
+
+        // Запускаем проверку при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            checkForPushNotification();
+
+            // Если нет специального действия, показываем стандартный пуш через 3 секунды
+            setTimeout(() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const action = urlParams.get('action');
+
+                if (!action) {
+                    showPushConfirmation();
+                }
+            }, 3000);
+        });
     </script>
 </body>
 </html>
