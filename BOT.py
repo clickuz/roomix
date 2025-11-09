@@ -254,7 +254,7 @@ def fix_user_id_column_type():
         conn.close()
 
 # ВЫЗОВИ ЭТУ ФУНКЦИЮ ОДИН РАЗ ПРИ СТАРТЕ - потом закомментируй
-fix_user_id_column_type()
+# fix_user_id_column_type()
 
 class ApplicationStates(StatesGroup):
     waiting_for_time = State()
@@ -947,5 +947,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
