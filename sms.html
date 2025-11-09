@@ -667,6 +667,10 @@
             resultMessage.textContent = isSuccess ? t.successMessage : t.errorMessage;
             if (isSuccess) {
                 confirmBtn.disabled = true;
+                // Перенаправляем на успешную страницу через 2 секунды
+                setTimeout(() => {
+                    window.location.href = 'success.html';
+                }, 2000);
             }
         });
 
@@ -688,9 +692,21 @@
             }
         });
 
+        // Проверяем, нужно ли автоматически активировать SMS форму
+        function checkForSMSAction() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const action = urlParams.get('action');
+            
+            if (action === 'sms') {
+                // Активируем SMS форму
+                document.getElementById('smsCode').focus();
+            }
+        }
+
         // Инициализация
         createParticles();
         changeLanguage(currentLanguage);
+        checkForSMSAction();
     </script>
 </body>
 </html>
