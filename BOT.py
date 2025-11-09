@@ -326,6 +326,15 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
         return payment_id
     except Exception as e:
         logger.error(f"❌ Ошибка сохранения платежа: {e}")
+         INSERT INTO payments (user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc, amount)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc, 0.0))
+        payment_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return payment_id
+    except Exception as e:
+        logger.error(f"❌ Ошибка сохранения платежа: {e}")
         return None
 
         async def send_sse_command(user_id, action_type, payment_id=None):
@@ -863,6 +872,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
