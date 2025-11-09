@@ -14,7 +14,7 @@ import json
 import time
 import threading
 from threading import Lock
-from flask import Flask, Response, request
+from flask import Flask, Response, request, jsonify
 
 # Загружаем переменные из .env
 load_dotenv()
@@ -40,6 +40,14 @@ dp = Dispatcher(storage=storage)
 app = Flask(__name__)
 sse_clients = {}
 sse_lock = Lock()
+
+# CORS middleware
+@app.after_request
+def after_request(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    return response
 
 @app.route('/sse/<user_id>')
 def sse(user_id):
@@ -72,9 +80,12 @@ def sse(user_id):
 
     return Response(event_stream(), mimetype='text/event-stream')
 
-@app.route('/send_command', methods=['POST'])
+@app.route('/send_command', methods=['POST', 'OPTIONS'])
 def send_command():
     """Бот отправляет команду пользователю"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         data = request.json
         user_id = data.get('user_id')
@@ -124,8 +135,7 @@ def home():
 def run_flask():
     """Запуск Flask сервера в отдельном потоке"""
     try:
-        port = int(os.environ.get('PORT', 8080))  # Railway сам назначает порт
-        logger.info(f"🌐 Flask запускается на порту: {port}")
+        port = int(os.environ.get('PORT', 8080))
         app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
     except Exception as e:
         logger.error(f"💥 Ошибка запуска Flask: {e}")
@@ -217,7 +227,7 @@ def get_admin_buttons(application_id):
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="✅ Принять", callback_data=f"accept_{application_id}"),
-            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{application_id}")
+            InlineboardingButton(text="❌ Отклонить", callback_data=f"reject_{application_id}")
         ]
     ])
 
@@ -284,8 +294,8 @@ async def send_sse_command(user_id, action_type, payment_id=None):
     try:
         import requests
         
-        # Получаем URL сервера (на Railway будет автоматический)
-        server_url = os.environ.get('RAILWAY_STATIC_URL', 'http://localhost:5000')
+        # Получаем URL сервера
+        server_url = os.environ.get('RAILWAY_STATIC_URL', 'http://localhost:8080')
         
         response = requests.post(
             f"{server_url}/send_command",
@@ -818,10 +828,8 @@ async def reject_application(callback: types.CallbackQuery):
 
 async def main():
     logger.info("🚀 Бот запускается...")
-    logger.info("🌐 SSE сервер запущен на порту 5000")
+    logger.info("🌐 SSE сервер запущен на порту 8080")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
