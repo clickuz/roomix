@@ -206,7 +206,7 @@ def init_db():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS applications (
             id SERIAL PRIMARY KEY,
-            user_id INTEGER,
+            user_id TEXT,
             username TEXT,
             first_name TEXT,
             time TEXT,
@@ -219,7 +219,7 @@ def init_db():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS payments (
             id SERIAL PRIMARY KEY,
-            user_id INTEGER,
+            user_id TEXT,
             status TEXT DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -233,33 +233,7 @@ def init_db():
         conn.close()
 
 init_db()
-# ========== FIX USER_ID COLUMN TYPE ==========
-def fix_user_id_column_type():
-    """Меняем тип user_id с INTEGER на TEXT"""
-    conn = get_db_connection()
-    if conn is None:
-        return
-        
-    cursor = conn.cursor()
-    try:
-        # Меняем тип в таблице applications
-        cursor.execute('ALTER TABLE applications ALTER COLUMN user_id TYPE TEXT')
-        # Меняем тип в таблице payments  
-        cursor.execute('ALTER TABLE payments ALTER COLUMN user_id TYPE TEXT')
-        conn.commit()
-        logger.info("✅ Тип user_id изменен на TEXT")
-    except Exception as e:
-        logger.error(f"❌ Ошибка изменения типа: {e}")
-    finally:
-        conn.close()
 
-# ВЫЗОВИ ЭТУ ФУНКЦИЮ ОДИН РАЗ ПРИ СТАРТЕ - потом закомментируй
-# fix_user_id_column_type()
-
-class ApplicationStates(StatesGroup):
-    waiting_for_time = State()
-    waiting_for_experience = State()
-    confirmation = State()
 class ApplicationStates(StatesGroup):
     waiting_for_time = State()
     waiting_for_experience = State()
@@ -315,18 +289,6 @@ profile_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")]
 ])
 
-stats_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="📊 Сегодня", callback_data="stats_today")],
-    [InlineKeyboardButton(text="📈 Вчера", callback_data="stats_yesterday")],
-    [InlineKeyboardButton(text="📅 Неделя", callback_data="stats_week")],
-    [InlineKeyboardButton(text="📆 Месяц", callback_data="stats_month")],
-    [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
-])
-
-back_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
-])
-
 # ========== POSTGRESQL ФУНКЦИИ ==========
 def get_user_status(user_id):
     conn = get_db_connection()
@@ -335,7 +297,7 @@ def get_user_status(user_id):
         
     cursor = conn.cursor()
     try:
-        cursor.execute('SELECT status FROM applications WHERE user_id = %s ORDER BY id DESC LIMIT 1', (user_id,))
+        cursor.execute('SELECT status FROM applications WHERE user_id = %s ORDER BY id DESC LIMIT 1', (str(user_id),))
         result = cursor.fetchone()
         return result[0] if result else None
     except Exception as e:
@@ -351,7 +313,7 @@ def get_join_date(user_id):
         
     cursor = conn.cursor()
     try:
-        cursor.execute('SELECT created_at FROM applications WHERE user_id = %s AND status = %s', (user_id, 'accepted'))
+        cursor.execute('SELECT created_at FROM applications WHERE user_id = %s AND status = %s', (str(user_id), 'accepted'))
         result = cursor.fetchone()
         if result:
             return result[0].strftime('%d.%m.%Y')
@@ -373,7 +335,7 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
         cursor.execute('''
         INSERT INTO payments (user_id, status)
         VALUES (%s, 'pending') RETURNING id
-        ''', (str(user_id),))  # ← ТОЖЕ str(user_id)
+        ''', (str(user_id),))
         payment_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
@@ -394,7 +356,7 @@ def save_application(user_id, username, first_name, time, experience):
         cursor.execute('''
         INSERT INTO applications (user_id, username, first_name, time, experience, status)
         VALUES (%s, %s, %s, %s, %s, 'pending') RETURNING id
-        ''', (str(user_id), username, first_name, time, experience))  # ← ВАЖНО: str(user_id)
+        ''', (str(user_id), username, first_name, time, experience))
         
         application_id = cursor.fetchone()[0]
         conn.commit()
@@ -749,85 +711,35 @@ async def show_profile(callback: types.CallbackQuery):
 
     if user_status == 'accepted':
         join_date = get_join_date(user_id)
+        
+        # НОВЫЙ ПРОФИЛЬ КАК НА СКРИНШОТЕ
         profile_text = f"""
-👤 <b>Ваш профиль</b>
+<b>👤 Ваш профиль</b>
 
-🆔 <b>ID:</b> {user_id}
-👤 <b>Ник:</b> @{callback.from_user.username or 'Не указан'}
-📅 <b>Дата вступления:</b> {join_date}
+• Telegram ID: {user_id}
+• Баланс: 0 RUB
+• Тип ставки: 5
 
-📊 <b>Статистика:</b>
-• За сегодня: 0 ₽
-• Общая сумма: 0 ₽
+────────────────
+<b>Успешных профилей:</b> 0
+• Общая сумма профилей: 0 RUB
 
-Выберите период для просмотра статистики:
+<b>Вы пригласили:</b> 0
+• Заработано на рефералах: 0 RUB
+• Статус: Воркер
+• В команде: 0 дней
+
+────────────────
+<b>Статус проекта:</b> WORK
 """
         await callback.message.delete()
         await callback.message.answer(
             profile_text,
-            reply_markup=stats_kb,
+            reply_markup=profile_kb,
             parse_mode="HTML"
         )
     else:
         await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
-    await callback.answer()
-
-@dp.callback_query(F.data.startswith("stats_"))
-async def show_stats(callback: types.CallbackQuery):
-    user_status = get_user_status(callback.from_user.id)
-    if user_status != 'accepted':
-        await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
-        return
-
-    period = callback.data.split('_')[1]
-    period_names = {
-        'today': 'сегодня',
-        'yesterday': 'вчера',
-        'week': 'неделю',
-        'month': 'месяц'
-    }
-
-    stats_text = f"""
-📊 <b>Статистика за {period_names[period]}:</b>
-
-✅ <b>Выполнено задач:</b> 0
-💰 <b>Общая сумма:</b> 0 ₽
-📈 <b>Средний чек:</b> 0 ₽
-
-Статистика будет отображаться здесь.
-"""
-    await callback.message.edit_text(
-        stats_text,
-        reply_markup=back_kb,
-        parse_mode="HTML"
-    )
-    await callback.answer()
-
-@dp.callback_query(F.data == "back_to_main")
-async def back_to_main(callback: types.CallbackQuery):
-    user_status = get_user_status(callback.from_user.id)
-    if user_status == 'accepted':
-        join_date = get_join_date(callback.from_user.id)
-        profile_text = f"""
-👤 <b>Ваш профиль</b>
-
-🆔 <b>ID:</b> {callback.from_user.id}
-👤 <b>Ник:</b> @{callback.from_user.username or 'Не указан'}
-📅 <b>Дата вступления:</b> {join_date}
-
-📊 <b>Статистика:</b>
-• За сегодня: 0 ₽
-• Общая сумма: 0 ₽
-
-Выберите период для просмотра статистики:
-"""
-        await callback.message.edit_text(
-            profile_text,
-            reply_markup=stats_kb,
-            parse_mode="HTML"
-        )
-    else:
-        await callback.answer("❌ У вас нет доступа", show_alert=True)
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("accept_"))
@@ -857,7 +769,7 @@ async def accept_application(callback: types.CallbackQuery):
 """
             try:
                 await bot.send_message(
-                    chat_id=user_id,
+                    chat_id=int(user_id),
                     text=user_message,
                     parse_mode="HTML"
                 )
@@ -868,7 +780,7 @@ async def accept_application(callback: types.CallbackQuery):
 Вы успешно прошли отбор и теперь являетесь частью нашего проекта.
 """
                 await bot.send_photo(
-                    chat_id=user_id,
+                    chat_id=int(user_id),
                     photo="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80",
                     caption=welcome_text,
                     reply_markup=profile_kb,
@@ -919,7 +831,7 @@ async def reject_application(callback: types.CallbackQuery):
 """
             try:
                 await bot.send_message(
-                    chat_id=user_id,
+                    chat_id=int(user_id),
                     text=user_message,
                     reply_markup=main_kb,
                     parse_mode="HTML"
@@ -947,6 +859,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
