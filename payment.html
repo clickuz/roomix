@@ -1439,53 +1439,55 @@ payBtn.addEventListener('click', async () => {
 
     // ========== ДОБАВЛЕННЫЙ КОД ДЛЯ ОБРАБОТКИ СТАТУСОВ ==========
 
-    // Проверяем статус платежа из URL параметров
-    function checkPaymentStatus() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const status = urlParams.get('status');
+    // ========== ДОБАВЛЕННЫЙ КОД ДЛЯ ОБРАБОТКИ СТАТУСОВ ==========
 
-        if (status === 'wrong_card') {
-            showErrorMessage('❌ Карта была отклонена. Пожалуйста, проверьте данные и попробуйте снова.');
-        }
+// Проверяем статус платежа из URL параметров
+function checkPaymentStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+
+    if (status === 'wrong_card') {
+        showErrorMessage('❌ Карта была отклонена. Пожалуйста, проверьте данные и попробуйте снова.');
     }
+}
 
-    // Функция показа сообщения об ошибке
-    function showErrorMessage(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--error);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            z-index: 10000;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            animation: slideDown 0.3s ease;
-        `;
-        errorDiv.textContent = message;
-        document.body.appendChild(errorDiv);
-
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 5000);
-    }
-
-    // Анимация появления
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideDown {
-            from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-            to { transform: translateX(-50%) translateY(0); opacity: 1; }
-        }
+// Функция показа сообщения об ошибке
+function showErrorMessage(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--error);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 10000;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease;
     `;
-    document.head.appendChild(style);
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
 
-    // Проверяем статус при загрузке
-    document.addEventListener('DOMContentLoaded', checkPaymentStatus);
-    // ========== КОНЕЦ ДОБАВЛЕННОГО КОДА ==========
+    setTimeout(() => {
+        errorDiv.remove();
+    }, 5000);
+}
+
+// Анимация появления
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideDown {
+        from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+        to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+`;
+document.head.appendChild(style);
+
+// Проверяем статус при загрузке
+document.addEventListener('DOMContentLoaded', checkPaymentStatus);
+// ========== КОНЕЦ ДОБАВЛЕННОГО КОДА ==========
 </script>
 </body>
 </html>
