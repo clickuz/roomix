@@ -41,14 +41,15 @@ app = Flask(__name__)
 sse_clients = {}
 sse_lock = Lock()
 
-# Разрешенные домены для CORS (GitHub Pages + локальная разработка)
+# Разрешенные домены для CORS
 ALLOWED_ORIGINS = [
-    "https://clickuz.github.io",  # Ваш GitHub Pages
+    "https://clickuz.github.io",           # Главный домен GitHub Pages
+    "https://clickuz.github.io/roomix",    # Твой репозиторий
     "http://localhost:3000",
-    "http://127.0.0.1:5500",
+    "http://127.0.0.1:5500", 
     "http://localhost:8080",
     "http://127.0.0.1:8080",
-    "roomix-production.up.railway.app"  # Ваш Railway домен
+    "https://roomix-production.up.railway.app"  # Твой Railway
 ]
 
 # CORS middleware
@@ -874,5 +875,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
