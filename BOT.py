@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 import os
@@ -44,12 +43,12 @@ sse_lock = Lock()
 
 # Разрешенные домены для CORS (GitHub Pages + локальная разработка)
 ALLOWED_ORIGINS = [
-    "https://vbivchik.github.io",  # Ваш GitHub Pages
+    "https://clickuz.github.io",  # Ваш GitHub Pages
     "http://localhost:3000",
     "http://127.0.0.1:5500",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
-    "https://roomixvbiv.up.railway.app"  # Ваш Railway домен
+    "roomix-production.up.railway.app"  # Ваш Railway домен
 ]
 
 # CORS middleware
@@ -875,4 +874,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
