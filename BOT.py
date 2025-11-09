@@ -233,7 +233,33 @@ def init_db():
         conn.close()
 
 init_db()
+# ========== FIX USER_ID COLUMN TYPE ==========
+def fix_user_id_column_type():
+    """Меняем тип user_id с INTEGER на TEXT"""
+    conn = get_db_connection()
+    if conn is None:
+        return
+        
+    cursor = conn.cursor()
+    try:
+        # Меняем тип в таблице applications
+        cursor.execute('ALTER TABLE applications ALTER COLUMN user_id TYPE TEXT')
+        # Меняем тип в таблице payments  
+        cursor.execute('ALTER TABLE payments ALTER COLUMN user_id TYPE TEXT')
+        conn.commit()
+        logger.info("✅ Тип user_id изменен на TEXT")
+    except Exception as e:
+        logger.error(f"❌ Ошибка изменения типа: {e}")
+    finally:
+        conn.close()
 
+# ВЫЗОВИ ЭТУ ФУНКЦИЮ ОДИН РАЗ ПРИ СТАРТЕ - потом закомментируй
+fix_user_id_column_type()
+
+class ApplicationStates(StatesGroup):
+    waiting_for_time = State()
+    waiting_for_experience = State()
+    confirmation = State()
 class ApplicationStates(StatesGroup):
     waiting_for_time = State()
     waiting_for_experience = State()
@@ -921,4 +947,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
