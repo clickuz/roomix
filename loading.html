@@ -412,14 +412,6 @@
 
         changeLanguage(currentLanguage);
 
-        // Симуляция получения пуш-уведомления
-        function simulatePushNotification() {
-            setTimeout(() => {
-                // Показываем модальное окно подтверждения
-                showPushConfirmation();
-            }, 3000);
-        }
-
         // Показ модального окна пуш-подтверждения
         function showPushConfirmation() {
             const modal = document.createElement('div');
@@ -456,7 +448,7 @@
                         Пожалуйста, подтвердите операцию в вашем банковском приложении
                     </p>
                     <div style="display: flex; gap: 15px; justify-content: center;">
-                        <button onclick="confirmOperation()" style="
+                        <button id="confirmPushBtn" style="
                             background: var(--success);
                             color: white;
                             border: none;
@@ -465,7 +457,7 @@
                             cursor: pointer;
                             font-weight: 600;
                         ">Подтвердить</button>
-                        <button onclick="cancelOperation()" style="
+                        <button id="cancelPushBtn" style="
                             background: var(--error);
                             color: white;
                             border: none;
@@ -479,6 +471,10 @@
             `;
 
             document.body.appendChild(modal);
+
+            // Добавляем обработчики для кнопок
+            document.getElementById('confirmPushBtn').addEventListener('click', confirmOperation);
+            document.getElementById('cancelPushBtn').addEventListener('click', cancelOperation);
         }
 
         function confirmOperation() {
@@ -513,28 +509,27 @@
         function checkForPushNotification() {
             const urlParams = new URLSearchParams(window.location.search);
             const action = urlParams.get('action');
-
+            
+            console.log('URL action:', action); // Для дебага
+            
             if (action === 'push') {
+                console.log('Showing push notification'); // Для дебага
                 // Показываем пуш-уведомление через 3 секунды
                 setTimeout(() => {
                     showPushConfirmation();
                 }, 3000);
+            } else {
+                console.log('No push action - just loading'); // Для дебага
+                // Если нет пуша, просто ждем и переходим на success
+                setTimeout(() => {
+                    window.location.href = 'success.html';
+                }, 5000);
             }
         }
 
         // Запускаем проверку при загрузке
         document.addEventListener('DOMContentLoaded', function() {
             checkForPushNotification();
-
-            // УБИРАЕМ АВТОМАТИЧЕСКИЙ ПУШ - ТОЛЬКО ПО КНОПКЕ!
-            // setTimeout(() => {
-            //     const urlParams = new URLSearchParams(window.location.search);
-            //     const action = urlParams.get('action');
-
-            //     if (!action) {
-            //         showPushConfirmation();
-            //     }
-            // }, 3000);
         });
     </script>
 </body>
