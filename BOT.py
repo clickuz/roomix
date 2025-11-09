@@ -124,7 +124,8 @@ def home():
 def run_flask():
     """Запуск Flask сервера в отдельном потоке"""
     try:
-        port = int(os.environ.get('PORT', 8080))  # ← ИЗМЕНИТЕ 5000 на 8080
+        port = int(os.environ.get('PORT', 8080))  # Railway сам назначает порт
+        logger.info(f"🌐 Flask запускается на порту: {port}")
         app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
     except Exception as e:
         logger.error(f"💥 Ошибка запуска Flask: {e}")
@@ -822,4 +823,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
