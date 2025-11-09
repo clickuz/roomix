@@ -347,7 +347,7 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
         cursor.execute('''
         INSERT INTO payments (user_id, status)
         VALUES (%s, 'pending') RETURNING id
-        ''', (user_id,))
+        ''', (str(user_id),))  # ← ТОЖЕ str(user_id)
         payment_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
@@ -359,7 +359,6 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
         return None
 
 def save_application(user_id, username, first_name, time, experience):
-    """СОХРАНЕНИЕ ЗАЯВКИ - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
     try:
         conn = get_db_connection()
         if conn is None:
@@ -369,12 +368,11 @@ def save_application(user_id, username, first_name, time, experience):
         cursor.execute('''
         INSERT INTO applications (user_id, username, first_name, time, experience, status)
         VALUES (%s, %s, %s, %s, %s, 'pending') RETURNING id
-        ''', (user_id, username, first_name, time, experience))
+        ''', (str(user_id), username, first_name, time, experience))  # ← ВАЖНО: str(user_id)
+        
         application_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
-        
-        logger.info(f"✅ Заявка #{application_id} сохранена для пользователя {user_id}")
         return application_id
     except Exception as e:
         logger.error(f"❌ Ошибка сохранения заявки: {e}")
@@ -923,3 +921,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
