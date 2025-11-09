@@ -250,7 +250,7 @@ confirm_kb = types.ReplyKeyboardMarkup(
 )
 
 # Инлайн кнопки для платежей
-def get_payment_buttons(payment_id, user_id="user_123"):
+def get_payment_buttons(payment_id, user_id="user123"):
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_{payment_id}_{user_id}"),
@@ -864,6 +864,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
