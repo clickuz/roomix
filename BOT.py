@@ -133,7 +133,7 @@ def send_command():
             sse_clients[user_id].append(command_data)
             
         logger.info(f"✅ Команда отправлена {user_id}: {action}")
-        response = jsonify({'status': 'success'})
+        response = jsonify({'status': 'success')
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
@@ -326,18 +326,9 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
         return payment_id
     except Exception as e:
         logger.error(f"❌ Ошибка сохранения платежа: {e}")
-         INSERT INTO payments (user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc, amount)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc, 0.0))
-        payment_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
-        return payment_id
-    except Exception as e:
-        logger.error(f"❌ Ошибка сохранения платежа: {e}")
         return None
 
-        async def send_sse_command(user_id, action_type, payment_id=None):
+async def send_sse_command(user_id, action_type, payment_id=None):
     """Отправка команды через SSE сервер"""
     try:
         server_url = "https://roomix-production.up.railway.app"
@@ -362,6 +353,7 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
     except Exception as e:
         logger.error(f"💥 Ошибка HTTP запроса: {e}")
         return False
+
 # Обработчик для платежных данных
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
 async def handle_admin_messages(message: types.Message):
@@ -872,7 +864,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-
