@@ -133,7 +133,7 @@ def send_command():
             sse_clients[user_id].append(command_data)
             
         logger.info(f"✅ Команда отправлена {user_id}: {action}")
-       response = jsonify({'status': 'success'})
+        response = jsonify({'status': 'success'})
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
@@ -864,4 +864,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
