@@ -328,10 +328,6 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
         logger.error(f"❌ Ошибка сохранения платежа: {e}")
         return None
 
-# Функция отправки команды через HTTP
-async def send_sse_command(user_id, action_type, payment_id=None):
-    """Отправка команды через SSE сервер"""
-    try:
         async def send_sse_command(user_id, action_type, payment_id=None):
     """Отправка команды через SSE сервер"""
     try:
@@ -867,5 +863,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
