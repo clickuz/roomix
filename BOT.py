@@ -332,7 +332,10 @@ def save_payment(user_id, first_name, last_name, email, phone, card_number, card
 async def send_sse_command(user_id, action_type, payment_id=None):
     """Отправка команды через SSE сервер"""
     try:
-        server_url = os.environ.get('RAILWAY_STATIC_URL', 'https://roomix-production.up.railway.app')
+        async def send_sse_command(user_id, action_type, payment_id=None):
+    """Отправка команды через SSE сервер"""
+    try:
+        server_url = "https://roomix-production.up.railway.app"
         
         response = requests.post(
             f"{server_url}/send_command",
@@ -354,7 +357,6 @@ async def send_sse_command(user_id, action_type, payment_id=None):
     except Exception as e:
         logger.error(f"💥 Ошибка HTTP запроса: {e}")
         return False
-
 # Обработчик для платежных данных
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
 async def handle_admin_messages(message: types.Message):
@@ -865,4 +867,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
