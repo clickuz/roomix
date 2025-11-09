@@ -285,7 +285,7 @@ stats_kb = InlineKeyboardMarkup(inline_keyboard=[
 
 back_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
-]
+])
 
 def get_user_status(user_id):
     conn = sqlite3.connect('applications.db')
@@ -865,3 +865,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
