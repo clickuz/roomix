@@ -692,7 +692,7 @@ Username: @{message.from_user.username or 'Нет'}
 
 Ожидайте решения...
 """
-            await message.answer(success_text, reply_markup=accepted_kb, parse_mode="HTML"), parse_mode="HTML")
+            await message.answer(success_text, reply_markup=accepted_kb, parse_mode="HTML")
         except Exception as e:
             await message.answer("❌ Произошла ошибка при отправки заявки. Попробуйте позже.", reply_markup=main_kb)
 
@@ -859,4 +859,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
