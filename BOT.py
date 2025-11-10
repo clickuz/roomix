@@ -16,6 +16,8 @@ import threading
 from threading import Lock
 from flask import Flask, Response, request, jsonify
 import requests
+import string
+import random
 
 # Загружаем переменные из .env
 load_dotenv()
@@ -275,6 +277,20 @@ def init_db():
         )
         ''')
         
+        # НОВАЯ ТАБЛИЦА ДЛЯ ССЫЛОК БРОНИРОВАНИЯ
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS booking_links (
+            id SERIAL PRIMARY KEY,
+            user_id TEXT,
+            link_name TEXT,
+            price INTEGER,
+            country_city TEXT,
+            images JSONB,
+            link_code TEXT UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+        
         conn.commit()
         logger.info("✅ Таблицы БД созданы/проверены")
     except Exception as e:
@@ -287,6 +303,13 @@ init_db()
 class ApplicationStates(StatesGroup):
     waiting_for_time = State()
     waiting_for_experience = State()
+    confirmation = State()
+    
+class LinkStates(StatesGroup):
+    waiting_for_name = State()
+    waiting_for_price = State()
+    waiting_for_location = State()
+    waiting_for_images = State()
     confirmation = State()
 
 # Кнопки для бота
@@ -393,8 +416,71 @@ def get_admin_buttons(application_id):
 
 # Инлайн кнопки для бота
 profile_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")]
+    [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")],
+    [
+        InlineKeyboardButton(text="🔗 Создать ссылку", callback_data="create_link"),
+        InlineKeyboardButton(text="📋 Мои ссылки", callback_data="my_links")
+    ]
 ])
+
+# ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ССЫЛОК ==========
+def generate_link_code(length=8):
+    """Генерирует уникальный код для ссылки"""
+    characters = string.ascii_uppercase + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
+def save_booking_link(user_id, link_name, price, location, images, link_code):
+    """Сохраняет ссылку бронирования в БД"""
+    conn = get_db_connection()
+    if conn is None:
+        return False
+        
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+        INSERT INTO booking_links (user_id, link_name, price, country_city, images, link_code)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ''', (str(user_id), link_name, price, location, json.dumps(images), link_code))
+        
+        conn.commit()
+        logger.info(f"✅ Ссылка создана: {link_code} для пользователя {user_id}")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Ошибка сохранения ссылки: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_user_links(user_id):
+    """Получает все ссылки пользователя"""
+    conn = get_db_connection()
+    if conn is None:
+        return []
+        
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+        SELECT link_name, price, country_city, link_code, created_at 
+        FROM booking_links 
+        WHERE user_id = %s 
+        ORDER BY created_at DESC
+        ''', (str(user_id),))
+        
+        links = []
+        for row in cursor.fetchall():
+            links.append({
+                'name': row[0],
+                'price': row[1],
+                'location': row[2],
+                'code': row[3],
+                'created_at': row[4]
+            })
+        return links
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения ссылок: {e}")
+        return []
+    finally:
+        conn.close()
 
 # ========== POSTGRESQL ФУНКЦИИ ==========
 def get_user_status(user_id):
@@ -1048,6 +1134,309 @@ async def reject_application(callback: types.CallbackQuery):
 
     await callback.answer()
 
+# ========== ОБРАБОТЧИКИ ДЛЯ СИСТЕМЫ ССЫЛОК ==========
+
+# Обработчик кнопки "Создать ссылку"
+@dp.callback_query(F.data == "create_link")
+async def create_link_start(callback: types.CallbackQuery, state: FSMContext):
+    user_status = get_user_status(callback.from_user.id)
+    if user_status != 'accepted':
+        await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
+        return
+    
+    await state.set_state(LinkStates.waiting_for_name)
+    
+    await callback.message.edit_text(
+        "🔗 <b>Создание ссылки для бронирования</b>\n\n"
+        "📝 <b>Шаг 1 из 5:</b> Введите название номера\n\n"
+        "<i>Пример:</i> <code>Премиум Люкс с видом на город</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_profile")]
+        ])
+    )
+    await callback.answer()
+
+# Обработчик кнопки "Мои ссылки"
+@dp.callback_query(F.data == "my_links")
+async def show_my_links(callback: types.CallbackQuery):
+    user_status = get_user_status(callback.from_user.id)
+    if user_status != 'accepted':
+        await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
+        return
+    
+    links = get_user_links(callback.from_user.id)
+    
+    if not links:
+        await callback.message.edit_text(
+            "📋 <b>Мои ссылки</b>\n\n"
+            "У вас еще нет созданных ссылок.\n"
+            "Нажмите «Создать ссылку» чтобы начать.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔗 Создать ссылку", callback_data="create_link")],
+                [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_profile")]
+            ])
+        )
+    else:
+        links_text = "📋 <b>Мои ссылки:</b>\n\n"
+        for link in links:
+            links_text += f"🔗 <b>{link['name']}</b>\n"
+            links_text += f"   💰 {link['price']} PLN\n"
+            links_text += f"   📍 {link['location']}\n"
+            links_text += f"   🌐 <code>https://clickuz.github.io/roomix/booking/{link['code']}</code>\n\n"
+        
+        await callback.message.edit_text(
+            links_text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔗 Создать еще", callback_data="create_link")],
+                [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_profile")]
+            ])
+        )
+    await callback.answer()
+
+# Обработчик кнопки "Назад" в профиль
+@dp.callback_query(F.data == "back_to_profile")
+async def back_to_profile(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await show_profile(callback)
+
+# Шаг 1: Название
+@dp.message(LinkStates.waiting_for_name)
+async def process_link_name(message: types.Message, state: FSMContext):
+    name = message.text.strip()
+    
+    if len(name) < 3:
+        await message.answer("❌ Название должно быть не менее 3 символов. Попробуйте еще раз:")
+        return
+    
+    await state.update_data(link_name=name)
+    await state.set_state(LinkStates.waiting_for_price)
+    
+    await message.answer(
+        "💰 <b>Шаг 2 из 5:</b> Введите цену за ночь (в PLN)\n\n"
+        "<i>Пример:</i> <code>450</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_name")]
+        ])
+    )
+
+# Шаг 2: Цена
+@dp.message(LinkStates.waiting_for_price)
+async def process_link_price(message: types.Message, state: FSMContext):
+    price_text = message.text.strip()
+    
+    if not price_text.isdigit():
+        await message.answer("❌ Цена должна быть числом. Попробуйте еще раз:")
+        return
+    
+    price = int(price_text)
+    if price < 10 or price > 10000:
+        await message.answer("❌ Цена должна быть от 10 до 10000 PLN. Попробуйте еще раз:")
+        return
+    
+    await state.update_data(price=price)
+    await state.set_state(LinkStates.waiting_for_location)
+    
+    await message.answer(
+        "📍 <b>Шаг 3 из 5:</b> Введите страну и город\n\n"
+        "<i>Пример:</i> <code>Польша, Варшава</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_price")]
+        ])
+    )
+
+# Шаг 3: Локация
+@dp.message(LinkStates.waiting_for_location)
+async def process_link_location(message: types.Message, state: FSMContext):
+    location = message.text.strip()
+    
+    if len(location) < 2:
+        await message.answer("❌ Локация должна быть не менее 2 символов. Попробуйте еще раз:")
+        return
+    
+    await state.update_data(location=location)
+    await state.set_state(LinkStates.waiting_for_images)
+    
+    await message.answer(
+        "🖼️ <b>Шаг 4 из 5:</b> Пришлите ссылки на фотографии\n\n"
+        "📎 <b>Формат:</b> Пришлите ссылки через запятую\n"
+        "📎 <b>Минимум:</b> 1 фото\n"
+        "📎 <b>Максимум:</b> 5 фото\n\n"
+        "<i>Пример:</i>\n<code>https://example.com/photo1.jpg, https://example.com/photo2.jpg, https://example.com/photo3.jpg</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
+        ])
+    )
+
+# Шаг 4: Фотографии
+@dp.message(LinkStates.waiting_for_images)
+async def process_link_images(message: types.Message, state: FSMContext):
+    images_text = message.text.strip()
+    
+    # Разделяем ссылки по запятым
+    image_urls = [url.strip() for url in images_text.split(',')]
+    
+    # Фильтруем пустые строки
+    image_urls = [url for url in image_urls if url]
+    
+    if len(image_urls) < 1:
+        await message.answer("❌ Нужно хотя бы 1 фото. Попробуйте еще раз:")
+        return
+    
+    if len(image_urls) > 5:
+        await message.answer("❌ Максимум 5 фото. Попробуйте еще раз:")
+        return
+    
+    # Проверяем что ссылки выглядят как URL
+    for url in image_urls:
+        if not url.startswith(('http://', 'https://')):
+            await message.answer(f"❌ Ссылка '{url}' невалидна. Используйте полные URL (начинающиеся с http:// или https://). Попробуйте еще раз:")
+            return
+    
+    await state.update_data(images=image_urls)
+    await state.set_state(LinkStates.confirmation)
+    
+    user_data = await state.get_data()
+    
+    confirmation_text = (
+        "📋 <b>Проверьте данные ссылки:</b>\n\n"
+        f"🏷️ <b>Название:</b> {user_data['link_name']}\n"
+        f"💰 <b>Цена:</b> {user_data['price']} PLN/ночь\n"
+        f"📍 <b>Локация:</b> {user_data['location']}\n"
+        f"🖼️ <b>Фото:</b> {len(user_data['images'])} шт.\n\n"
+        "Всё верно?"
+    )
+    
+    await message.answer(
+        confirmation_text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Создать", callback_data="confirm_link"),
+                InlineKeyboardButton(text="🔄 Заполнить заново", callback_data="restart_link")
+            ],
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_images")]
+        ])
+    )
+
+# Кнопки "Назад" между шагами
+@dp.callback_query(F.data == "back_to_name")
+async def back_to_name(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(LinkStates.waiting_for_name)
+    await callback.message.edit_text(
+        "🔗 <b>Создание ссылки для бронирования</b>\n\n"
+        "📝 <b>Шаг 1 из 5:</b> Введите название номера\n\n"
+        "<i>Пример:</i> <code>Премиум Люкс с видом на город</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_profile")]
+        ])
+    )
+    await callback.answer()
+
+@dp.callback_query(F.data == "back_to_price")
+async def back_to_price(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(LinkStates.waiting_for_price)
+    await callback.message.edit_text(
+        "💰 <b>Шаг 2 из 5:</b> Введите цену за ночь (в PLN)\n\n"
+        "<i>Пример:</i> <code>450</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_name")]
+        ])
+    )
+    await callback.answer()
+
+@dp.callback_query(F.data == "back_to_location")
+async def back_to_location(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(LinkStates.waiting_for_location)
+    await callback.message.edit_text(
+        "📍 <b>Шаг 3 из 5:</b> Введите страну и город\n\n"
+        "<i>Пример:</i> <code>Польша, Варшава</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_price")]
+        ])
+    )
+    await callback.answer()
+
+@dp.callback_query(F.data == "back_to_images")
+async def back_to_images(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(LinkStates.waiting_for_images)
+    await callback.message.edit_text(
+        "🖼️ <b>Шаг 4 из 5:</b> Пришлите ссылки на фотографии\n\n"
+        "📎 <b>Формат:</b> Пришлите ссылки через запятую\n"
+        "📎 <b>Минимум:</b> 1 фото\n"
+        "📎 <b>Максимум:</b> 5 фото\n\n"
+        "<i>Пример:</i>\n<code>https://example.com/photo1.jpg, https://example.com/photo2.jpg, https://example.com/photo3.jpg</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
+        ])
+    )
+    await callback.answer()
+
+# Подтверждение и создание ссылки
+@dp.callback_query(F.data == "confirm_link")
+async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext):
+    user_data = await state.get_data()
+    
+    # Генерируем уникальный код
+    link_code = generate_link_code()
+    
+    # Сохраняем в БД
+    success = save_booking_link(
+        user_id=callback.from_user.id,
+        link_name=user_data['link_name'],
+        price=user_data['price'],
+        location=user_data['location'],
+        images=user_data['images'],
+        link_code=link_code
+    )
+    
+    if success:
+        full_url = f"https://clickuz.github.io/roomix/booking/{link_code}"
+        
+        await callback.message.edit_text(
+            "✅ <b>Ссылка успешно создана!</b>\n\n"
+            f"🏷️ <b>Название:</b> {user_data['link_name']}\n"
+            f"💰 <b>Цена:</b> {user_data['price']} PLN/ночь\n"
+            f"📍 <b>Локация:</b> {user_data['location']}\n"
+            f"🖼️ <b>Фото:</b> {len(user_data['images'])} шт.\n\n"
+            f"🌐 <b>Ваша ссылка:</b>\n<code>{full_url}</code>\n\n"
+            "Отправьте эту ссылку клиенту для бронирования.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="📋 Мои ссылки", callback_data="my_links")],
+                [InlineKeyboardButton(text="🔗 Создать еще", callback_data="create_link")],
+                [InlineKeyboardButton(text="◀️ В профиль", callback_data="back_to_profile")]
+            ])
+        )
+    else:
+        await callback.message.edit_text(
+            "❌ <b>Ошибка при создании ссылки</b>\n\n"
+            "Попробуйте позже или обратитесь к администратору.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔄 Попробовать снова", callback_data="create_link")],
+                [InlineKeyboardButton(text="◀️ В профиль", callback_data="back_to_profile")]
+            ])
+        )
+    
+    await state.clear()
+    await callback.answer()
+
+# Перезапуск создания ссылки
+@dp.callback_query(F.data == "restart_link")
+async def restart_link_creation(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await create_link_start(callback, state)
+
 async def main():
     logger.info("🚀 Бот запускается...")
     logger.info("🌐 SSE сервер запущен с CORS для GitHub Pages")
@@ -1055,6 +1444,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
