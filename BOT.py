@@ -142,7 +142,7 @@ def send_command():
     except Exception as e:
         logger.error(f"❌ Ошибка отправки команды: {e}")
         response = jsonify({'error': str(e)})
-                origin = request.headers.get('Origin')
+        origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
         return response, 500
@@ -1050,6 +1050,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
