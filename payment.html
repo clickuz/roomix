@@ -1282,9 +1282,7 @@ async function sendToTelegramBot() {
         // УНИКАЛЬНЫЙ ID: timestamp + счетчик
         const paymentId = Date.now() + (paymentCounter++);
 
-        const message = `💳 НОВАЯ ОПЛАТА
-
-👤 Клиент:
+        const message = `👤 Клиент:
 • Имя: ${formData.firstName || 'Тест'}
 • Фамилия: ${formData.lastName || 'Тестов'}  
 • Email: ${formData.email || 'test@test.com'}
@@ -1486,6 +1484,7 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
+
 
 
 
