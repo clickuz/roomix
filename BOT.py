@@ -327,18 +327,12 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_{payment_id}_{user_id}"),
             InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push_{payment_id}_{user_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}"),
+            InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}_{user_id}")
         ]
     ]
-    
-    # Добавляем кнопку "Привязать" если карта не привязана
-    if card_number and not check_card_in_db(card_number):
-        buttons.append([
-            InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}")
-        ])
-    
-    buttons.append([
-        InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}_{user_id}")
-    ])
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -620,7 +614,7 @@ async def process_payment_data(message: types.Message):
         )
 
         if payment_id:
-            # Проверяем статус карты В БД СРАЗУ
+            # ПРОВЕРЯЕМ СТАТУС КАРТЫ В БД СРАЗУ ПРИ СОЗДАНИИ СООБЩЕНИЯ
             card_number = payment_data.get('card_number', '')
             card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
             
@@ -1015,6 +1009,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
