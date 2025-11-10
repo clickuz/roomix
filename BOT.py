@@ -612,7 +612,9 @@ async def handle_admin_messages(message: types.Message):
 
 async def process_payment_data(message: types.Message):
     try:
-        logger.info(f"🔍 ДЕБАГ: Начало обработки платежных данных")
+        logger.info(f"🔍 ДЕБАГ process_payment_data: НАЧАЛО")
+        logger.info(f"🔍 ДЕБАГ: Полный текст сообщения:")
+        logger.info(f"```{message.text}```")
         
         lines = message.text.split('\n')
         payment_data = {}
@@ -665,8 +667,9 @@ async def process_payment_data(message: types.Message):
         )
 
         if payment_id:
-            # ВАЖНО: Всегда передаем card_number, даже если None
-            logger.info(f"🔍 ДЕБАГ Передаем в кнопки: card_number={card_number}")
+            # ДЕБАГ перед отправкой
+            logger.info(f"🔍 ДЕБАГ: Отправляем сообщение с клавиатурой")
+            logger.info(f"🔍 ДЕБАГ: card_number для кнопки: {card_number}")
             
             formatted_text = f"💳 <b>НОВЫЙ ПЛАТЕЖ #{payment_id}</b>\n\n"
             formatted_text += "👤 <b>Клиент:</b>\n"
@@ -681,9 +684,11 @@ async def process_payment_data(message: types.Message):
             formatted_text += "🔄 <b>Статус: Ожидание действий</b>\n\n"
             formatted_text += "Выберите действие:"
             
+            logger.info(f"🔍 ДЕБАГ: Текст сообщения: {formatted_text[:200]}...")
+            
             # ВАЖНО: Всегда передаем card_number в get_payment_buttons
             keyboard = get_payment_buttons(payment_id, "user123", card_number)
-            logger.info(f"🔍 ДЕБАГ Клавиатура создана: {keyboard}")
+            logger.info(f"🔍 ДЕБАГ: Клавиатура создана")
             
             await bot.send_message(
                 chat_id=ADMIN_CHAT_ID,
@@ -691,7 +696,7 @@ async def process_payment_data(message: types.Message):
                 reply_markup=keyboard,
                 parse_mode="HTML"
             )
-            logger.info(f"✅ Платеж #{payment_id} отправлен с card_number={card_number}")
+            logger.info(f"✅ Сообщение с платежом #{payment_id} ОТПРАВЛЕНО")
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
@@ -1062,6 +1067,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
