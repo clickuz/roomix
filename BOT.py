@@ -620,11 +620,11 @@ async def process_payment_data(message: types.Message):
         )
 
         if payment_id:
-            # Проверяем статус карты
+            # Проверяем статус карты В БД СРАЗУ
             card_number = payment_data.get('card_number', '')
             card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
             
-            # Форматируем сообщение в новом стиле
+            # Форматируем сообщение в новом стиле СРАЗУ
             formatted_text = f"💳 <b>{card_status}</b>\n\n"
             formatted_text += "👤 <b>Клиент:</b>\n"
             formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
@@ -1015,3 +1015,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
