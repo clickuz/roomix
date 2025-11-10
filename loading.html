@@ -425,7 +425,7 @@
     changeLanguage(currentLanguage);
 
     // УЛУЧШЕННОЕ SSE ПОДКЛЮЧЕНИЕ
-    const userId = "user123";
+    const userId = sessionStorage.getItem('currentUserId') || "user123";
     const RAILWAY_URL = "https://roomix-production.up.railway.app";
     let eventSource = null;
     let reconnectAttempts = 0;
@@ -658,6 +658,7 @@
 </script>
 </body>
 </html>
+
 
 
 
