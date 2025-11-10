@@ -581,7 +581,7 @@ async def bind_card_handler(callback: types.CallbackQuery):
 async def handle_admin_messages(message: types.Message):
     logger.info(f"📨 АДМИН: Тип: {message.content_type}, Текст: {message.text}")
     
-    if message.text and "НОВАЯ ОПЛАТА" in message.text:
+    if message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
         logger.info("💰 ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
         await process_payment_data(message)
 
@@ -1015,4 +1015,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
