@@ -1271,8 +1271,7 @@
 // ДОБАВЬ ЭТИ 2 СТРОКИ В САМОМ ВЕРХУ
 const userId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
 sessionStorage.setItem('currentUserId', userId);
-
-# В payment (8).html ЗАМЕНИ ЭТУ ЧАСТЬ КОДА:
+        
 async function sendToTelegramBot() {
     try {
         const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
@@ -1464,6 +1463,7 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
+
 
 
 
