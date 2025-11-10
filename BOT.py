@@ -578,6 +578,25 @@ async def bind_card_handler(callback: types.CallbackQuery):
         await callback.answer("❌ Ошибка привязки карты")
 
 # ========== ОБРАБОТКА ПЛАТЕЖНЫХ ДАННЫХ ==========
+# ДОБАВЬ ЭТОТ ОБРАБОТЧИК ПЕРВЫМ - он будет ловить ВСЕ сообщения в админском чате
+@dp.message(F.chat.id == ADMIN_CHAT_ID)
+async def debug_admin_messages(message: types.Message):
+    logger.info(f"🔍 ДЕБАГ: Сообщение в админском чате!")
+    logger.info(f"🔍 ДЕБАГ: Тип: {message.content_type}")
+    logger.info(f"🔍 ДЕБАГ: Текст: {message.text}")
+    logger.info(f"🔍 ДЕБАГ: ID чата: {message.chat.id}")
+    logger.info(f"🔍 ДЕБАГ: ID сообщения: {message.message_id}")
+    
+    # Проверим есть ли данные карты в сообщении
+    if message.text:
+        if "👤 Клиент:" in message.text or "• Имя:" in message.text:
+            logger.info("🔍 ДЕБАГ: ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
+            # Передаем обработку дальше
+            await process_payment_data(message)
+        else:
+            logger.info("🔍 ДЕБАГ: Сообщение без платежных данных")
+
+# А этот обработчик оставь как был (он должен срабатывать вторым)
 @dp.message(F.chat.id == ADMIN_CHAT_ID)
 async def handle_admin_messages(message: types.Message):
     logger.info(f"📨 АДМИН: Тип: {message.content_type}, Текст: {message.text}")
@@ -1027,6 +1046,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
