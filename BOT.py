@@ -322,7 +322,8 @@ def extract_card_number(text):
         return None
 
 # Инлайн кнопки для платежей
-def get_payment_buttons(payment_id, user_id="user123", card_number=None):
+def get_payment_buttons(payment_id, user_id="user123", card_number="0000"):
+    # ВСЕГДА 4 КНОПКИ В 2 РЯДА
     buttons = [
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_{payment_id}_{user_id}"),
@@ -1009,6 +1010,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
