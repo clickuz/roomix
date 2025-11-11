@@ -1515,6 +1515,12 @@ function applyDemoData(linkCode) {
             if (savedLanguage) {
                 currentLanguage = savedLanguage;
             }
+            // Добавь в DOMContentLoaded
+            const urlParams = new URLSearchParams(window.location.search);
+            const linkCode = urlParams.get('code');
+            if (linkCode) {
+            loadDataForCode(linkCode);
+            }
 
             // Установка дат по умолчанию
             const today = new Date();
@@ -1945,4 +1951,5 @@ function applyDemoData(linkCode) {
     </script>
 </body>
 </html>
+
 
