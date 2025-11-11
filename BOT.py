@@ -207,7 +207,51 @@ def health():
     if origin in ALLOWED_ORIGINS:
         response.headers['Access-Control-Allow-Origin'] = origin
     return response
+    
+# Добавьте этот код в BOT.py после строки 210 (после других Flask endpoints)
 
+@app.route('/get_link_data/<link_code>')
+def get_link_data(link_code):
+    """Получает данные ссылки по её коду"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT link_name, price, country_city, images 
+            FROM booking_links 
+            WHERE link_code = %s
+        ''', (link_code,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            link_name, price, country_city, images_json = result
+            
+            response = jsonify({
+                'link_name': link_name,
+                'price': price,
+                'country_city': country_city,
+                'images': json.loads(images_json) if images_json else [],
+                'description': f'Премиум номер {link_name}'
+            })
+            
+            # CORS headers
+            origin = request.headers.get('Origin')
+            if origin in ALLOWED_ORIGINS:
+                response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            
+            return response
+        else:
+            return jsonify({'error': 'Link not found'}), 404
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения данных ссылки: {e}")
+        return jsonify({'error': str(e)}), 500
 @app.route('/')
 def home():
     return "🚀 Roomix Bot + SSE Server"
