@@ -1143,6 +1143,137 @@
             ]
         };
 
+        // ========== ФУНКЦИИ ДЛЯ РАБОТЫ С URL ПАРАМЕТРАМИ ==========
+
+        // Функция для получения параметров из URL
+        function getUrlParams() {
+            const params = {};
+            const queryString = window.location.search.substring(1);
+            const pairs = queryString.split('&');
+
+            for (let pair of pairs) {
+                const [key, value] = pair.split('=');
+                if (key && value) {
+                    params[decodeURIComponent(key)] = decodeURIComponent(value);
+                }
+            }
+            return params;
+        }
+
+        // Функция для загрузки данных из параметров URL
+        function loadDataFromUrl() {
+            const params = getUrlParams();
+
+            if (Object.keys(params).length > 0) {
+                console.log('📥 Загружаем данные из URL:', params);
+
+                // Обновляем данные комнаты из параметров
+                if (params.name) roomData.name = params.name;
+                if (params.price) roomData.price = parseInt(params.price) || 450;
+                if (params.location) roomData.location = params.location;
+                if (params.description) roomData.description = params.description;
+
+                // Обрабатываем изображения
+                if (params.images) {
+                    const imageUrls = params.images.split(',');
+                    roomData.images = imageUrls.map(url => url.trim()).filter(url => url);
+                }
+
+                // Обновляем отображение
+                updateRoomDisplay();
+                updatePrice();
+
+                console.log('✅ Данные из URL применены:', roomData);
+            }
+        }
+
+        // Функция для получения данных из кода ссылки (booking/CODE)
+        function loadDataFromLinkCode() {
+            const path = window.location.pathname;
+            const bookingMatch = path.match(/\/booking\/([A-Z0-9]+)/);
+
+            if (bookingMatch) {
+                const linkCode = bookingMatch[1];
+                console.log('🔗 Обнаружен код ссылки:', linkCode);
+
+                // Показываем сообщение о загрузке
+                showLoadingMessage();
+
+                // Демо-реализация - в будущем заменить на API запрос
+                setTimeout(() => {
+                    applyDemoData(linkCode);
+                    hideLoadingMessage();
+                }, 1000);
+            }
+        }
+
+        // Демо-функция для применения данных (в будущем заменить на API)
+        function applyDemoData(linkCode) {
+            // Создаем уникальные данные на основе кода
+            const demoData = {
+                name: `Премиум номер ${linkCode.substring(0, 4)}`,
+                price: 400 + (linkCode.charCodeAt(0) % 200),
+                location: 'Польша, Варшава',
+                description: `Эксклюзивный номер с уникальным кодом ${linkCode}. Идеальное сочетание комфорта и стиля.`,
+                images: [
+                    'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80',
+                    'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+                    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80'
+                ]
+            };
+
+            roomData = { ...roomData, ...demoData };
+            updateRoomDisplay();
+            updatePrice();
+
+            console.log('✅ Применены демо-данные для кода:', linkCode);
+        }
+
+        // Функции для показа/скрытия сообщения загрузки
+        function showLoadingMessage() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loadingOverlay';
+            loadingDiv.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(18, 18, 18, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                color: var(--primary);
+                font-size: 20px;
+                font-weight: 600;
+            `;
+            loadingDiv.innerHTML = `
+                <div style="text-align: center;">
+                    <div class="loader" style="border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                    <div>Загрузка данных бронирования...</div>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+        }
+
+        function hideLoadingMessage() {
+            const loadingDiv = document.getElementById('loadingOverlay');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+
+        // Добавляем CSS для анимации загрузки
+        const loadStyle = document.createElement('style');
+        loadStyle.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(loadStyle);
+
         // Тексты для разных языков
         const translations = {
             ru: {
@@ -1270,25 +1401,35 @@
             document.getElementById('roomRating').textContent = roomData.rating;
             document.getElementById('roomDescription').textContent = roomData.description;
 
-            // Обновление галереи
+            // Обновление галереи с поддержкой разного количества фото
             const slidesContainer = document.getElementById('slides');
             const dotsContainer = document.getElementById('galleryNav');
 
             slidesContainer.innerHTML = '';
             dotsContainer.innerHTML = '';
 
-            roomData.images.forEach((image, index) => {
+            if (roomData.images && roomData.images.length > 0) {
+                roomData.images.forEach((image, index) => {
+                    const slide = document.createElement('img');
+                    slide.className = 'slide';
+                    slide.src = image;
+                    slide.alt = `Room photo ${index + 1}`;
+                    if (index === 0) slide.style.display = 'block';
+                    slidesContainer.appendChild(slide);
+
+                    const dot = document.createElement('div');
+                    dot.className = `nav-dot ${index === 0 ? 'active' : ''}`;
+                    dotsContainer.appendChild(dot);
+                });
+            } else {
+                // Если нет фото, показываем заглушку
                 const slide = document.createElement('img');
                 slide.className = 'slide';
-                slide.src = image;
-                slide.alt = `Room photo ${index + 1}`;
-                if (index === 0) slide.style.display = 'block';
+                slide.src = 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80';
+                slide.alt = 'Room photo';
+                slide.style.display = 'block';
                 slidesContainer.appendChild(slide);
-
-                const dot = document.createElement('div');
-                dot.className = `nav-dot ${index === 0 ? 'active' : ''}`;
-                dotsContainer.appendChild(dot);
-            });
+            }
 
             // Обновление удобств
             const amenitiesGrid = document.getElementById('amenitiesGrid');
@@ -1353,6 +1494,12 @@
             document.getElementById('checkOut').value = formatDateLocal(tomorrow);
             document.getElementById('checkIn').min = formatDateLocal(today);
             document.getElementById('checkOut').min = formatDateLocal(tomorrow);
+
+            // Загружаем данные из URL параметров
+            loadDataFromUrl();
+
+            // Загружаем данные из кода ссылки (booking/CODE)
+            loadDataFromLinkCode();
 
             // Инициализация данных о номере
             updateRoomDisplay();
