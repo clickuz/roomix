@@ -1177,10 +1177,10 @@ function loadLinkData() {
 }
 
 // Загрузка данных через API
+// Загрузка данных через API
 function loadDataFromAPI(linkCode) {
     showLoadingMessage();
     
-    // Обновляем детали загрузки
     const loadingDetails = document.getElementById('loadingDetails');
     if (loadingDetails) {
         loadingDetails.textContent = `Код: ${linkCode}`;
@@ -1190,10 +1190,20 @@ function loadDataFromAPI(linkCode) {
     
     console.log('🔄 Запрос к API:', apiUrl);
     
-    fetch(apiUrl)
+    // Добавляем таймаут
+    const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Таймаут запроса')), 10000)
+    );
+    
+    const fetchPromise = fetch(apiUrl)
         .then(response => {
+            console.log('📡 Статус ответа:', response.status, response.statusText);
+            
             if (!response.ok) {
-                throw new Error(`Ошибка сервера: ${response.status}`);
+                // Пробуем получить текст ошибки
+                return response.text().then(text => {
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                });
             }
             return response.json();
         })
@@ -1218,13 +1228,24 @@ function loadDataFromAPI(linkCode) {
             hideLoadingMessage();
             
             console.log('🎉 Данные успешно применены');
-        })
+        });
+
+    // Используем таймаут
+    Promise.race([fetchPromise, timeoutPromise])
         .catch(error => {
             console.error('❌ Ошибка загрузки:', error);
             hideLoadingMessage();
             
-            // Показываем ошибку, но продолжаем работу со стандартными данными
-            showErrorMessage(`Ссылка не найдена или устарела. Используем стандартный номер.`);
+            let errorMessage = 'Не удалось загрузить данные номера';
+            if (error.message.includes('404')) {
+                errorMessage = 'Ссылка не найдена или была удалена';
+            } else if (error.message.includes('500')) {
+                errorMessage = 'Ошибка сервера. Попробуйте позже';
+            } else if (error.message.includes('Таймаут')) {
+                errorMessage = 'Сервер не отвечает. Попробуйте позже';
+            }
+            
+            showErrorMessage(`${errorMessage}. Используем стандартный номер.`);
             updateRoomDisplay();
         });
 }
@@ -1920,4 +1941,5 @@ document.addEventListener('DOMContentLoaded', function() {
     </script>
 </body>
 </html>
+
 
