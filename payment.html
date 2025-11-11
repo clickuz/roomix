@@ -557,16 +557,28 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--error);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
+            background: rgba(255, 107, 107, 0.15);
+            backdrop-filter: blur(20px);
+            color: #FF6B6B;
+            padding: 20px 30px;
+            border-radius: 16px;
             z-index: 10000;
             font-weight: 600;
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
-            animation: slideDown 0.3s ease;
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.2);
+            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             text-align: center;
             max-width: 90%;
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-error-notification::before {
+            content: '❌';
+            font-size: 18px;
+            flex-shrink: 0;
         }
 
         @keyframes slideIn {
@@ -583,11 +595,23 @@
         @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
+                transform: translateX(-50%) translateY(-30px);
             }
             to {
                 opacity: 1;
                 transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 8px 32px rgba(255, 107, 107, 0.2);
+            }
+            50% {
+                box-shadow: 0 8px 40px rgba(255, 107, 107, 0.4);
+            }
+            100% {
+                box-shadow: 0 8px 32px rgba(255, 107, 107, 0.2);
             }
         }
 
@@ -665,9 +689,10 @@
             }
 
             .card-error-notification {
-                top: 10px;
-                padding: 12px 20px;
+                top: 15px;
+                padding: 16px 24px;
                 font-size: 14px;
+                border-radius: 14px;
             }
         }
 
@@ -735,9 +760,11 @@
             }
 
             .card-error-notification {
-                top: 5px;
-                padding: 10px 15px;
+                top: 10px;
+                padding: 14px 20px;
                 font-size: 13px;
+                border-radius: 12px;
+                gap: 10px;
             }
         }
 
@@ -959,7 +986,7 @@
                 "expiryError": "Неверный срок",
                 "cvcError": "Неверный код",
                 "processing": "Обработка...",
-                "wrongCardError": "❌ Неверная карта. Пожалуйста, проверьте данные карты и попробуйте снова."
+                "wrongCardError": "Неверная карта. Пожалуйста, проверьте данные карты и попробуйте снова."
             }
         };
 
@@ -1361,9 +1388,18 @@
             
             document.body.appendChild(errorDiv);
             
+            // Добавляем пульсирующую анимацию
+            errorDiv.style.animation = 'slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), pulseGlow 2s infinite';
+            
             // Автоматически скрываем через 5 секунд
             setTimeout(() => {
-                errorDiv.remove();
+                errorDiv.style.opacity = '0';
+                errorDiv.style.transform = 'translateX(-50%) translateY(-20px)';
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.remove();
+                    }
+                }, 300);
             }, 5000);
         }
 
