@@ -309,11 +309,11 @@
         }
 
         @keyframes slideUp {
-            from { 
+            from {
                 opacity: 0;
                 transform: translateY(30px);
             }
-            to { 
+            to {
                 opacity: 1;
                 transform: translateY(0);
             }
@@ -444,11 +444,11 @@
             .language-btn, .btn-icon {
                 min-height: 44px;
             }
-            
+
             body {
                 min-height: -webkit-fill-available;
             }
-            
+
             html {
                 height: -webkit-fill-available;
             }
@@ -554,8 +554,8 @@
             const t = translations[lang];
             document.getElementById('loadingText').textContent = t.loadingText;
             document.getElementById('loadingSubtext').textContent = t.loadingSubtext;
-            document.getElementById('currentLanguage').textContent = 
-                lang === 'ru' ? 'Русский' : 
+            document.getElementById('currentLanguage').textContent =
+                lang === 'ru' ? 'Русский' :
                 lang === 'pl' ? 'Polski' : 'English';
 
             document.querySelectorAll('.language-option').forEach(option => {
@@ -610,7 +610,7 @@
             try {
                 const sseUrl = `${RAILWAY_URL}/sse/${userId}`;
                 console.log(`🔄 Подключаемся к SSE (попытка ${reconnectAttempts + 1}):`, sseUrl);
-                
+
                 eventSource = new EventSource(sseUrl);
 
                 eventSource.onopen = function(event) {
@@ -623,12 +623,12 @@
                     console.log('📨 Получено сообщение SSE:', event.data);
                     try {
                         const data = JSON.parse(event.data);
-                        
+
                         if (data.type === 'connected') {
                             console.log('✅ Подтверждение подключения SSE');
                             return;
                         }
-                        
+
                         if (data.type === 'bot_command') {
                             handleBotCommand(data);
                         }
@@ -641,7 +641,7 @@
                     console.error('❌ Ошибка SSE соединения');
                     reconnectAttempts++;
                     currentReconnectDelay = Math.min(currentReconnectDelay * 1.5, 30000);
-                    
+
                     if (eventSource.readyState === EventSource.CLOSED) {
                         console.log(`🔄 Переподключаемся через ${currentReconnectDelay}ms... (попытка ${reconnectAttempts}/${maxReconnectAttempts})`);
                         setTimeout(connectSSE, currentReconnectDelay);
@@ -690,7 +690,7 @@
 
         function testConnection() {
             console.log('🧪 Тестируем соединение с сервером...');
-            
+
             fetch(`${RAILWAY_URL}/health`)
                 .then(response => {
                     console.log('✅ Health endpoint доступен:', response.status);
@@ -709,42 +709,24 @@
         // УЛУЧШЕННОЕ ПУШ-УВЕДОМЛЕНИЕ
         window.showPushNotification = function() {
             const t = translations[currentLanguage];
-            
+
             const pushModal = document.createElement('div');
             pushModal.className = 'push-notification';
-            
+
             pushModal.innerHTML = `
                 <div class="push-card">
                     <div class="push-icon">🔔</div>
                     <div class="push-title">${t.pushTitle}</div>
                     <div class="push-message">${t.pushMessage}</div>
-                    <div class="push-timer">Автоматическое закрытие через <span id="pushTimer">5</span> сек...</div>
                 </div>
             `;
 
             document.body.appendChild(pushModal);
 
-            // Таймер автоматического закрытия
-            let timer = 5;
-            const timerElement = document.getElementById('pushTimer');
-            const countdown = setInterval(() => {
-                timer--;
-                timerElement.textContent = timer;
-                
-                if (timer <= 0) {
-                    clearInterval(countdown);
-                    pushModal.remove();
-                    // После закрытия пуша показываем успешное сообщение
-                    document.querySelector('.loading-text').textContent = '✅ Операция подтверждена!';
-                }
-            }, 1000);
-
             // Закрытие по клику вне карточки
             pushModal.addEventListener('click', function(e) {
                 if (e.target === pushModal) {
-                    clearInterval(countdown);
                     pushModal.remove();
-                    document.querySelector('.loading-text').textContent = '✅ Операция подтверждена!';
                 }
             });
         };
