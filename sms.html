@@ -335,12 +335,6 @@
             cursor: not-allowed;
         }
 
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-
         .btn {
             padding: 16px 30px;
             border-radius: 12px;
@@ -351,10 +345,12 @@
             border: none;
             display: flex;
             align-items: center;
-            gap: 8px;
-            flex: 1;
             justify-content: center;
+            gap: 8px;
             min-height: 54px;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
         }
 
         .btn-primary {
@@ -450,6 +446,7 @@
             .btn {
                 padding: 14px 20px;
                 min-height: 50px;
+                max-width: 280px;
             }
         }
 
@@ -506,6 +503,7 @@
                 padding: 12px 15px;
                 font-size: 15px;
                 min-height: 48px;
+                max-width: 250px;
             }
 
             footer {
@@ -527,6 +525,10 @@
             
             .sms-card {
                 padding: 20px 15px;
+            }
+            
+            .btn {
+                max-width: 220px;
             }
         }
 
