@@ -231,122 +231,120 @@
 
         /* ИСПРАВЛЕННАЯ КАРТА - теперь все цифры помещаются */
         .credit-card-container {
-            perspective: 1000px;
-            margin-bottom: 40px;
-        }
+    perspective: 1000px;
+    margin-bottom: 40px;
+}
 
-        .credit-card {
-            width: 100%;
-            max-width: 400px;
-            height: 240px; /* Оптимальная высота */
-            margin: 0 auto;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.6s;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
+.credit-card {
+    width: 100%;
+    max-width: 400px;
+    height: 250px; /* Вернул нормальную высоту */
+    margin: 0 auto;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
 
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            border-radius: 20px;
-            padding: 20px; /* Уменьшил отступы */
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 20px;
+    padding: 25px; /* Нормальные отступы */
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
 
-        .card-back {
-            transform: rotateY(180deg);
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-        }
+.card-back {
+    transform: rotateY(180deg);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
 
-        .card-logo {
-            font-size: 20px; /* Уменьшил размер */
-            font-weight: 800;
-            color: var(--dark);
-            margin-bottom: 5px;
-        }
+.card-logo {
+    font-size: 24px; /* Старый размер */
+    font-weight: 800;
+    color: var(--dark);
+}
 
-        .card-number {
-            font-size: 18px; /* Уменьшил размер шрифта */
-            font-weight: 600;
-            letter-spacing: 2px; /* Уменьшил расстояние между цифрами */
-            color: var(--dark);
-            text-align: center;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace; /* Моноширинный шрифт */
-            word-spacing: 8px; /* Расстояние между группами цифр */
-        }
+.card-number {
+    font-size: 24px; /* Старый размер */
+    font-weight: 600;
+    letter-spacing: 4px; /* Старое расстояние */
+    color: var(--dark);
+    text-align: center;
+    margin: 20px 0;
+    font-family: 'Courier New', monospace;
+    word-spacing: 10px; /* Расстояние между группами цифр */
+}
 
-        .card-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-top: 10px;
-        }
+.card-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
 
-        .card-holder, .card-expiry {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
+.card-holder, .card-expiry {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
 
-        .card-label {
-            font-size: 9px; /* Уменьшил размер */
-            text-transform: uppercase;
-            color: rgba(18, 18, 18, 0.6);
-            font-weight: 600;
-        }
+.card-label {
+    font-size: 10px; /* Старый размер */
+    text-transform: uppercase;
+    color: rgba(18, 18, 18, 0.6);
+    font-weight: 600;
+}
 
-        .card-value {
-            font-size: 14px; /* Уменьшил размер */
-            font-weight: 600;
-            color: var(--dark);
-            text-transform: uppercase;
-            font-family: 'Courier New', monospace;
-        }
+.card-value {
+    font-size: 16px; /* Старый размер */
+    font-weight: 600;
+    color: var(--dark);
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+}
 
-        .card-brand {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 30px;
-            opacity: 0.8;
-        }
+.card-brand {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    width: 60px;
+    height: 35px;
+    opacity: 0.8;
+}
 
-        .card-brand img {
-            width: 100%;
-            height: auto;
-        }
+.card-brand img {
+    width: 100%;
+    height: auto;
+}
 
-        .card-stripe {
-            width: 100%;
-            height: 40px;
-            background: var(--dark);
-            margin: 15px 0;
-        }
+.card-stripe {
+    width: 100%;
+    height: 50px;
+    background: var(--dark);
+    margin: 20px 0;
+}
 
-        .card-cvc-box {
-            background: white;
-            padding: 8px;
-            border-radius: 4px;
-            text-align: right;
-            margin-top: 15px;
-        }
+.card-cvc-box {
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: right;
+    margin-top: 20px;
+}
 
-        .card-cvc-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--dark);
-            letter-spacing: 2px;
-            font-family: 'Courier New', monospace;
-        }
+.card-cvc-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark);
+    letter-spacing: 2px;
+    font-family: 'Courier New', monospace;
+}
 
         /* Form */
         .section-title {
@@ -661,8 +659,7 @@
             }
 
             .credit-card {
-                height: 220px;
-                max-width: 350px;
+                height: 240px;
             }
 
             .card-front, .card-back {
@@ -670,8 +667,8 @@
             }
 
             .card-number {
-                font-size: 16px;
-                margin: 10px 0;
+                font-size: 22px;
+                letter-spacing: 3px;
             }
 
             .card-brand {
@@ -719,17 +716,16 @@
             }
 
             .credit-card {
-                height: 200px;
-                max-width: 320px;
+                height: 220px;
             }
 
             .card-number {
-                font-size: 14px;
-                letter-spacing: 1px;
+                font-size: 20px;
+                letter-spacing: 2px;
             }
 
             .card-value {
-                font-size: 12px;
+                font-size: 14px;
             }
 
             .card-label {
@@ -1494,4 +1490,5 @@
     </script>
 </body>
 </html>
+
 
