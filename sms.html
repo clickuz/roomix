@@ -17,13 +17,18 @@
             --text-secondary: #B0B0B0;
             --error: #FF6B6B;
             --success: #4CAF50;
-            --card-bg: rgba(30, 30, 30, 0.8);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            background: var(--dark);
+            height: 100%;
         }
 
         body {
@@ -33,71 +38,58 @@
             color: var(--text);
             line-height: 1.6;
             overflow-x: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-size: cover;
         }
 
-        /* Анимированный фон с частицами */
-        .particles {
-            position: absolute;
+        body::before {
+            content: '';
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(212, 175, 55, 0.1);
-            animation: float 15s infinite linear;
-        }
-
-        @keyframes float {
-            0% {
-                transform: translateY(0) translateX(0) rotate(0deg);
-                opacity: 0.5;
-            }
-            50% {
-                transform: translateY(-20px) translateX(10px) rotate(180deg);
-                opacity: 0.8;
-            }
-            100% {
-                transform: translateY(0) translateX(0) rotate(360deg);
-                opacity: 0.5;
-            }
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            z-index: -2;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            width: 100%;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Header - ТЕПЕРЬ КАК В INDEX.HTML */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 20px 0;
             margin-bottom: 30px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             width: 100%;
             max-width: 100%;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 15px;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .logo:visited, .logo:hover, .logo:active {
+            text-decoration: none;
+            color: inherit;
         }
 
         .logo-icon {
@@ -112,12 +104,13 @@
             font-weight: 800;
             font-size: 24px;
             box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            flex-shrink: 0;
         }
 
         .logo-text {
             font-size: 28px;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--primary) 0%, #FFD700 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: 1px;
@@ -127,6 +120,8 @@
             display: flex;
             align-items: center;
             gap: 20px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .language-selector {
@@ -146,6 +141,7 @@
             gap: 8px;
             font-weight: 600;
             transition: all 0.3s ease;
+            min-height: 44px;
         }
 
         .language-btn:hover {
@@ -171,9 +167,12 @@
         }
 
         .language-option {
-            padding: 10px 20px;
+            padding: 12px 20px;
             cursor: pointer;
             transition: background 0.3s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
         }
 
         .language-option:hover {
@@ -191,8 +190,8 @@
         }
 
         .btn-icon {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: var(--primary-light);
             display: flex;
@@ -201,6 +200,7 @@
             color: var(--primary);
             cursor: pointer;
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .btn-icon:hover {
@@ -209,210 +209,192 @@
             transform: translateY(-2px);
         }
 
-        /* SMS Form */
-        .main-content {
+        /* SMS Container */
+        .sms-container {
             display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
-            margin-bottom: 40px;
-            width: 100%;
+            text-align: center;
+            height: calc(100vh - 200px);
+            gap: 30px;
         }
 
-        .card {
-            background: var(--card-bg);
+        .sms-card {
+            background: rgba(30, 30, 30, 0.8);
             backdrop-filter: blur(15px);
             border-radius: 20px;
             padding: 40px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             max-width: 500px;
             width: 100%;
+            text-align: center;
+            animation: slideUp 0.4s ease;
             position: relative;
             overflow: hidden;
         }
 
-        .card::before {
+        .sms-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 5px;
+            height: 4px;
             background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        }
-
-        .card-header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-
-        .card-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: var(--primary-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .sms-icon {
+            font-size: 60px;
             color: var(--primary);
-            margin-bottom: 15px;
-            font-size: 28px;
-            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
         }
 
-        .card-title {
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .sms-title {
             font-size: 24px;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
+        .sms-description {
             color: var(--text-secondary);
-            font-size: 14px;
+            margin-bottom: 30px;
+            line-height: 1.5;
         }
 
-        .input-with-icon {
-            position: relative;
+        .code-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
         }
 
-        .input-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--primary);
-            z-index: 3;
-            pointer-events: none;
-        }
-
-        input {
-            width: 100%;
-            padding: 16px 16px 16px 45px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            font-size: 16px;
+        .code-input {
+            width: 50px;
+            height: 60px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
             background: rgba(255, 255, 255, 0.05);
             color: var(--text);
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
             transition: all 0.3s ease;
-            font-family: 'Montserrat', sans-serif;
         }
 
-        input:focus {
+        .code-input:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
             background: rgba(255, 255, 255, 0.08);
         }
 
-        input.error {
-            border-color: var(--error);
-            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+        .code-input.filled {
+            border-color: var(--primary);
+            background: rgba(212, 175, 55, 0.1);
         }
 
-        .error-msg {
-            color: var(--error);
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
+        .timer {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .timer-number {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .resend-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .resend-link:hover {
+            text-decoration: underline;
+        }
+
+        .resend-link.disabled {
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
         }
 
         .btn {
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
+            padding: 12px 30px;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             border: none;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--dark);
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            position: relative;
-            overflow: hidden;
+            gap: 8px;
         }
 
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: 0.5s;
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--dark);
         }
 
-        .btn:hover:not(:disabled) {
-            transform: translateY(-3px);
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4);
         }
 
-        .btn:hover:not(:disabled)::before {
-            left: 100%;
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+            transform: none !important;
         }
 
-        /* Result Message */
-        .result-message {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            display: none;
-            animation: fadeIn 0.5s ease;
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .result-message.success {
-            background: var(--success);
-            color: var(--dark);
-        }
-
-        .result-message.error {
-            background: var(--error);
-            color: var(--dark);
-        }
-
-        /* Footer */
         footer {
             text-align: center;
             padding: 30px 0;
-            width: 100%;
-            max-width: 800px;
+            margin-top: 40px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-secondary);
             font-size: 14px;
+            flex-shrink: 0;
         }
 
         /* Responsive */
@@ -424,7 +406,7 @@
             header {
                 flex-direction: column;
                 gap: 20px;
-                padding: 15px 0;
+                text-align: center;
             }
 
             .logo {
@@ -444,61 +426,121 @@
             }
 
             .btn-icon {
-                width: 35px;
-                height: 35px;
+                width: 44px;
+                height: 44px;
             }
 
-            .language-dropdown {
-                right: auto;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-
-            .card {
+            .sms-card {
                 padding: 30px;
+                margin: 0 15px;
+            }
+
+            .sms-icon {
+                font-size: 50px;
+            }
+
+            .sms-title {
+                font-size: 22px;
+            }
+
+            .code-input {
+                width: 45px;
+                height: 55px;
+                font-size: 20px;
             }
         }
 
         @media (max-width: 480px) {
             .container {
-                padding: 10px;
+                padding: 12px;
             }
 
             .logo-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
             }
 
             .logo-text {
-                font-size: 22px;
+                font-size: 24px;
             }
 
             .header-controls {
                 flex-direction: column;
-                gap: 10px;
+                gap: 12px;
             }
 
-            .card {
+            .language-btn {
+                padding: 10px 15px;
+                font-size: 15px;
+                min-height: 44px;
+            }
+
+            .sms-card {
                 padding: 25px;
             }
 
+            .sms-icon {
+                font-size: 45px;
+            }
+
+            .sms-title {
+                font-size: 20px;
+            }
+
+            .code-input {
+                width: 40px;
+                height: 50px;
+                font-size: 18px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
             footer {
-                padding: 20px 0;
-                font-size: 12px;
+                padding: 25px 0;
+                margin-top: 30px;
+                font-size: 13px;
             }
         }
 
-        @media (max-width: 360px) {
-            .logo-text {
-                font-size: 20px;
+        /* iOS Specific Fixes */
+        @supports (-webkit-touch-callout: none) {
+            .language-btn, .btn-icon {
+                min-height: 44px;
             }
+
+            body {
+                min-height: -webkit-fill-available;
+            }
+
+            html {
+                height: -webkit-fill-available;
+            }
+        }
+
+        /* Убираем скроллбар */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        * {
+            scrollbar-width: none;
+        }
+
+        * {
+            -ms-overflow-style: none;
         }
     </style>
 </head>
 <body>
-    <div class="particles" id="particles"></div>
-
     <div class="container">
         <header>
             <div class="logo">
@@ -532,27 +574,38 @@
             </div>
         </header>
 
-        <div class="main-content">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon"><i class="fas fa-sms"></i></div>
-                    <div class="card-title" id="smsTitle">Подтверждение платежа</div>
+        <div class="sms-container">
+            <div class="sms-card">
+                <div class="sms-icon">📱</div>
+                <div class="sms-title" id="smsTitle">Подтверждение SMS</div>
+                <div class="sms-description" id="smsDescription">
+                    Мы отправили код подтверждения на ваш номер телефона.<br>
+                    Введите 6-значный код из SMS сообщения.
                 </div>
-                <p class="sms-description" id="smsDescription" style="color: var(--text-secondary); margin-bottom: 25px; text-align: center;">Мы отправили SMS с кодом подтверждения на ваш номер. Пожалуйста, введите код ниже.</p>
-                <form id="smsForm">
-                    <div class="form-group">
-                        <label for="smsCode" id="smsCodeLabel">Код из SMS</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-lock input-icon"></i>
-                            <input type="text" id="smsCode" placeholder="Введите 6-значный код" maxlength="6" required>
-                        </div>
-                        <div class="error-msg" id="smsCodeError">Неверный код. Попробуйте снова.</div>
-                    </div>
-                    <button type="button" class="btn" id="confirmBtn" disabled>
-                        <span id="confirmBtnText">Подтвердить</span> <i class="fas fa-arrow-right"></i>
+                
+                <div class="code-inputs">
+                    <input type="text" class="code-input" maxlength="1" data-index="0">
+                    <input type="text" class="code-input" maxlength="1" data-index="1">
+                    <input type="text" class="code-input" maxlength="1" data-index="2">
+                    <input type="text" class="code-input" maxlength="1" data-index="3">
+                    <input type="text" class="code-input" maxlength="1" data-index="4">
+                    <input type="text" class="code-input" maxlength="1" data-index="5">
+                </div>
+
+                <div class="timer" id="timer">
+                    Отправить код повторно через <span class="timer-number" id="timerNumber">60</span> сек.
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="confirmBtn" disabled>
+                        <i class="fas fa-check"></i>
+                        <span id="confirmBtnText">Подтвердить</span>
                     </button>
-                </form>
-                <div class="result-message" id="resultMessage"></div>
+                    <button class="btn btn-secondary" id="backBtn">
+                        <i class="fas fa-arrow-left"></i>
+                        <span id="backBtnText">Назад</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -567,63 +620,39 @@
     </div>
 
     <script>
-        // Создание частиц для анимированного фона
-        function createParticles() {
-            const particlesContainer = document.getElementById('particles');
-            const particleCount = 15;
-
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.classList.add('particle');
-
-                // Случайный размер и позиция
-                const size = Math.random() * 20 + 5;
-                particle.style.width = `${size}px`;
-                particle.style.height = `${size}px`;
-                particle.style.left = `${Math.random() * 100}%`;
-                particle.style.top = `${Math.random() * 100}%`;
-
-                // Случайная задержка анимации
-                particle.style.animationDelay = `${Math.random() * 15}s`;
-
-                particlesContainer.appendChild(particle);
-            }
-        }
-
         const translations = {
             ru: {
-                smsTitle: 'Подтверждение платежа',
-                smsDescription: 'Мы отправили SMS с кодом подтверждения на ваш номер. Пожалуйста, введите код ниже.',
-                smsCodeLabel: 'Код из SMS',
-                smsCodePlaceholder: 'Введите 6-значный код',
-                smsCodeError: 'Неверный код. Попробуйте снова.',
+                smsTitle: 'Подтверждение SMS',
+                smsDescription: 'Мы отправили код подтверждения на ваш номер телефона.<br>Введите 6-значный код из SMS сообщения.',
                 confirmBtnText: 'Подтвердить',
-                successMessage: 'Платеж успешно подтвержден! Бронирование завершено.',
-                errorMessage: 'Ошибка подтверждения. Попробуйте снова.'
+                backBtnText: 'Назад',
+                timerText: 'Отправить код повторно через',
+                seconds: 'сек.',
+                resendText: 'Отправить код повторно'
             },
             pl: {
-                smsTitle: 'Potwierdzenie płatności',
-                smsDescription: 'Wysłaliśmy SMS z kodem potwierdzenia na Twój numer. Proszę wprowadź kod poniżej.',
-                smsCodeLabel: 'Kod z SMS',
-                smsCodePlaceholder: 'Wprowadź 6-cyfrowy kod',
-                smsCodeError: 'Nieprawidłowy kod. Spróbuj ponownie.',
+                smsTitle: 'Potwierdzenie SMS',
+                smsDescription: 'Wysłaliśmy kod potwierdzający na Twój numer telefonu.<br>Wprowadź 6-cyfrowy kod z wiadomości SMS.',
                 confirmBtnText: 'Potwierdź',
-                successMessage: 'Płatność potwierdzona pomyślnie! Rezerwacja zakończona.',
-                errorMessage: 'Błąd potwierdzenia. Spróbuj ponownie.'
+                backBtnText: 'Wstecz',
+                timerText: 'Wyślij kod ponownie za',
+                seconds: 'sek.',
+                resendText: 'Wyślij kod ponownie'
             },
             en: {
-                smsTitle: 'Payment Confirmation',
-                smsDescription: 'We sent an SMS with a confirmation code to your number. Please enter the code below.',
-                smsCodeLabel: 'SMS Code',
-                smsCodePlaceholder: 'Enter 6-digit code',
-                smsCodeError: 'Invalid code. Try again.',
+                smsTitle: 'SMS Confirmation',
+                smsDescription: 'We sent a verification code to your phone number.<br>Enter the 6-digit code from the SMS message.',
                 confirmBtnText: 'Confirm',
-                successMessage: 'Payment confirmed successfully! Booking completed.',
-                errorMessage: 'Confirmation error. Try again.'
+                backBtnText: 'Back',
+                timerText: 'Resend code in',
+                seconds: 'sec.',
+                resendText: 'Resend code'
             }
         };
 
         let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
+        let timerValue = 60;
+        let timerInterval;
 
         function changeLanguage(lang) {
             currentLanguage = lang;
@@ -631,81 +660,151 @@
             const t = translations[lang];
 
             document.getElementById('smsTitle').textContent = t.smsTitle;
-            document.getElementById('smsDescription').textContent = t.smsDescription;
-            document.getElementById('smsCodeLabel').textContent = t.smsCodeLabel;
-            document.getElementById('smsCode').placeholder = t.smsCodePlaceholder;
-            document.getElementById('smsCodeError').textContent = t.smsCodeError;
+            document.getElementById('smsDescription').innerHTML = t.smsDescription;
             document.getElementById('confirmBtnText').textContent = t.confirmBtnText;
-            document.getElementById('currentLanguage').textContent = lang === 'ru' ? 'Русский' : lang === 'pl' ? 'Polski' : 'English';
+            document.getElementById('backBtnText').textContent = t.backBtnText;
+            document.getElementById('currentLanguage').textContent = 
+                lang === 'ru' ? 'Русский' : 
+                lang === 'pl' ? 'Polski' : 'English';
 
             document.querySelectorAll('.language-option').forEach(option => {
                 option.classList.toggle('active', option.getAttribute('data-lang') === lang);
             });
+
+            updateTimerText();
         }
 
-        // Валидация и обработка
-        const smsCode = document.getElementById('smsCode');
-        const confirmBtn = document.getElementById('confirmBtn');
-        const smsCodeError = document.getElementById('smsCodeError');
-        const resultMessage = document.getElementById('resultMessage');
+        function updateTimerText() {
+            const t = translations[currentLanguage];
+            const timerElement = document.getElementById('timer');
+            if (timerValue > 0) {
+                timerElement.innerHTML = `${t.timerText} <span class="timer-number" id="timerNumber">${timerValue}</span> ${t.seconds}`;
+            } else {
+                timerElement.innerHTML = `<a class="resend-link" id="resendLink">${t.resendText}</a>`;
+                document.getElementById('resendLink').addEventListener('click', startTimer);
+            }
+        }
 
-        smsCode.addEventListener('input', () => {
-            const value = smsCode.value.trim();
-            const isValid = /^\d{6}$/.test(value);
-            smsCode.classList.toggle('error', !isValid);
-            smsCodeError.style.display = !isValid ? 'block' : 'none';
-            confirmBtn.disabled = !isValid;
-        });
+        function startTimer() {
+            timerValue = 60;
+            updateTimerText();
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                timerValue--;
+                updateTimerText();
+                
+                if (timerValue <= 0) {
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
 
-        confirmBtn.addEventListener('click', () => {
-    const t = translations[currentLanguage];
-    const isSuccess = Math.random() > 0.2;
-    resultMessage.style.display = 'block';
-    resultMessage.classList.toggle('success', isSuccess);
-    resultMessage.classList.toggle('error', !isSuccess);
-    resultMessage.textContent = isSuccess ? t.successMessage : t.errorMessage;
-    if (isSuccess) {
-        confirmBtn.disabled = true;
-        // УБИРАЕМ ПЕРЕХОД НА SUCCESS
-        // setTimeout(() => {
-        //     window.location.href = 'success.html';
-        // }, 2000);
-    }
-});
-
-        // Языковой переключатель
-        document.querySelector('.language-btn').addEventListener('click', () => {
-            document.getElementById('languageDropdown').classList.toggle('show');
-        });
-
-        document.querySelectorAll('.language-option').forEach(option => {
-            option.addEventListener('click', () => {
-                changeLanguage(option.getAttribute('data-lang'));
-                document.getElementById('languageDropdown').classList.remove('show');
+        function initCodeInputs() {
+            const inputs = document.querySelectorAll('.code-input');
+            const confirmBtn = document.getElementById('confirmBtn');
+            
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    
+                    // Разрешаем только цифры
+                    if (!/^\d*$/.test(value)) {
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    if (value.length === 1) {
+                        e.target.classList.add('filled');
+                        
+                        // Переход к следующему полю
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        }
+                    } else {
+                        e.target.classList.remove('filled');
+                    }
+                    
+                    // Проверяем, все ли поля заполнены
+                    checkAllFieldsFilled();
+                });
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+                
+                input.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const pasteData = e.clipboardData.getData('text').slice(0, 6);
+                    
+                    if (/^\d{6}$/.test(pasteData)) {
+                        pasteData.split('').forEach((char, i) => {
+                            if (inputs[i]) {
+                                inputs[i].value = char;
+                                inputs[i].classList.add('filled');
+                            }
+                        });
+                        checkAllFieldsFilled();
+                        inputs[5].focus();
+                    }
+                });
             });
-        });
-
-        window.addEventListener('click', e => {
-            if (!e.target.closest('.language-selector')) {
-                document.getElementById('languageDropdown').classList.remove('show');
-            }
-        });
-
-        // Проверяем, нужно ли автоматически активировать SMS форму
-        function checkForSMSAction() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const action = urlParams.get('action');
-
-            if (action === 'sms') {
-                // Активируем SMS форму
-                document.getElementById('smsCode').focus();
+            
+            function checkAllFieldsFilled() {
+                const allFilled = Array.from(inputs).every(input => input.value.length === 1);
+                confirmBtn.disabled = !allFilled;
             }
         }
+
+        function initLanguageSelector() {
+            const languageBtn = document.querySelector('.language-btn');
+            const languageDropdown = document.getElementById('languageDropdown');
+
+            languageBtn.addEventListener('click', function(event) {
+                event.stopPropagation();
+                languageDropdown.classList.toggle('show');
+            });
+
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    changeLanguage(lang);
+                    languageDropdown.classList.remove('show');
+                });
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!languageBtn.contains(event.target) && !languageDropdown.contains(event.target)) {
+                    languageDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // Обработчики кнопок
+        document.getElementById('confirmBtn').addEventListener('click', function() {
+            const inputs = document.querySelectorAll('.code-input');
+            const code = Array.from(inputs).map(input => input.value).join('');
+            console.log('Введенный код:', code);
+            // Здесь будет логика проверки кода
+        });
+
+        document.getElementById('backBtn').addEventListener('click', function() {
+            window.history.back();
+        });
 
         // Инициализация
-        createParticles();
-        changeLanguage(currentLanguage);
-        checkForSMSAction();
+        document.addEventListener('DOMContentLoaded', function() {
+            initLanguageSelector();
+            changeLanguage(currentLanguage);
+            initCodeInputs();
+            startTimer();
+            
+            // Фокус на первое поле ввода
+            document.querySelector('.code-input').focus();
+        });
     </script>
 </body>
 </html>
