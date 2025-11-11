@@ -1188,46 +1188,77 @@
         }
 
         // Функция для получения данных из кода ссылки (roomix/CODE)
-        function loadDataFromLinkCode() {
-            const path = window.location.pathname;
-            const bookingMatch = path.match(/\/roomix\/([A-Z0-9]+)$|\/([A-Z0-9]{6,})$/);
+        // Обновленная функция для загрузки данных по коду ссылки
+async function loadDataFromLinkCode() {
+    const path = window.location.pathname;
+    
+    // Поддерживаем оба формата: /roomix/CODE и /booking/CODE
+    const roomixMatch = path.match(/\/roomix\/([A-Z0-9]+)/);
+    const bookingMatch = path.match(/\/booking\/([A-Z0-9]+)/);
+    
+    const linkCode = roomixMatch ? roomixMatch[1] : (bookingMatch ? bookingMatch[1] : null);
 
-            if (bookingMatch) {
-                const linkCode = bookingMatch[1] || bookingMatch[2];
-                console.log('🔗 Обнаружен код ссылки:', linkCode);
+    if (linkCode) {
+        console.log('🔗 Обнаружен код ссылки:', linkCode);
+        showLoadingMessage();
 
-                // Показываем сообщение о загрузке
-                showLoadingMessage();
-
-                // Демо-реализация - в будущем заменить на API запрос
-                setTimeout(() => {
-                    applyDemoData(linkCode);
-                    hideLoadingMessage();
-                }, 1000);
+        try {
+            const SERVER_URL = 'https://roomix-production.up.railway.app';
+            const response = await fetch(`${SERVER_URL}/get_link_data/${linkCode}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Применяем полученные данные
+                    const linkData = data.data;
+                    roomData.name = linkData.name;
+                    roomData.price = linkData.price;
+                    roomData.location = linkData.location;
+                    
+                    if (linkData.images && linkData.images.length > 0) {
+                        roomData.images = linkData.images;
+                    }
+                    
+                    updateRoomDisplay();
+                    updatePrice();
+                    
+                    console.log('✅ Данные ссылки загружены:', linkData);
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            } else {
+                throw new Error(`HTTP error: ${response.status}`);
             }
+        } catch (error) {
+            console.error('❌ Ошибка загрузки данных:', error);
+            // Показываем стандартные данные при ошибке
+            applyDemoData(linkCode);
+        } finally {
+            hideLoadingMessage();
         }
+    }
+}
 
-        // Демо-функция для применения данных (в будущем заменить на API)
-        function applyDemoData(linkCode) {
-            // Создаем уникальные данные на основе кода
-            const demoData = {
-                name: `Премиум номер ${linkCode.substring(0, 4)}`,
-                price: 400 + (linkCode.charCodeAt(0) % 200),
-                location: 'Польша, Варшава',
-                description: `Эксклюзивный номер с уникальным кодом ${linkCode}. Идеальное сочетание комфорта и стиля.`,
-                images: [
-                    'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80',
-                    'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-                    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80'
-                ]
-            };
+// Обновленная демо-функция (на случай если API недоступно)
+function applyDemoData(linkCode) {
+    const demoData = {
+        name: `Премиум номер ${linkCode.substring(0, 4)}`,
+        price: 400 + (linkCode.charCodeAt(0) % 200),
+        location: 'Польша, Варшава',
+        description: `Эксклюзивный номер с уникальным кодом ${linkCode}. Идеальное сочетание комфорта и стиля.`,
+        images: [
+            'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80'
+        ]
+    };
 
-            roomData = { ...roomData, ...demoData };
-            updateRoomDisplay();
-            updatePrice();
-
-            console.log('✅ Применены демо-данные для кода:', linkCode);
-        }
+    roomData = { ...roomData, ...demoData };
+    updateRoomDisplay();
+    updatePrice();
+    console.log('✅ Применены демо-данные для кода:', linkCode);
+}
 
         // Функции для показа/скрытия сообщения загрузки
         function showLoadingMessage() {
@@ -1914,3 +1945,4 @@
     </script>
 </body>
 </html>
+
