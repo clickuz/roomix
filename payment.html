@@ -551,6 +551,24 @@
             color: var(--error);
         }
 
+        /* Стили для уведомления об ошибке карты */
+        .card-error-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--error);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            z-index: 10000;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+            animation: slideDown 0.3s ease;
+            text-align: center;
+            max-width: 90%;
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -559,6 +577,17 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
             }
         }
 
@@ -634,6 +663,12 @@
                 width: 60px;
                 height: 35px;
             }
+
+            .card-error-notification {
+                top: 10px;
+                padding: 12px 20px;
+                font-size: 14px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -697,6 +732,12 @@
             .card-brand {
                 width: 50px;
                 height: 25px;
+            }
+
+            .card-error-notification {
+                top: 5px;
+                padding: 10px 15px;
+                font-size: 13px;
             }
         }
 
@@ -917,7 +958,8 @@
                 "cardNumberError": "Неверный номер карты",
                 "expiryError": "Неверный срок",
                 "cvcError": "Неверный код",
-                "processing": "Обработка..."
+                "processing": "Обработка...",
+                "wrongCardError": "❌ Неверная карта. Пожалуйста, проверьте данные карты и попробуйте снова."
             }
         };
 
@@ -1311,10 +1353,33 @@
             });
         }
 
+        // Функция для показа уведомления об ошибке карты
+        function showWrongCardError() {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'card-error-notification';
+            errorDiv.textContent = translations[currentLanguage].wrongCardError;
+            
+            document.body.appendChild(errorDiv);
+            
+            // Автоматически скрываем через 5 секунд
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Проверяем параметры URL при загрузке
         window.addEventListener('DOMContentLoaded', () => {
             loadBookingData();
             initLanguageSelector();
             changeLanguage(currentLanguage);
+            
+            // Проверяем параметры URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status');
+            
+            if (status === 'wrong_card') {
+                showWrongCardError();
+            }
         });
     </script>
 </body>
