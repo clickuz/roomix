@@ -207,6 +207,51 @@ def health():
     if origin in ALLOWED_ORIGINS:
         response.headers['Access-Control-Allow-Origin'] = origin
     return response
+    
+    # Добавь этот маршрут в Flask приложение после других @app.route
+@app.route('/get_link_data/<link_code>', methods=['GET', 'OPTIONS'])
+def get_link_data(link_code):
+    """Получает данные ссылки по коду"""
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        return response
+        
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute('''
+        SELECT link_name, price, country_city, images 
+        FROM booking_links 
+        WHERE link_code = %s
+        ''', (link_code,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'name': result[0],
+                    'price': result[1],
+                    'location': result[2],
+                    'images': json.loads(result[3]) if result[3] else []
+                }
+            })
+        else:
+            return jsonify({'error': 'Link not found'}), 404
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения данных ссылки: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/')
 def home():
@@ -1403,7 +1448,9 @@ async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext
     )
     
     if success:
+        # ИСПРАВЛЕННЫЙ URL - поддерживаем оба формата
         full_url = f"https://clickuz.github.io/roomix/{link_code}"
+        short_url = f"https://clickuz.github.io/roomix/booking/{link_code}"
         
         await callback.message.edit_text(
             "✅ <b>Ссылка успешно создана!</b>\n\n"
@@ -1411,8 +1458,9 @@ async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext
             f"💰 <b>Цена:</b> {user_data['price']} PLN/ночь\n"
             f"📍 <b>Локация:</b> {user_data['location']}\n"
             f"🖼️ <b>Фото:</b> {len(user_data['images'])} шт.\n\n"
-            f"🌐 <b>Ваша ссылка:</b>\n<code>{full_url}</code>\n\n"
-            "Отправьте эту ссылку клиенту для бронирования.",
+            f"🌐 <b>Основная ссылка:</b>\n<code>{full_url}</code>\n\n"
+            f"🌐 <b>Альтернативная ссылка:</b>\n<code>{short_url}</code>\n\n"
+            "Обе ссылки ведут на одну и ту же страницу бронирования.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="📋 Мои ссылки", callback_data="my_links")],
@@ -1447,6 +1495,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
