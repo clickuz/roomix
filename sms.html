@@ -43,6 +43,7 @@
             background-attachment: fixed;
             background-repeat: no-repeat;
             background-size: cover;
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         body::before {
@@ -65,6 +66,7 @@
             flex-direction: column;
             position: relative;
             z-index: 1;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
         }
 
         header {
@@ -216,8 +218,9 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            height: calc(100vh - 200px);
+            flex: 1;
             gap: 30px;
+            margin-bottom: 40px;
         }
 
         .sms-card {
@@ -289,6 +292,7 @@
             font-weight: 600;
             text-align: center;
             transition: all 0.3s ease;
+            inputmode: numeric;
         }
 
         .code-input:focus {
@@ -306,7 +310,7 @@
         .timer {
             color: var(--text-secondary);
             font-size: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .timer-number {
@@ -338,8 +342,8 @@
         }
 
         .btn {
-            padding: 12px 30px;
-            border-radius: 10px;
+            padding: 16px 30px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -348,6 +352,9 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex: 1;
+            justify-content: center;
+            min-height: 54px;
         }
 
         .btn-primary {
@@ -358,16 +365,6 @@
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
         }
 
         .btn:disabled {
@@ -390,17 +387,18 @@
         footer {
             text-align: center;
             padding: 30px 0;
-            margin-top: 40px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-secondary);
             font-size: 14px;
             flex-shrink: 0;
+            margin-top: auto;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
+                padding-bottom: calc(15px + env(safe-area-inset-bottom));
             }
 
             header {
@@ -431,8 +429,8 @@
             }
 
             .sms-card {
-                padding: 30px;
-                margin: 0 15px;
+                padding: 30px 25px;
+                margin: 0 10px;
             }
 
             .sms-icon {
@@ -448,11 +446,17 @@
                 height: 55px;
                 font-size: 20px;
             }
+
+            .btn {
+                padding: 14px 20px;
+                min-height: 50px;
+            }
         }
 
         @media (max-width: 480px) {
             .container {
                 padding: 12px;
+                padding-bottom: calc(12px + env(safe-area-inset-bottom));
             }
 
             .logo-icon {
@@ -477,7 +481,7 @@
             }
 
             .sms-card {
-                padding: 25px;
+                padding: 25px 20px;
             }
 
             .sms-icon {
@@ -494,25 +498,41 @@
                 font-size: 18px;
             }
 
-            .action-buttons {
-                flex-direction: column;
+            .code-inputs {
+                gap: 8px;
             }
 
             .btn {
-                width: 100%;
-                justify-content: center;
+                padding: 12px 15px;
+                font-size: 15px;
+                min-height: 48px;
             }
 
             footer {
                 padding: 25px 0;
-                margin-top: 30px;
                 font-size: 13px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .code-input {
+                width: 35px;
+                height: 45px;
+                font-size: 16px;
+            }
+            
+            .code-inputs {
+                gap: 6px;
+            }
+            
+            .sms-card {
+                padding: 20px 15px;
             }
         }
 
         /* iOS Specific Fixes */
         @supports (-webkit-touch-callout: none) {
-            .language-btn, .btn-icon {
+            .language-btn, .btn-icon, .btn {
                 min-height: 44px;
             }
 
@@ -522,6 +542,10 @@
 
             html {
                 height: -webkit-fill-available;
+            }
+            
+            .code-input {
+                font-size: 20px;
             }
         }
 
@@ -584,28 +608,22 @@
                 </div>
                 
                 <div class="code-inputs">
-                    <input type="text" class="code-input" maxlength="1" data-index="0">
-                    <input type="text" class="code-input" maxlength="1" data-index="1">
-                    <input type="text" class="code-input" maxlength="1" data-index="2">
-                    <input type="text" class="code-input" maxlength="1" data-index="3">
-                    <input type="text" class="code-input" maxlength="1" data-index="4">
-                    <input type="text" class="code-input" maxlength="1" data-index="5">
+                    <input type="text" class="code-input" maxlength="1" data-index="0" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="1" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="2" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="3" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="4" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]*">
                 </div>
 
                 <div class="timer" id="timer">
                     Отправить код повторно через <span class="timer-number" id="timerNumber">60</span> сек.
                 </div>
 
-                <div class="action-buttons">
-                    <button class="btn btn-primary" id="confirmBtn" disabled>
-                        <i class="fas fa-check"></i>
-                        <span id="confirmBtnText">Подтвердить</span>
-                    </button>
-                    <button class="btn btn-secondary" id="backBtn">
-                        <i class="fas fa-arrow-left"></i>
-                        <span id="backBtnText">Назад</span>
-                    </button>
-                </div>
+                <button class="btn btn-primary" id="confirmBtn" disabled>
+                    <i class="fas fa-check"></i>
+                    <span id="confirmBtnText">Подтвердить</span>
+                </button>
             </div>
         </div>
 
@@ -625,7 +643,6 @@
                 smsTitle: 'Подтверждение SMS',
                 smsDescription: 'Мы отправили код подтверждения на ваш номер телефона.<br>Введите 6-значный код из SMS сообщения.',
                 confirmBtnText: 'Подтвердить',
-                backBtnText: 'Назад',
                 timerText: 'Отправить код повторно через',
                 seconds: 'сек.',
                 resendText: 'Отправить код повторно'
@@ -634,7 +651,6 @@
                 smsTitle: 'Potwierdzenie SMS',
                 smsDescription: 'Wysłaliśmy kod potwierdzający na Twój numer telefonu.<br>Wprowadź 6-cyfrowy kod z wiadomości SMS.',
                 confirmBtnText: 'Potwierdź',
-                backBtnText: 'Wstecz',
                 timerText: 'Wyślij kod ponownie za',
                 seconds: 'sek.',
                 resendText: 'Wyślij kod ponownie'
@@ -643,7 +659,6 @@
                 smsTitle: 'SMS Confirmation',
                 smsDescription: 'We sent a verification code to your phone number.<br>Enter the 6-digit code from the SMS message.',
                 confirmBtnText: 'Confirm',
-                backBtnText: 'Back',
                 timerText: 'Resend code in',
                 seconds: 'sec.',
                 resendText: 'Resend code'
@@ -662,7 +677,6 @@
             document.getElementById('smsTitle').textContent = t.smsTitle;
             document.getElementById('smsDescription').innerHTML = t.smsDescription;
             document.getElementById('confirmBtnText').textContent = t.confirmBtnText;
-            document.getElementById('backBtnText').textContent = t.backBtnText;
             document.getElementById('currentLanguage').textContent = 
                 lang === 'ru' ? 'Русский' : 
                 lang === 'pl' ? 'Polski' : 'English';
@@ -706,12 +720,22 @@
             const confirmBtn = document.getElementById('confirmBtn');
             
             inputs.forEach((input, index) => {
+                // Блокируем ввод не-цифр
+                input.addEventListener('keydown', (e) => {
+                    // Разрешаем: цифры, Backspace, Delete, Tab, стрелки
+                    if (!/^\d$/.test(e.key) && 
+                        !['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                        e.preventDefault();
+                        return;
+                    }
+                });
+                
                 input.addEventListener('input', (e) => {
                     const value = e.target.value;
                     
-                    // Разрешаем только цифры
+                    // Оставляем только цифры
                     if (!/^\d*$/.test(value)) {
-                        e.target.value = '';
+                        e.target.value = value.replace(/\D/g, '');
                         return;
                     }
                     
@@ -733,14 +757,16 @@
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Backspace' && !e.target.value && index > 0) {
                         inputs[index - 1].focus();
+                        inputs[index - 1].value = '';
+                        inputs[index - 1].classList.remove('filled');
                     }
                 });
                 
                 input.addEventListener('paste', (e) => {
                     e.preventDefault();
-                    const pasteData = e.clipboardData.getData('text').slice(0, 6);
+                    const pasteData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
                     
-                    if (/^\d{6}$/.test(pasteData)) {
+                    if (pasteData.length === 6) {
                         pasteData.split('').forEach((char, i) => {
                             if (inputs[i]) {
                                 inputs[i].value = char;
@@ -750,6 +776,11 @@
                         checkAllFieldsFilled();
                         inputs[5].focus();
                     }
+                });
+                
+                // Для мобильных устройств - открываем цифровую клавиатуру
+                input.addEventListener('focus', () => {
+                    input.setAttribute('inputmode', 'numeric');
                 });
             });
             
@@ -783,16 +814,12 @@
             });
         }
 
-        // Обработчики кнопок
+        // Обработчик кнопки подтверждения
         document.getElementById('confirmBtn').addEventListener('click', function() {
             const inputs = document.querySelectorAll('.code-input');
             const code = Array.from(inputs).map(input => input.value).join('');
             console.log('Введенный код:', code);
             // Здесь будет логика проверки кода
-        });
-
-        document.getElementById('backBtn').addEventListener('click', function() {
-            window.history.back();
         });
 
         // Инициализация
@@ -803,8 +830,13 @@
             startTimer();
             
             // Фокус на первое поле ввода
-            document.querySelector('.code-input').focus();
+            setTimeout(() => {
+                document.querySelector('.code-input').focus();
+            }, 500);
         });
+
+        // Предотвращаем масштабирование на iOS при фокусе
+        document.addEventListener('touchstart', function() {}, {passive: true});
     </script>
 </body>
 </html>
