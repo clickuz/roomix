@@ -214,8 +214,11 @@ def health():
 def get_link_data(link_code):
     """Получает данные ссылки по её коду"""
     try:
+        logger.info(f"🔍 Поиск ссылки с кодом: {link_code}")
+        
         conn = get_db_connection()
         if conn is None:
+            logger.error("❌ Ошибка подключения к БД")
             return jsonify({'error': 'Database connection failed'}), 500
             
         cursor = conn.cursor()
@@ -230,28 +233,53 @@ def get_link_data(link_code):
         
         if result:
             link_name, price, country_city, images_json = result
+            logger.info(f"✅ Найдена ссылка: {link_name}, цена: {price}")
             
-            response = jsonify({
+            # Обрабатываем изображения
+            images = []
+            if images_json:
+                try:
+                    # Если это JSON строка - парсим
+                    if isinstance(images_json, str):
+                        images = json.loads(images_json)
+                    else:
+                        images = images_json
+                except Exception as e:
+                    logger.error(f"❌ Ошибка парсинга images: {e}")
+                    # Если не получается распарсить, используем как есть
+                    images = [images_json] if images_json else []
+            
+            # Убедимся что images это список
+            if not isinstance(images, list):
+                images = [images] if images else []
+            
+            response_data = {
                 'link_name': link_name,
-                'price': price,
-                'country_city': country_city,
-                'images': json.loads(images_json) if images_json else [],
-                'description': f'Премиум номер {link_name}'
-            })
+                'price': int(price) if price else 450,
+                'country_city': country_city or 'Польша, Варшава',
+                'images': images,
+                'description': f'Премиум номер {link_name} в {country_city}. Идеальное сочетание комфорта и стиля.'
+            }
             
-            # CORS headers
-            origin = request.headers.get('Origin')
-            if origin in ALLOWED_ORIGINS:
-                response.headers['Access-Control-Allow-Origin'] = origin
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            logger.info(f"📦 Отправляем данные: {response_data}")
             
-            return response
+            response = jsonify(response_data)
+            
         else:
-            return jsonify({'error': 'Link not found'}), 404
+            logger.warning(f"❌ Ссылка не найдена: {link_code}")
+            response = jsonify({'error': 'Link not found'}), 404
+        
+        # CORS headers
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        
+        return response
             
     except Exception as e:
-        logger.error(f"❌ Ошибка получения данных ссылки: {e}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"💥 Критическая ошибка получения данных ссылки: {e}")
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 @app.route('/')
 def home():
     return "🚀 Roomix Bot + SSE Server"
@@ -1491,3 +1519,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
