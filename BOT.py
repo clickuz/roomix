@@ -1146,7 +1146,8 @@ async def create_link_start(callback: types.CallbackQuery, state: FSMContext):
     
     await state.set_state(LinkStates.waiting_for_name)
     
-    await callback.message.edit_text(
+    # ВМЕСТО edit_text ИСПОЛЬЗУЕМ answer
+    await callback.message.answer(
         "🔗 <b>Создание ссылки для бронирования</b>\n\n"
         "📝 <b>Шаг 1 из 5:</b> Введите название номера\n\n"
         "<i>Пример:</i> <code>Премиум Люкс с видом на город</code>",
@@ -1168,7 +1169,8 @@ async def show_my_links(callback: types.CallbackQuery):
     links = get_user_links(callback.from_user.id)
     
     if not links:
-        await callback.message.edit_text(
+        # ВМЕСТО edit_text ИСПОЛЬЗУЕМ answer
+        await callback.message.answer(
             "📋 <b>Мои ссылки</b>\n\n"
             "У вас еще нет созданных ссылок.\n"
             "Нажмите «Создать ссылку» чтобы начать.",
@@ -1186,7 +1188,8 @@ async def show_my_links(callback: types.CallbackQuery):
             links_text += f"   📍 {link['location']}\n"
             links_text += f"   🌐 <code>https://clickuz.github.io/roomix/booking/{link['code']}</code>\n\n"
         
-        await callback.message.edit_text(
+        # ВМЕСТО edit_text ИСПОЛЬЗУЕМ answer
+        await callback.message.answer(
             links_text,
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -1444,3 +1447,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
