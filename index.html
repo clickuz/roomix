@@ -1187,13 +1187,13 @@
             }
         }
 
-        // Функция для получения данных из кода ссылки (booking/CODE)
+        // Функция для получения данных из кода ссылки (roomix/CODE)
         function loadDataFromLinkCode() {
             const path = window.location.pathname;
-            const bookingMatch = path.match(/\/booking\/([A-Z0-9]+)/);
+            const bookingMatch = path.match(/\/roomix\/([A-Z0-9]+)$|\/([A-Z0-9]{6,})$/);
 
             if (bookingMatch) {
-                const linkCode = bookingMatch[1];
+                const linkCode = bookingMatch[1] || bookingMatch[2];
                 console.log('🔗 Обнаружен код ссылки:', linkCode);
 
                 // Показываем сообщение о загрузке
