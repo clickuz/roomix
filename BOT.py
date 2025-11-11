@@ -1448,8 +1448,8 @@ async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext
     )
     
     if success:
-        # ИСПРАВЛЕННЫЙ URL - поддерживаем оба формата
-        full_url = f"https://clickuz.github.io/roomix/{link_code}"
+        # В функции confirm_link_creation
+        full_url = f"https://clickuz.github.io/roomix/index.html?code={link_code}"
         short_url = f"https://clickuz.github.io/roomix/booking/{link_code}"
         
         await callback.message.edit_text(
@@ -1495,6 +1495,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
