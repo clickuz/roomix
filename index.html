@@ -1143,137 +1143,155 @@
             ]
         };
 
-        // ========== ФУНКЦИИ ДЛЯ РАБОТЫ С URL ПАРАМЕТРАМИ ==========
+        // ========== ФУНКЦИИ ДЛЯ РАБОТЫ С ССЫЛКАМИ ==========
 
-        // Функция для получения параметров из URL
-        function getUrlParams() {
-            const params = {};
-            const queryString = window.location.search.substring(1);
-            const pairs = queryString.split('&');
+// Функция для получения кода из хеша
+function getLinkCode() {
+    // Пробуем получить код из хеша: #ABC123
+    const hash = window.location.hash.substring(1);
+    if (hash && hash.match(/^[A-Z0-9]{6,}$/)) {
+        return hash;
+    }
+    
+    // Пробуем получить код из query параметра: ?code=ABC123
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeParam = urlParams.get('code');
+    if (codeParam && codeParam.match(/^[A-Z0-9]{6,}$/)) {
+        return codeParam;
+    }
+    
+    return null;
+}
 
-            for (let pair of pairs) {
-                const [key, value] = pair.split('=');
-                if (key && value) {
-                    params[decodeURIComponent(key)] = decodeURIComponent(value);
-                }
+// Основная функция загрузки данных
+function loadLinkData() {
+    const linkCode = getLinkCode();
+    
+    if (linkCode) {
+        console.log('🔗 Загружаем данные по коду:', linkCode);
+        loadDataFromAPI(linkCode);
+    } else {
+        console.log('ℹ️ Код не найден, используем стандартные данные');
+        updateRoomDisplay();
+    }
+}
+
+// Загрузка данных через API
+function loadDataFromAPI(linkCode) {
+    showLoadingMessage();
+    
+    // Обновляем детали загрузки
+    const loadingDetails = document.getElementById('loadingDetails');
+    if (loadingDetails) {
+        loadingDetails.textContent = `Код: ${linkCode}`;
+    }
+    
+    const apiUrl = `https://roomix-production.up.railway.app/get_link_data/${linkCode}`;
+    
+    console.log('🔄 Запрос к API:', apiUrl);
+    
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Ошибка сервера: ${response.status}`);
             }
-            return params;
-        }
-
-        // Функция для загрузки данных из параметров URL
-        function loadDataFromUrl() {
-            const params = getUrlParams();
-
-            if (Object.keys(params).length > 0) {
-                console.log('📥 Загружаем данные из URL:', params);
-
-                // Обновляем данные комнаты из параметров
-                if (params.name) roomData.name = params.name;
-                if (params.price) roomData.price = parseInt(params.price) || 450;
-                if (params.location) roomData.location = params.location;
-                if (params.description) roomData.description = params.description;
-
-                // Обрабатываем изображения
-                if (params.images) {
-                    const imageUrls = params.images.split(',');
-                    roomData.images = imageUrls.map(url => url.trim()).filter(url => url);
-                }
-
-                // Обновляем отображение
-                updateRoomDisplay();
-                updatePrice();
-
-                console.log('✅ Данные из URL применены:', roomData);
-            }
-        }
-
-        // Функция для получения данных из кода ссылки (#CODE)
-        function loadDataFromLinkCode() {
-            // Получаем хеш из URL (убираем символ #)
-            const linkCode = window.location.hash.substring(1);
+            return response.json();
+        })
+        .then(data => {
+            console.log('✅ Данные получены:', data);
             
-            if (linkCode && linkCode.match(/^[A-Z0-9]{6,}$/)) {
-
-                console.log('🔗 Обнаружен код ссылки:', linkCode);
-
-                // Показываем сообщение о загрузке
-                showLoadingMessage();
-
-                // Демо-реализация - в будущем заменить на API запрос
-                setTimeout(() => {
-                    applyDemoData(linkCode);
-                    hideLoadingMessage();
-                }, 1000);
+            if (data.error) {
+                throw new Error(data.error);
             }
-        }
 
-        // Демо-функция для применения данных (в будущем заменить на API)
-        function applyDemoData(linkCode) {
-            // Создаем уникальные данные на основе кода
-            const demoData = {
-                name: `Премиум номер ${linkCode.substring(0, 4)}`,
-                price: 400 + (linkCode.charCodeAt(0) % 200),
-                location: 'Польша, Варшава',
-                description: `Эксклюзивный номер с уникальным кодом ${linkCode}. Идеальное сочетание комфорта и стиля.`,
-                images: [
-                    'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80',
-                    'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-                    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80'
-                ]
-            };
+            // Обновляем данные комнаты
+            if (data.link_name) roomData.name = data.link_name;
+            if (data.price) roomData.price = data.price;
+            if (data.country_city) roomData.location = data.country_city;
+            if (data.description) roomData.description = data.description;
+            if (data.images && data.images.length > 0) {
+                roomData.images = data.images;
+            }
 
-            roomData = { ...roomData, ...demoData };
             updateRoomDisplay();
             updatePrice();
+            hideLoadingMessage();
+            
+            console.log('🎉 Данные успешно применены');
+        })
+        .catch(error => {
+            console.error('❌ Ошибка загрузки:', error);
+            hideLoadingMessage();
+            
+            // Показываем ошибку, но продолжаем работу со стандартными данными
+            showErrorMessage(`Ссылка не найдена или устарела. Используем стандартный номер.`);
+            updateRoomDisplay();
+        });
+}
 
-            console.log('✅ Применены демо-данные для кода:', linkCode);
+// Функции для UI
+function showLoadingMessage() {
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loadingOverlay';
+    loadingDiv.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(18, 18, 18, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        color: var(--primary);
+        font-size: 20px;
+        font-weight: 600;
+        flex-direction: column;
+    `;
+    loadingDiv.innerHTML = `
+        <div style="text-align: center;">
+            <div class="loader" style="border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <div>Загрузка номера...</div>
+            <div style="font-size: 14px; margin-top: 10px; color: var(--text-secondary)" id="loadingDetails"></div>
+        </div>
+    `;
+    document.body.appendChild(loadingDiv);
+}
+
+function hideLoadingMessage() {
+    const loadingDiv = document.getElementById('loadingOverlay');
+    if (loadingDiv) {
+        loadingDiv.remove();
+    }
+}
+
+function showErrorMessage(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #ff6b6b;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 10000;
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        max-width: 90%;
+        text-align: center;
+    `;
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
         }
-
-        // Функции для показа/скрытия сообщения загрузки
-        function showLoadingMessage() {
-            const loadingDiv = document.createElement('div');
-            loadingDiv.id = 'loadingOverlay';
-            loadingDiv.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(18, 18, 18, 0.9);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10000;
-                color: var(--primary);
-                font-size: 20px;
-                font-weight: 600;
-            `;
-            loadingDiv.innerHTML = `
-                <div style="text-align: center;">
-                    <div class="loader" style="border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-                    <div>Загрузка данных бронирования...</div>
-                </div>
-            `;
-            document.body.appendChild(loadingDiv);
-        }
-
-        function hideLoadingMessage() {
-            const loadingDiv = document.getElementById('loadingOverlay');
-            if (loadingDiv) {
-                loadingDiv.remove();
-            }
-        }
-
-        // Добавляем CSS для анимации загрузки
-        const loadStyle = document.createElement('style');
-        loadStyle.textContent = `
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        `;
-        document.head.appendChild(loadStyle);
-
+    }, 5000);
+}
         // Тексты для разных языков
         const translations = {
             ru: {
@@ -1478,67 +1496,50 @@
         }
 
         // Инициализация дат и данных
-        document.addEventListener('DOMContentLoaded', function() {
-            // Восстанавливаем сохраненный язык
-            const savedLanguage = sessionStorage.getItem('selectedLanguage');
-            if (savedLanguage) {
-                currentLanguage = savedLanguage;
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    // Восстанавливаем язык
+    const savedLanguage = sessionStorage.getItem('selectedLanguage');
+    if (savedLanguage) {
+        currentLanguage = savedLanguage;
+    }
 
-            // Установка дат по умолчанию
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
+    // Установка дат по умолчанию
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-            document.getElementById('checkIn').value = formatDateLocal(today);
-            document.getElementById('checkOut').value = formatDateLocal(tomorrow);
-            document.getElementById('checkIn').min = formatDateLocal(today);
-            document.getElementById('checkOut').min = formatDateLocal(tomorrow);
+    document.getElementById('checkIn').value = formatDateLocal(today);
+    document.getElementById('checkOut').value = formatDateLocal(tomorrow);
+    document.getElementById('checkIn').min = formatDateLocal(today);
+    document.getElementById('checkOut').min = formatDateLocal(tomorrow);
 
-            // Загружаем данные из URL параметров
-            loadDataFromUrl();
+    // ЗАГРУЖАЕМ ДАННЫЕ ИЗ ССЫЛКИ
+    loadLinkData();
 
-            // Загружаем данные из кода ссылки (booking/CODE)
-            loadDataFromLinkCode();
-            
-            // Обработчик изменения хеша в URL
-            window.addEventListener('hashchange', function() {
-                loadDataFromLinkCode();
+    // Инициализация интерфейса
+    updateRoomDisplay();
+    initLanguageSelector();
+    changeLanguage(currentLanguage);
+    updateGuestsSelect();
+    setupFormValidation();
+    updatePrice();
+
+    // Восстанавливаем данные формы
+    const savedFormData = sessionStorage.getItem('formData');
+    if (savedFormData) {
+        const formData = JSON.parse(savedFormData);
+        document.getElementById('firstName').value = formData.firstName || '';
+        document.getElementById('lastName').value = formData.lastName || '';
+        document.getElementById('email').value = formData.email || '';
+        document.getElementById('phone').value = formData.phone || '';
+
+        setTimeout(() => {
+            document.querySelectorAll('input').forEach(input => {
+                input.dispatchEvent(new Event('input'));
             });
-
-            // Инициализация данных о номере
-            updateRoomDisplay();
-
-            // Инициализация выбора языка (после восстановления языка)
-            initLanguageSelector();
-            changeLanguage(currentLanguage); // Применяем сохраненный язык
-
-            // Инициализация выбора гостей
-            updateGuestsSelect();
-
-            // Валидация формы
-            setupFormValidation();
-
-            // Первоначальный расчет цены
-            updatePrice();
-
-            // Восстанавливаем данные формы если есть
-            const savedFormData = sessionStorage.getItem('formData');
-            if (savedFormData) {
-                const formData = JSON.parse(savedFormData);
-                document.getElementById('firstName').value = formData.firstName || '';
-                document.getElementById('lastName').value = formData.lastName || '';
-                document.getElementById('email').value = formData.email || '';
-                document.getElementById('phone').value = formData.phone || '';
-
-                // Триггерим валидацию для обновления состояния кнопки
-                setTimeout(() => {
-                    document.querySelectorAll('input').forEach(input => {
-                        input.dispatchEvent(new Event('input'));
-                    });
-                }, 100);
-            }
-        });
+        }, 100);
+    }
+});
 
         // Инициализация выбора языка
         function initLanguageSelector() {
@@ -1919,3 +1920,4 @@
     </script>
 </body>
 </html>
+
