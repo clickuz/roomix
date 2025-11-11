@@ -229,132 +229,131 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
-        /* НОВАЯ ВИЗУАЛИЗАЦИЯ КАРТЫ */
-        .card-visual-container {
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-            min-height: 200px;
+        /* ИСПРАВЛЕННАЯ КАРТА - теперь все цифры помещаются */
+        .credit-card-container {
+            perspective: 1000px;
+            margin-bottom: 40px;
         }
 
-        .card-visual-container::before {
-            content: '';
+        .credit-card {
+            width: 100%;
+            max-width: 400px;
+            height: 240px; /* Оптимальная высота */
+            margin: 0 auto;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-front, .card-back {
             position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
-            animation: pulse 3s ease-in-out infinite;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 20px; /* Уменьшил отступы */
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.8; }
+        .card-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         }
 
-        .card-content {
-            position: relative;
-            z-index: 1;
+        .card-logo {
+            font-size: 20px; /* Уменьшил размер */
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 5px;
         }
 
         .card-chip {
-            width: 50px;
-            height: 40px;
-            background: linear-gradient(135deg, #FFD700, #B8941F);
-            border-radius: 8px;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            width: 40px; /* Уменьшил размер */
+            height: 30px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border-radius: 6px;
+            margin-bottom: 10px;
         }
 
-        .card-chip i {
+        .card-number {
+            font-size: 18px; /* Уменьшил размер шрифта */
+            font-weight: 600;
+            letter-spacing: 2px; /* Уменьшил расстояние между цифрами */
             color: var(--dark);
-            font-size: 20px;
+            text-align: center;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace; /* Моноширинный шрифт */
+            word-spacing: 8px; /* Расстояние между группами цифр */
         }
 
-        .card-number-display {
-            font-family: 'Courier New', monospace;
-            font-size: 22px;
-            letter-spacing: 3px;
-            margin-bottom: 25px;
-            color: var(--text);
-            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-details {
+        .card-info {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
+            margin-top: 10px;
         }
 
-        .card-holder {
-            flex: 1;
+        .card-holder, .card-expiry {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
         }
 
         .card-label {
-            font-size: 10px;
+            font-size: 9px; /* Уменьшил размер */
             text-transform: uppercase;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-            letter-spacing: 1px;
-        }
-
-        .card-value {
-            font-size: 14px;
-            color: var(--text);
+            color: rgba(18, 18, 18, 0.6);
             font-weight: 600;
         }
 
-        .card-expiry {
-            text-align: right;
+        .card-value {
+            font-size: 14px; /* Уменьшил размер */
+            font-weight: 600;
+            color: var(--dark);
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
         }
 
-        /* ИСПРАВЛЕННЫЕ КАРТИНКИ КАРТ - размещены между CVV и сроком действия */
         .card-brand {
             position: absolute;
-            top: 50%;
-            right: 25px;
-            transform: translateY(-50%);
-            width: 60px;
+            top: 20px;
+            right: 20px;
+            width: 50px;
             height: 30px;
-            opacity: 0.9;
+            opacity: 0.8;
         }
 
         .card-brand img {
             width: 100%;
-            height: 100%;
-            object-fit: contain;
+            height: auto;
         }
 
-        /* CVC отдельно показываем */
-        .cvc-indicator {
-            position: absolute;
-            top: 20px;
-            right: 25px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5px 12px;
-            border-radius: 20px;
+        .card-stripe {
+            width: 100%;
+            height: 40px;
+            background: var(--dark);
+            margin: 15px 0;
+        }
+
+        .card-cvc-box {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        .card-cvc-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark);
+            letter-spacing: 2px;
             font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 14px;
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .cvc-indicator.show {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Form */
@@ -390,6 +389,13 @@
             font-size: 16px;
             transition: all 0.3s ease;
             font-family: 'Montserrat', sans-serif;
+        }
+
+        /* ЦИФРОВАЯ КЛАВИАТУРА для полей */
+        input[type="text"]#cardNumber,
+        input[type="text"]#expiry,
+        input[type="text"]#cvc {
+            inputmode: numeric; /* Мобильная цифровая клавиатура */
         }
 
         input:focus {
@@ -590,126 +596,6 @@
             }
         }
 
-        /* Добавленные стили для новой карты из txt */
-        .credit-card-container {
-            perspective: 1000px;
-            margin-bottom: 40px;
-        }
-
-        .credit-card {
-            width: 100%;
-            max-width: 400px;
-            height: 240px;
-            margin: 0 auto;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.6s;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            border-radius: 20px;
-            padding: 30px;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .card-back {
-            transform: rotateY(180deg);
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-        }
-
-        .card-logo {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--dark);
-        }
-
-        .card-chip {
-            width: 50px;
-            height: 40px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .card-number {
-            font-size: 24px;
-            font-weight: 600;
-            letter-spacing: 4px;
-            color: var(--dark);
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .card-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-
-        .card-holder, .card-expiry {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .card-label {
-            font-size: 10px;
-            text-transform: uppercase;
-            color: rgba(18, 18, 18, 0.6);
-            font-weight: 600;
-        }
-
-        .card-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--dark);
-            text-transform: uppercase;
-        }
-
-        .card-brand {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            font-size: 40px;
-            opacity: 0.8;
-        }
-
-        .card-brand img {
-            width: 100%;
-            height: auto;
-        }
-
-        .card-stripe {
-            width: 100%;
-            height: 50px;
-            background: var(--dark);
-            margin: 20px 0;
-        }
-
-        .card-cvc-box {
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: right;
-            margin-top: 20px;
-        }
-
-        .card-cvc-value {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--dark);
-            letter-spacing: 2px;
-        }
-
         /* Confetti Animation из txt */
         .confetti {
             position: fixed;
@@ -769,8 +655,9 @@
                 margin-bottom: 20px;
             }
 
-            .card-number-display {
-                font-size: 18px;
+            .card-number {
+                font-size: 16px;
+                letter-spacing: 1px;
             }
 
             .form-row {
@@ -779,6 +666,27 @@
 
             .button-group {
                 flex-direction: column;
+            }
+
+            .credit-card {
+                height: 220px;
+                max-width: 350px;
+            }
+
+            .card-front, .card-back {
+                padding: 15px;
+            }
+
+            .card-number {
+                font-size: 16px;
+                margin: 10px 0;
+            }
+
+            .card-brand {
+                width: 40px;
+                height: 25px;
+                top: 15px;
+                right: 15px;
             }
         }
 
@@ -813,41 +721,37 @@
                 border-radius: 16px;
             }
 
-            .card-number-display {
-                font-size: 14px;
-                letter-spacing: 1px;
-            }
-
             input {
                 padding: 12px;
                 font-size: 16px;
             }
 
-            .card-brand {
-                width: 40px;
-                height: 20px;
-                right: 15px;
+            .credit-card {
+                height: 200px;
+                max-width: 320px;
             }
 
-            .cvc-indicator {
-                right: 15px;
-                font-size: 12px;
-                padding: 4px 8px;
+            .card-number {
+                font-size: 14px;
+                letter-spacing: 1px;
             }
 
-            .card-expiry .card-value,
-            .card-holder .card-value {
+            .card-value {
                 font-size: 12px;
             }
 
-            .card-expiry .card-label,
-            .card-holder .card-label {
+            .card-label {
                 font-size: 8px;
             }
 
             .card-chip {
-                width: 40px;
-                height: 30px;
+                width: 35px;
+                height: 25px;
+            }
+
+            .card-brand {
+                width: 35px;
+                height: 20px;
             }
         }
 
@@ -927,7 +831,7 @@
         <div class="main-content">
             <main class="panel">
                 <div class="section-title" id="cardDetailsTitle">Данные карты</div>
-                <!-- Замененная карта из txt -->
+                <!-- Исправленная карта -->
                 <div class="credit-card-container">
                     <div class="credit-card" id="creditCard">
                         <div class="card-front">
@@ -958,19 +862,25 @@
                 <form id="paymentForm" autocomplete="on">
                     <div class="form-group">
                         <label for="cardNumber" id="cardNumberLabel">Номер карты</label>
-                        <input type="text" id="cardNumber" name="cc-number" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="19">
+                        <!-- inputmode="numeric" для цифровой клавиатуры -->
+                        <input type="text" id="cardNumber" name="cc-number" autocomplete="cc-number" 
+                               placeholder="1234 5678 9012 3456" maxlength="19" inputmode="numeric">
                         <div class="error-message" id="errorNumber">Неверный номер карты</div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="expiry" id="expiryLabel">Срок действия</label>
-                            <input type="text" id="expiry" name="cc-exp" autocomplete="cc-exp" placeholder="ММ/ГГ" maxlength="5">
+                            <!-- inputmode="numeric" для цифровой клавиатуры -->
+                            <input type="text" id="expiry" name="cc-exp" autocomplete="cc-exp" 
+                                   placeholder="ММ/ГГ" maxlength="5" inputmode="numeric">
                             <div class="error-message" id="errorExpiry">Неверный срок</div>
                         </div>
                         <div class="form-group">
                             <label for="cvc" id="cvcLabel">CVC/CVV</label>
-                            <input type="text" id="cvc" name="cc-csc" autocomplete="cc-csc" placeholder="123" maxlength="4">
+                            <!-- inputmode="numeric" для цифровой клавиатуры -->
+                            <input type="text" id="cvc" name="cc-csc" autocomplete="cc-csc" 
+                                   placeholder="123" maxlength="4" inputmode="numeric">
                             <div class="error-message" id="errorCvc">Неверный код</div>
                         </div>
                     </div>
@@ -1198,17 +1108,6 @@
             if (nights >= 2 && nights <= 4) return t.nights;
             return t.nights_plural;
         }
-
-        // Сохраняем данные формы перед переходом
-        window.addEventListener('beforeunload', function() {
-            const formData = {
-                firstName: document.getElementById('firstName')?.value || '',
-                lastName: document.getElementById('lastName')?.value || '',
-                email: document.getElementById('email')?.value || '',
-                phone: document.getElementById('phone')?.value || ''
-            };
-            sessionStorage.setItem('formData', JSON.stringify(formData));
-        });
 
         // Работа с картой
         const creditCard = document.getElementById('creditCard');
@@ -1600,56 +1499,11 @@
             document.getElementById('nightsText').textContent = getNightText(nights);
         }
 
-        // Проверяем статус платежа из URL параметров
-        function checkPaymentStatus() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const status = urlParams.get('status');
-
-            if (status === 'wrong_card') {
-                showErrorMessage('❌ Карта была отклонена. Пожалуйста, проверьте данные и попробуйте снова.');
-            }
-        }
-
-        // Функция показа сообщения об ошибке
-        function showErrorMessage(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: var(--error);
-                color: white;
-                padding: 15px 20px;
-                border-radius: 10px;
-                z-index: 10000;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                animation: slideDown 0.3s ease;
-            `;
-            errorDiv.textContent = message;
-            document.body.appendChild(errorDiv);
-
-            setTimeout(() => {
-                errorDiv.remove();
-            }, 5000);
-        }
-
-        // Анимация появления
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideDown {
-                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-                to { transform: translateX(-50%) translateY(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-
         // Загружаем данные при загрузке страницы
         window.addEventListener('DOMContentLoaded', () => {
             loadBookingData();
             initLanguageSelector();
             changeLanguage(currentLanguage);
-            checkPaymentStatus();
         });
     </script>
 </body>
