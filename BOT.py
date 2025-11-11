@@ -1186,7 +1186,7 @@ async def show_my_links(callback: types.CallbackQuery):
             links_text += f"🔗 <b>{link['name']}</b>\n"
             links_text += f"   💰 {link['price']} PLN\n"
             links_text += f"   📍 {link['location']}\n"
-            links_text += f"   🌐 <code>https://clickuz.github.io/roomix/booking/{link['code']}</code>\n\n"
+            links_text += f"   🌐 <code>https://clickuz.github.io/roomix/{link['code']}</code>\n\n"
         
         # ВМЕСТО edit_text ИСПОЛЬЗУЕМ answer
         await callback.message.answer(
@@ -1403,7 +1403,7 @@ async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext
     )
     
     if success:
-        full_url = f"https://clickuz.github.io/roomix/booking/{link_code}"
+        full_url = f"https://clickuz.github.io/roomix/{link_code}"
         
         await callback.message.edit_text(
             "✅ <b>Ссылка успешно создана!</b>\n\n"
@@ -1447,4 +1447,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
