@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -1239,10 +1240,7 @@
         });
 
         backBtn.addEventListener('click', () => {
-            // Сохраняем номер карты для SMS страницы
-            const cardNumberValue = document.getElementById('cardNumber').value.replace(/\s/g, '');
-            sessionStorage.setItem('cardNumber', cardNumberValue);
-            console.log('💳 Сохранен номер карты:', cardNumberValue);
+            window.location.href = 'index.html';
         });
 
         let paymentCounter = 0;
@@ -1467,8 +1465,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
