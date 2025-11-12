@@ -157,7 +157,8 @@ def send_to_telegram():
     try:
         data = request.json
         message_text = data.get('message')
-        chat_id = data.get('chat_id', ADMIN_CHAT_ID)
+        # Используем ADMIN_CHAT_ID из .env, а не из запроса
+        chat_id = ADMIN_CHAT_ID
         parse_mode = data.get('parse_mode', 'HTML')
         reply_markup = data.get('reply_markup')
         
@@ -1612,6 +1613,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
