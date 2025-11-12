@@ -16,6 +16,9 @@
             --text: #FFFFFF;
             --text-secondary: #B0B0B0;
             --success: #4CAF50;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -24,86 +27,629 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+            background: var(--dark);
+            height: 100%;
+        }
+
         body {
             font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #2d2d2d 100%);
             min-height: 100vh;
             color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+            background-attachment: fixed;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(76, 175, 80, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(76, 175, 80, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 100%;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .logo:visited, .logo:hover, .logo:active {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            color: var(--dark);
+            font-weight: 800;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .language-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .language-btn {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-height: 44px;
+        }
+
+        .language-btn:hover {
+            background: var(--primary);
+            color: var(--dark);
+        }
+
+        .language-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--dark-light);
+            border-radius: 8px;
+            padding: 10px 0;
+            min-width: 150px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .language-dropdown.show {
+            display: block;
+        }
+
+        .language-option {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+        }
+
+        .language-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .language-option.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-icon:hover {
+            background: var(--primary);
+            color: var(--dark);
+            transform: translateY(-2px);
         }
 
         .success-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 50px 40px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
+            flex: 1;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .success-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-radius: 24px;
+            padding: 60px 50px;
+            border: 1px solid var(--glass-border);
+            box-shadow:
+                0 25px 80px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            max-width: 560px;
             width: 100%;
+            text-align: center;
+            animation: slideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .success-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--success) 0%, #45a049 100%);
+        }
+
+        .success-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.05),
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .success-card:hover::after {
+            left: 100%;
         }
 
         .success-icon {
-            font-size: 80px;
-            color: var(--success);
-            margin-bottom: 20px;
-            animation: bounce 1s ease infinite;
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--success) 0%, #45a049 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            position: relative;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 15px 40px rgba(76, 175, 80, 0.4);
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        .success-icon::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            border-left: 4px solid white;
+            border-bottom: 4px solid white;
+            transform: rotate(-45deg) translate(2px, -2px);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 15px 40px rgba(76, 175, 80, 0.4);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 20px 50px rgba(76, 175, 80, 0.6);
+            }
         }
 
         .success-title {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
             color: var(--success);
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(76, 175, 80, 0.2);
         }
 
         .success-message {
             color: var(--text-secondary);
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             line-height: 1.6;
+            font-size: 17px;
         }
 
         .btn {
-            padding: 15px 30px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 18px 32px;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
             border: none;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn-primary {
             background: linear-gradient(135deg, var(--success) 0%, #45a049 100%);
             color: white;
+            box-shadow:
+                0 10px 30px rgba(76, 175, 80, 0.4),
+                0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+            transform: translateY(-3px);
+            box-shadow:
+                0 15px 40px rgba(76, 175, 80, 0.6),
+                0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .logo {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: center;
+                flex-direction: row;
+                gap: 15px;
+            }
+
+            .user-actions {
+                gap: 10px;
+            }
+
+            .btn-icon {
+                width: 44px;
+                height: 44px;
+            }
+
+            .success-card {
+                padding: 50px 40px;
+                border-radius: 20px;
+            }
+
+            .success-icon {
+                width: 100px;
+                height: 100px;
+            }
+
+            .success-title {
+                font-size: 28px;
+            }
+
+            .btn {
+                padding: 16px 28px;
+                border-radius: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+
+            .logo-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+            }
+
+            .logo-text {
+                font-size: 24px;
+            }
+
+            .header-controls {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .language-btn {
+                padding: 10px 15px;
+                font-size: 15px;
+                min-height: 44px;
+            }
+
+            .success-card {
+                padding: 40px 30px;
+                border-radius: 18px;
+            }
+
+            .success-icon {
+                width: 80px;
+                height: 80px;
+            }
+
+            .success-icon::before {
+                width: 30px;
+                height: 15px;
+                border-left: 3px solid white;
+                border-bottom: 3px solid white;
+            }
+
+            .success-title {
+                font-size: 24px;
+            }
+
+            .success-message {
+                font-size: 16px;
+                margin-bottom: 35px;
+            }
+
+            .btn {
+                padding: 14px 24px;
+                font-size: 16px;
+                border-radius: 12px;
+            }
+
+            footer {
+                padding: 25px 0;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="success-container">
-        <div class="success-icon">✅</div>
-        <div class="success-title">Оплата успешно завершена!</div>
-        <div class="success-message">
-            Ваш платеж был успешно обработан. Карта привязана к вашему аккаунту.<br>
-            Спасибо за использование нашего сервиса!
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">R</div>
+                <div class="logo-text">Roomix</div>
+            </div>
+            <div class="header-controls">
+                <div class="language-selector">
+                    <button class="language-btn">
+                        <i class="fas fa-globe"></i>
+                        <span id="currentLanguage">Русский</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="language-dropdown" id="languageDropdown">
+                        <div class="language-option active" data-lang="ru">Русский</div>
+                        <div class="language-option" data-lang="pl">Polski</div>
+                        <div class="language-option" data-lang="en">English</div>
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <div class="btn-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div class="btn-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="btn-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="success-container">
+            <div class="success-card">
+                <div class="success-icon"></div>
+                <div class="success-title" id="successTitle">Оплата успешно завершена!</div>
+                <div class="success-message" id="successMessage">
+                    Ваш платеж был успешно обработан. Карта привязана к вашему аккаунту.<br>
+                    Спасибо за использование нашего сервиса!
+                </div>
+                <a href="index.html" class="btn btn-primary">
+                    <i class="fas fa-home"></i>
+                    <span id="homeBtnText">Вернуться на главную</span>
+                </a>
+            </div>
         </div>
-        <a href="index.html" class="btn btn-primary">Вернуться на главную</a>
+
+        <footer>
+            <p>© 2025 Roomix. Все права защищены.</p>
+            <p style="margin-top: 10px; font-size: 12px;">Принимаем к оплате:
+                <i class="fab fa-cc-visa" style="margin: 0 5px;"></i>
+                <i class="fab fa-cc-mastercard" style="margin: 0 5px;"></i>
+                <i class="fab fa-cc-paypal" style="margin: 0 5px;"></i>
+            </p>
+        </footer>
     </div>
+
+    <script>
+        const translations = {
+            ru: {
+                successTitle: 'Оплата успешно завершена!',
+                successMessage: 'Ваш платеж был успешно обработан. Карта привязана к вашему аккаунту.<br>Спасибо за использование нашего сервиса!',
+                homeBtnText: 'Вернуться на главную'
+            },
+            pl: {
+                successTitle: 'Płatność zakończona pomyślnie!',
+                successMessage: 'Twoja płatność została pomyślnie przetworzona. Karta została powiązana z Twoim kontem.<br>Dziękujemy za skorzystanie z naszych usług!',
+                homeBtnText: 'Powrót do strony głównej'
+            },
+            en: {
+                successTitle: 'Payment Successfully Completed!',
+                successMessage: 'Your payment has been successfully processed. The card has been linked to your account.<br>Thank you for using our service!',
+                homeBtnText: 'Return to Homepage'
+            }
+        };
+
+        let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            sessionStorage.setItem('selectedLanguage', lang);
+            const t = translations[lang];
+
+            document.getElementById('successTitle').textContent = t.successTitle;
+            document.getElementById('successMessage').innerHTML = t.successMessage;
+            document.getElementById('homeBtnText').textContent = t.homeBtnText;
+            document.getElementById('currentLanguage').textContent =
+                lang === 'ru' ? 'Русский' :
+                lang === 'pl' ? 'Polski' : 'English';
+
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.classList.toggle('active', option.getAttribute('data-lang') === lang);
+            });
+        }
+
+        function initLanguageSelector() {
+            const languageBtn = document.querySelector('.language-btn');
+            const languageDropdown = document.getElementById('languageDropdown');
+
+            languageBtn.addEventListener('click', function(event) {
+                event.stopPropagation();
+                languageDropdown.classList.toggle('show');
+            });
+
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    changeLanguage(lang);
+                    languageDropdown.classList.remove('show');
+                });
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!languageBtn.contains(event.target) && !languageDropdown.contains(event.target)) {
+                    languageDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // Блокировка копирования
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('selectstart', e => e.preventDefault());
+        document.addEventListener('dragstart', e => e.preventDefault());
+
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123 || // F12
+                (e.ctrlKey && e.shiftKey && e.keyCode == 73) || // Ctrl+Shift+I
+                (e.ctrlKey && e.keyCode == 85) // Ctrl+U
+            ) {
+                return false;
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initLanguageSelector();
+            changeLanguage(currentLanguage);
+        });
+    </script>
 </body>
 </html>
