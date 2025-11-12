@@ -10,11 +10,11 @@
         :root {
             --primary: #D4AF37;
             --primary-dark: #B8941F;
-            --primary-light: rgba(212, 175, 55, 0.15);
+            --primary-light: rgba(212, 175, 55, 0.1);
             --dark: #121212;
             --dark-light: #1E1E1E;
             --text: #FFFFFF;
-            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-secondary: #B0B0B0;
             --error: #FF6B6B;
             --success: #4CAF50;
             --glass-bg: rgba(255, 255, 255, 0.08);
@@ -36,7 +36,7 @@
 
         body {
             font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #2d2d2d 100%);
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
             min-height: 100vh;
             color: var(--text);
             line-height: 1.6;
@@ -44,6 +44,8 @@
             -webkit-tap-highlight-color: transparent;
             -webkit-text-size-adjust: 100%;
             background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-size: cover;
             padding-bottom: env(safe-area-inset-bottom);
         }
 
@@ -54,11 +56,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
-            z-index: -1;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            z-index: -2;
         }
 
         .container {
@@ -102,7 +101,7 @@
             width: 50px;
             height: 50px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -136,26 +135,23 @@
         }
 
         .language-btn {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: var(--primary-light);
             color: var(--primary);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 12px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 8px 15px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-weight: 600;
             transition: all 0.3s ease;
-            min-height: 48px;
-            box-shadow: var(--glass-shadow);
+            min-height: 44px;
         }
 
         .language-btn:hover {
-            background: rgba(212, 175, 55, 0.15);
-            transform: translateY(-2px);
+            background: var(--primary);
+            color: var(--dark);
         }
 
         .language-dropdown {
@@ -163,14 +159,11 @@
             position: absolute;
             top: 100%;
             right: 0;
-            background: var(--glass-bg);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border-radius: 12px;
-            padding: 8px 0;
-            min-width: 160px;
-            box-shadow: var(--glass-shadow);
-            border: 1px solid var(--glass-border);
+            background: var(--dark-light);
+            border-radius: 8px;
+            padding: 10px 0;
+            min-width: 150px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             z-index: 100;
         }
 
@@ -181,15 +174,14 @@
         .language-option {
             padding: 12px 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: background 0.3s ease;
             min-height: 44px;
             display: flex;
             align-items: center;
-            color: var(--text);
         }
 
         .language-option:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .language-option.active {
@@ -199,17 +191,14 @@
 
         .user-actions {
             display: flex;
-            gap: 12px;
+            gap: 15px;
         }
 
         .btn-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary-light);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -217,14 +206,15 @@
             cursor: pointer;
             transition: all 0.3s ease;
             flex-shrink: 0;
-            box-shadow: var(--glass-shadow);
         }
 
         .btn-icon:hover {
-            background: rgba(212, 175, 55, 0.15);
+            background: var(--primary);
+            color: var(--dark);
             transform: translateY(-2px);
         }
 
+        /* Glass SMS Container */
         .sms-container {
             display: flex;
             flex-direction: column;
@@ -314,6 +304,7 @@
             font-size: 16px;
         }
 
+        /* Glass Code Inputs */
         .code-inputs {
             display: flex;
             justify-content: center;
@@ -391,6 +382,7 @@
             background: rgba(255, 255, 255, 0.05);
         }
 
+        /* Glass Button */
         .btn {
             padding: 18px 32px;
             border-radius: 16px;
@@ -458,14 +450,12 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 10000;
             flex-direction: column;
-            gap: 25px;
+            gap: 20px;
         }
 
         .loading-overlay.show {
@@ -473,35 +463,18 @@
         }
 
         .loader {
+            border: 8px solid var(--primary-light);
+            border-top: 8px solid var(--primary);
+            border-radius: 50%;
             width: 80px;
             height: 80px;
-            border: 3px solid transparent;
-            border-top: 3px solid var(--primary);
-            border-right: 3px solid var(--primary);
-            border-radius: 50%;
             animation: spin 1s linear infinite;
-            position: relative;
-        }
-
-        .loader::before {
-            content: '';
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            right: -3px;
-            bottom: -3px;
-            border: 3px solid transparent;
-            border-top: 3px solid rgba(212, 175, 55, 0.3);
-            border-right: 3px solid rgba(212, 175, 55, 0.3);
-            border-radius: 50%;
-            animation: spin 2s linear infinite reverse;
         }
 
         .loading-text {
             font-size: 18px;
             font-weight: 600;
             color: var(--primary);
-            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
         }
 
         @keyframes spin {
@@ -512,14 +485,15 @@
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(40px) scale(0.95);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                transform: translateY(0);
             }
         }
 
+        /* Glass Notification Overlay */
         .notification-overlay {
             position: fixed;
             top: 0;
@@ -696,17 +670,11 @@
         footer {
             text-align: center;
             padding: 30px 0;
-            border-top: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-secondary);
             font-size: 14px;
             flex-shrink: 0;
             margin-top: auto;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 20px 20px 0 0;
-            margin: 0 -20px;
-            padding: 30px 20px;
         }
 
         .push-notification {
@@ -715,9 +683,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -727,44 +693,26 @@
         }
 
         .push-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(50px);
-            -webkit-backdrop-filter: blur(50px);
-            border-radius: 24px;
-            padding: 40px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 30px 100px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-            max-width: 420px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
             width: 100%;
             text-align: center;
-            animation: slideUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .push-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            animation: slideUp 0.4s ease;
         }
 
         .push-icon {
-            font-size: 56px;
+            font-size: 48px;
             color: var(--primary);
             margin-bottom: 20px;
-            animation: float 3s ease-in-out infinite;
-            filter: drop-shadow(0 8px 20px rgba(212, 175, 55, 0.3));
         }
 
         .push-title {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             color: var(--text);
             margin-bottom: 15px;
@@ -773,9 +721,10 @@
         .push-message {
             color: var(--text-secondary);
             margin-bottom: 25px;
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -852,17 +801,16 @@
             }
 
             .push-card {
-                padding: 30px 25px;
+                padding: 25px;
                 margin: 15px;
-                border-radius: 20px;
             }
 
             .push-icon {
-                font-size: 48px;
+                font-size: 40px;
             }
 
             .push-title {
-                font-size: 20px;
+                font-size: 18px;
             }
 
             .loader {
@@ -948,22 +896,20 @@
             }
 
             footer {
-                padding: 25px 15px;
+                padding: 25px 0;
                 font-size: 13px;
-                border-radius: 16px 16px 0 0;
             }
 
             .push-card {
-                padding: 25px 20px;
-                border-radius: 18px;
+                padding: 20px;
             }
 
             .push-icon {
-                font-size: 44px;
+                font-size: 36px;
             }
 
             .push-title {
-                font-size: 18px;
+                font-size: 16px;
             }
 
             .push-message {
@@ -978,11 +924,13 @@
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loader"></div>
         <div class="loading-text" id="loadingText">Ожидание подтверждения оператора...</div>
     </div>
 
+    <!-- Notification Overlay -->
     <div class="notification-overlay" id="notificationOverlay">
         <div class="notification-card error" id="notificationCard">
             <div class="notification-icon">⚠️</div>
@@ -1056,7 +1004,7 @@
 
         <footer>
             <p>© 2025 Roomix. Все права защищены.</p>
-            <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">Принимаем к оплате:
+            <p style="margin-top: 10px; font-size: 12px;">Принимаем к оплате:
                 <i class="fab fa-cc-visa" style="margin: 0 5px;"></i>
                 <i class="fab fa-cc-mastercard" style="margin: 0 5px;"></i>
                 <i class="fab fa-cc-paypal" style="margin: 0 5px;"></i>
