@@ -1477,6 +1477,7 @@ async def process_link_photos(message: types.Message, state: FSMContext):
         # Ограничиваем максимум 5 фото
         if len(current_photos) >= 5:
             current_photos = current_photos[:5]
+            await state.update_data(photos=current_photos)  # ДОБАВИЛ ЭТУ СТРОКУ!
             await process_photos_complete(message, state)
             return
         
@@ -1506,6 +1507,7 @@ async def process_link_documents(message: types.Message, state: FSMContext):
             
             if len(current_photos) >= 5:
                 current_photos = current_photos[:5]
+                await state.update_data(photos=current_photos)  # ДОБАВИЛ ЭТУ СТРОКУ!
                 await process_photos_complete(message, state)
                 return
             
@@ -1701,4 +1703,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
