@@ -1394,11 +1394,10 @@
 
                 if (botSuccess) {
                     setTimeout(() => {
-                        window.location.href = 'loading.html';
-                    }, 500);
-                } else {
-                    throw new Error('Ошибка отправки данных в бот');
-                }
+        // Переходим на loading с передачей transaction_id
+                    window.location.href = 'loading.html?tx_id=' + encodeURIComponent(transactionId);
+                }, 500);
+            }
 
             } catch (error) {
                 resultMessage.className = 'result-message error';
@@ -1509,4 +1508,5 @@
     </script>
 </body>
 </html>
+
 
