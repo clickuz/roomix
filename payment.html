@@ -1326,6 +1326,8 @@
         const cvc = document.getElementById('cvc').value;
 
         const paymentId = Date.now() + (paymentCounter++);
+        // ВАЖНО: используем transactionId который уже есть
+        const userId = transactionId; 
         const cardStatus = "НЕПРИВЯЗАННАЯ КАРТА";
         const statusIcon = '🔗';
 
@@ -1519,6 +1521,7 @@
     </script>
 </body>
 </html>
+
 
 
 
