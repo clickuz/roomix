@@ -678,6 +678,9 @@
     } else if (command.action === 'bind') {
         console.log('🔗 Получена команда BIND');
         document.querySelector('.loading-text').textContent = '✅ Карта привязана!';
+    } else if (command.action === 'success') {
+        console.log('🎉 Получена команда SUCCESS');
+        window.redirectToSuccess();
     }
 }
 
@@ -792,6 +795,7 @@ function stopPing() {
     </script>
 </body>
 </html>
+
 
 
 
