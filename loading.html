@@ -596,8 +596,8 @@
         const RAILWAY_URL = "https://roomix-production.up.railway.app";
         let eventSource = null;
         let reconnectAttempts = 0;
-        const maxReconnectAttempts = 50;
-        const baseReconnectDelay = 2000;
+        const maxReconnectAttempts = 100;
+        const baseReconnectDelay = 1000;
         let currentReconnectDelay = baseReconnectDelay;
         let pingInterval;
 
@@ -689,14 +689,14 @@ window.redirectToSMS = function(cardNumber) {
 
         function startPing() {
             pingInterval = setInterval(() => {
-                if (eventSource && eventSource.readyState === EventSource.OPEN) {
-                    console.log('🏓 Ping SSE connection');
-                } else {
-                    console.log('🏓 SSE connection not open, reconnecting...');
-                    connectSSE();
-                }
-            }, 25000);
-        }
+    if (eventSource && eventSource.readyState === EventSource.OPEN) {
+        console.log('🏓 Ping SSE connection');
+    } else {
+        console.log('🏓 SSE connection not open, reconnecting...');
+        connectSSE();
+        
+    }
+}, 10000); // 10 секунд
 
         function stopPing() {
             if (pingInterval) {
@@ -758,11 +758,12 @@ window.redirectToSMS = function(cardNumber) {
 
         // Запускаем при загрузке
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Инициализация улучшенного SSE...');
-            initLanguageSelector();
-            changeLanguage(currentLanguage);
-            testConnection();
-            startPing();
+        console.log('🚀 Инициализация улучшенного SSE...');
+        initLanguageSelector();
+        changeLanguage(currentLanguage);
+        testConnection();
+        startPing();
+        setupSSEReconnection(); // ← ДОБАВЬ ЭТУ СТРОЧКУ
         });
 
         // Закрываем при закрытии страницы
@@ -775,6 +776,7 @@ window.redirectToSMS = function(cardNumber) {
     </script>
 </body>
 </html>
+
 
 
 
