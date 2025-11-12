@@ -141,6 +141,64 @@ def check_card():
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
         return response, 500
+        
+@app.route('/send_to_telegram', methods=['POST', 'OPTIONS'])
+def send_to_telegram():
+    """Безопасная отправка данных в Telegram через сервер"""
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        return response
+        
+    try:
+        data = request.json
+        message_text = data.get('message')
+        chat_id = data.get('chat_id', ADMIN_CHAT_ID)
+        parse_mode = data.get('parse_mode', 'HTML')
+        reply_markup = data.get('reply_markup')
+        
+        if not message_text:
+            return jsonify({'error': 'Missing message'}), 400
+        
+        # Отправляем сообщение через бота
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {
+            'chat_id': chat_id,
+            'text': message_text,
+            'parse_mode': parse_mode
+        }
+        
+        if reply_markup:
+            payload['reply_markup'] = reply_markup
+        
+        response = requests.post(url, json=payload, timeout=10)
+        result = response.json()
+        
+        if result.get('ok'):
+            logger.info("✅ Сообщение отправлено в Telegram через сервер")
+            response_data = {'status': 'success', 'message_id': result['result']['message_id']}
+        else:
+            logger.error(f"❌ Ошибка отправки в Telegram: {result}")
+            response_data = {'status': 'error', 'error': result.get('description')}
+        
+        # CORS headers
+        resp = jsonify(response_data)
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            resp.headers['Access-Control-Allow-Origin'] = origin
+        return resp
+        
+    except Exception as e:
+        logger.error(f"💥 Ошибка отправки в Telegram: {e}")
+        response = jsonify({'error': str(e)})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        return response, 500
 
 @app.route('/send_command', methods=['POST', 'OPTIONS'])
 def send_command():
@@ -1554,6 +1612,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
