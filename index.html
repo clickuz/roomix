@@ -1270,13 +1270,12 @@
     </div>
 
     <script>
-        // Данные о номере
+        // Данные о номере - УБИРАЕМ description из roomData
         let roomData = {
             name: "Премиум Люкс с видом на город",
             location: "Варшава, Польша",
             price: 450,
             rating: 4.8,
-            description: "Просторный номер премиум-класса с панорамным видом на город. В номере есть king-size кровать, рабочая зона, современная ванная комната с джакузи. Идеально подходит для романтического отдыха или деловой поездки.",
             images: [
                 "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
                 "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
@@ -1321,7 +1320,7 @@
             }
         }
 
-        // Загрузка данных через API
+        // Загрузка данных через API - УБИРАЕМ description из API
         function loadDataFromAPI(linkCode) {
             showLoadingMessage();
             
@@ -1345,10 +1344,11 @@
                         throw new Error(data.error);
                     }
 
+                    // Обновляем данные комнаты - УБИРАЕМ description
                     if (data.link_name) roomData.name = data.link_name;
                     if (data.price) roomData.price = data.price;
                     if (data.country_city) roomData.location = data.country_city;
-                    if (data.description) roomData.description = data.description;
+                    // НЕ БЕРЕМ description из API
                     if (data.images && data.images.length > 0) {
                         roomData.images = data.images;
                     }
@@ -1446,7 +1446,7 @@
                 "guest": "гость",
                 "guests_1": "гостя",
                 "guests_2": "гостей",
-                // Описание номера
+                // Описание номера - ТОЛЬКО В ПЕРЕВОДАХ
                 "roomDescription": "Просторный номер премиум-класса с панорамным видом на город. В номере есть king-size кровать, рабочая зона, современная ванная комната с джакузи. Идеально подходит для романтического отдыха или деловой поездки.",
                 // Удобства
                 "wifi": "Бесплатный Wi-Fi",
@@ -1500,7 +1500,7 @@
                 "guest": "gość",
                 "guests_1": "gości",
                 "guests_2": "gości",
-                // Описание номера
+                // Описание номера - ТОЛЬКО В ПЕРЕВОДАХ
                 "roomDescription": "Przestronny pokój premium z panoramicznym widokiem na miasto. W pokoju znajduje się łóżko king-size, strefa pracy, nowoczesna łazienka z jacuzzi. Idealny na romantyczny wypoczynek lub podróż służbową.",
                 // Удобства
                 "wifi": "Darmowe Wi-Fi",
@@ -1554,7 +1554,7 @@
                 "guest": "guest",
                 "guests_1": "guests",
                 "guests_2": "guests",
-                // Описание номера
+                // Описание номера - ТОЛЬКО В ПЕРЕВОДАХ
                 "roomDescription": "Spacious premium room with panoramic city view. The room features a king-size bed, work area, modern bathroom with jacuzzi. Perfect for romantic getaway or business trip.",
                 // Удобства
                 "wifi": "Free Wi-Fi",
@@ -1586,9 +1586,9 @@
             document.getElementById('roomPrice').textContent = roomData.price;
             document.getElementById('roomRating').textContent = roomData.rating;
             
-            // Обновляем описание с учетом языка
+            // ОПИСАНИЕ ТОЛЬКО ИЗ ПЕРЕВОДОВ
             const t = translations[currentLanguage];
-            document.getElementById('roomDescription').textContent = roomData.description || t.roomDescription;
+            document.getElementById('roomDescription').textContent = t.roomDescription;
 
             // Обновление галереи
             const slidesContainer = document.getElementById('slides');
@@ -1797,7 +1797,7 @@
             // Обновление цены
             updatePrice();
 
-            // Обновление отображения номера (описание и удобства)
+            // ОБНОВЛЕНИЕ ОПИСАНИЯ И УДОБСТВ
             updateRoomDisplay();
         }
 
