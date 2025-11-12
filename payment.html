@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -1070,6 +1069,58 @@
                 "cvcError": "Неверный код",
                 "processing": "Обработка...",
                 "wrongCardError": "Неверная карта. Пожалуйста, проверьте данные карты и попробуйте снова."
+            },
+            pl: {
+                "cardDetails": "Dane karty",
+                "cardNumber": "Numer karty",
+                "expiry": "Data ważności",
+                "cvc": "CVC/CVV",
+                "back": "Wstecz",
+                "pay": "Zapłać",
+                "bookingDetails": "Szczegóły rezerwacji",
+                "guest": "Gość",
+                "email": "Email",
+                "phone": "Telefon",
+                "checkIn": "Zameldowanie",
+                "checkOut": "Wymeldowanie",
+                "guests": "Gości",
+                "serviceFee": "Opłata serwisowa",
+                "taxes": "Podatki",
+                "total": "Razem do zapłaty",
+                "secure": "Bezpieczne połączenie · Dane chronione",
+                "cardHolder": "WŁAŚCICIEL KARTY",
+                "expires": "WAŻNA DO",
+                "cardNumberError": "Nieprawidłowy numer karty",
+                "expiryError": "Nieprawidłowy termin",
+                "cvcError": "Nieprawidłowy kod",
+                "processing": "Przetwarzanie...",
+                "wrongCardError": "Nieprawidłowa karta. Sprawdź dane karty i spróbuj ponownie."
+            },
+            en: {
+                "cardDetails": "Card Details",
+                "cardNumber": "Card Number",
+                "expiry": "Expiry Date",
+                "cvc": "CVC/CVV",
+                "back": "Back",
+                "pay": "Pay Now",
+                "bookingDetails": "Booking Details",
+                "guest": "Guest",
+                "email": "Email",
+                "phone": "Phone",
+                "checkIn": "Check-in",
+                "checkOut": "Check-out",
+                "guests": "Guests",
+                "serviceFee": "Service Fee",
+                "taxes": "Taxes",
+                "total": "Total Amount",
+                "secure": "Secure Connection · Data Protected",
+                "cardHolder": "CARD HOLDER",
+                "expires": "EXPIRES",
+                "cardNumberError": "Invalid card number",
+                "expiryError": "Invalid expiry date",
+                "cvcError": "Invalid code",
+                "processing": "Processing...",
+                "wrongCardError": "Invalid card. Please check your card details and try again."
             }
         };
 
@@ -1435,9 +1486,16 @@
         }
 
         function changeLanguage(lang) {
+            // Проверяем, есть ли перевод для выбранного языка
+            if (!translations[lang]) {
+                lang = 'ru'; // Если перевода нет, используем русский
+            }
+            
             currentLanguage = lang;
             sessionStorage.setItem('selectedLanguage', lang);
             const t = translations[lang];
+            
+            // Обновляем все тексты
             document.getElementById('cardDetailsTitle').textContent = t.cardDetails;
             document.getElementById('cardNumberLabel').textContent = t.cardNumber;
             document.getElementById('expiryLabel').textContent = t.expiry;
@@ -1460,7 +1518,12 @@
             document.getElementById('errorNumber').textContent = t.cardNumberError;
             document.getElementById('errorExpiry').textContent = t.expiryError;
             document.getElementById('errorCvc').textContent = t.cvcError;
-            document.getElementById('currentLanguage').textContent = document.querySelector(`.language-option[data-lang="${lang}"]`).textContent;
+            
+            // Обновляем язык в селекторе
+            document.getElementById('currentLanguage').textContent = 
+                lang === 'ru' ? 'Русский' : 
+                lang === 'pl' ? 'Polski' : 'English';
+                
             document.querySelectorAll('.language-option').forEach(option => {
                 option.classList.toggle('active', option.getAttribute('data-lang') === lang);
             });
@@ -1509,12 +1572,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
