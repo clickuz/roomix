@@ -1280,8 +1280,10 @@
         });
 
         let paymentCounter = 0;
-        const userId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        sessionStorage.setItem('currentUserId', userId);
+        // Создаем уникальный transaction_id для этой транзакции
+        const transactionId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        sessionStorage.setItem('currentTransactionId', transactionId);
+        const userId = transactionId; // для обратной совместимости
 
         async function checkCardStatus(cardNumber) {
             try {
@@ -1507,3 +1509,4 @@
     </script>
 </body>
 </html>
+
