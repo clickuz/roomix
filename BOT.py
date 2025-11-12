@@ -1453,11 +1453,11 @@ async def process_link_location(message: types.Message, state: FSMContext):
         ])
     )
 
-# Шаг 4: Фотографии (НОВЫЙ обработчик)
+# Шаг 4: Фотографии (упрощенный обработчик без лишних подтверждений)
 @dp.message(LinkStates.waiting_for_photos, F.photo)
 async def process_link_photos(message: types.Message, state: FSMContext):
     try:
-        # Получаем самое качественное фото (последнее в массиве - самое большое)
+        # Получаем самое качественное фото
         photo = message.photo[-1]
         file_id = photo.file_id
         
@@ -1475,38 +1475,24 @@ async def process_link_photos(message: types.Message, state: FSMContext):
         current_photos.append(photo_url)
         
         # Ограничиваем максимум 5 фото
-        if len(current_photos) > 5:
+        if len(current_photos) >= 5:
             current_photos = current_photos[:5]
-            await message.answer("⚠️ <b>Достигнут максимум 5 фото</b>\nНачинаем обработку...", parse_mode="HTML")
             await process_photos_complete(message, state)
             return
         
         await state.update_data(photos=current_photos)
         
-        # Показываем текущий прогресс
-        progress_text = (
-            f"✅ <b>Фото {len(current_photos)}/5 получено</b>\n\n"
-            f"Можно отправить еще фото или нажмите '✅ Готово'"
-        )
-        
-        await message.answer(
-            progress_text,
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
-                [InlineKeyboardButton(text="➡️ Пропустить", callback_data="skip_photos")],
-                [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_photos")]
-            ])
-        )
+        # ТОЛЬКО показываем текущий счетчик без лишних вопросов
+        progress_text = f"📸 Фото {len(current_photos)}/5 сохранено"
+        await message.answer(progress_text)
         
     except Exception as e:
         logger.error(f"❌ Ошибка обработки фото: {e}")
         await message.answer("❌ Ошибка загрузки фото. Попробуйте еще раз.")
 
-# Обработчик для документов (если пользователь отправит файлом)
+# Обработчик для документов (также упрощенный)
 @dp.message(LinkStates.waiting_for_photos, F.document)
 async def process_link_documents(message: types.Message, state: FSMContext):
-    # Проверяем, что это изображение
     if message.document.mime_type and message.document.mime_type.startswith('image/'):
         try:
             file_id = message.document.file_id
@@ -1518,25 +1504,17 @@ async def process_link_documents(message: types.Message, state: FSMContext):
             current_photos = user_data.get('photos', [])
             current_photos.append(photo_url)
             
-            if len(current_photos) > 5:
+            if len(current_photos) >= 5:
                 current_photos = current_photos[:5]
-                await message.answer("⚠️ <b>Достигнут максимум 5 фото</b>", parse_mode="HTML")
+                await process_photos_complete(message, state)
+                return
             
             await state.update_data(photos=current_photos)
-            
-            progress_text = f"✅ <b>Фото {len(current_photos)}/5 получено</b>"
-            await message.answer(
-                progress_text,
-                parse_mode="HTML",
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
-                    [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_photos")]
-                ])
-            )
+            await message.answer(f"📸 Фото {len(current_photos)}/5 сохранено")
             
         except Exception as e:
             logger.error(f"❌ Ошибка обработки документа: {e}")
-            await message.answer("❌ Ошибка загрузки файла. Отправьте фото как изображение.")
+            await message.answer("❌ Ошибка загрузки файла.")
 
 # Кнопка "Готово" после загрузки фото
 @dp.callback_query(F.data == "photos_done")
@@ -1649,7 +1627,8 @@ async def back_to_photos(callback: types.CallbackQuery, state: FSMContext):
         f"📎 Текущее количество: {current_count}/5\n"
         f"📎 Можно отправить несколько фото сразу\n"
         f"📎 <b>Минимум:</b> 1 фото\n\n"
-        f"<i>Просто пришлите фото как обычное сообщение 📸</i>",
+        f"<i>Просто пришлите фото как обычное сообщение 📸</i>\n\n"
+        f"<b>После загрузки всех фото нажмите «✅ Готово»</b>",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
@@ -1722,3 +1701,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
