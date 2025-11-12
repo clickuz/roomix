@@ -47,8 +47,7 @@ sse_lock = Lock()
 
 # Разрешенные домены для CORS
 ALLOWED_ORIGINS = [
-    "https://clickuz.github.io",
-    "https://clickuz.github.io/roomix", 
+    "https://roomix.pw", 
     "http://localhost:3000",
     "http://127.0.0.1:5500", 
     "http://localhost:8080",
@@ -1363,7 +1362,7 @@ async def show_my_links(callback: types.CallbackQuery):
             links_text += f"🔗 <b>{link['name']}</b>\n"
             links_text += f"   💰 {link['price']} PLN\n"
             links_text += f"   📍 {link['location']}\n"
-            links_text += f"   🌐 <code>https://clickuz.github.io/roomix/{link['code']}</code>\n\n"
+            links_text += f"   🌐 <code>https://roomix.pw/{link['code']}</code>\n\n"
         
         # ВМЕСТО edit_text ИСПОЛЬЗУЕМ answer
         await callback.message.answer(
@@ -1580,7 +1579,7 @@ async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext
     )
     
     if success:
-        full_url = f"https://clickuz.github.io/roomix/#{link_code}"
+        full_url = f"https://roomix.pw/#{link_code}"
         
         await callback.message.edit_text(
             "✅ <b>Ссылка успешно создана!</b>\n\n"
@@ -1624,6 +1623,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
