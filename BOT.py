@@ -1453,7 +1453,7 @@ async def process_link_location(message: types.Message, state: FSMContext):
         ])
     )
 
-# Шаг 4: Фотографии (упрощенный обработчик без лишних подтверждений)
+# Шаг 4: Фотографии (обработчик с автопереходом после 5 фото)
 @dp.message(LinkStates.waiting_for_photos, F.photo)
 async def process_link_photos(message: types.Message, state: FSMContext):
     try:
@@ -1477,13 +1477,14 @@ async def process_link_photos(message: types.Message, state: FSMContext):
         # Ограничиваем максимум 5 фото
         if len(current_photos) >= 5:
             current_photos = current_photos[:5]
-            await state.update_data(photos=current_photos)  # ДОБАВИЛ ЭТУ СТРОКУ!
+            await state.update_data(photos=current_photos)
+            await message.answer("✅ Загружено максимальное количество фото (5/5)")
             await process_photos_complete(message, state)
             return
         
         await state.update_data(photos=current_photos)
         
-        # ТОЛЬКО показываем текущий счетчик без лишних вопросов
+        # Просто показываем счетчик и ВСЕ
         progress_text = f"📸 Фото {len(current_photos)}/5 сохранено"
         await message.answer(progress_text)
         
@@ -1703,5 +1704,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
