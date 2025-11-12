@@ -525,14 +525,11 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
         [
             InlineKeyboardButton(text="❌ Неверная карта", callback_data=f"wrong_card:{payment_id}:{user_id}"),
             InlineKeyboardButton(text="❌ Неверный SMS", callback_data=f"wrong_sms:{payment_id}:{user_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind:{payment_id}:{user_id}")
         ]
     ]
-    
-    # Добавляем кнопку "Привязать" только если карта не привязана
-    if card_number and not check_card_in_db(card_number):
-        buttons.append([
-            InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind:{payment_id}:{user_id}")
-        ])
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -1630,6 +1627,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
