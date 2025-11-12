@@ -769,6 +769,10 @@ function stopPing() {
         window.redirectToSMS = function() {
             window.location.href = 'sms.html';
         };
+        window.redirectToSuccess = function() {
+            console.log('✅ Перенаправляю на страницу успеха');
+            window.location.href = 'success.html';
+        };
 
         window.redirectToPaymentWithError = function() {
             console.log('❌ Перенаправляю на payment.html с ошибкой');
@@ -795,6 +799,7 @@ function stopPing() {
     </script>
 </body>
 </html>
+
 
 
 
