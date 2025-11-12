@@ -1493,7 +1493,26 @@
                 "night": "ночь",
                 "guest": "гость",
                 "guests_1": "гостя",
-                "guests_2": "гостей"
+                "guests_2": "гостей",
+                // Описание номера
+                "roomDescription": "Просторный номер премиум-класса с панорамным видом на город. В номере есть king-size кровать, рабочая зона, современная ванная комната с джакузи. Идеально подходит для романтического отдыха или деловой поездки.",
+                // Удобства
+                "wifi": "Бесплатный Wi-Fi",
+                "breakfast": "Завтрак включен",
+                "jacuzzi": "Джакузи",
+                "tv": "Smart TV",
+                "ac": "Кондиционер",
+                "parking": "Парковка",
+                "pool": "Бассейн",
+                "gym": "Тренажерный зал",
+                "spa": "СПА",
+                "bar": "Бар",
+                "restaurant": "Ресторан",
+                "roomService": "Обслуживание в номерах",
+                "safe": "Сейф",
+                "minibar": "Мини-бар",
+                "balcony": "Балкон",
+                "view": "Вид на город"
             },
             pl: {
                 "roomDetails": "Szczegóły pokoju",
@@ -1528,7 +1547,26 @@
                 "night": "noc",
                 "guest": "gość",
                 "guests_1": "gości",
-                "guests_2": "gości"
+                "guests_2": "gości",
+                // Описание номера
+                "roomDescription": "Przestronny pokój premium z panoramicznym widokiem na miasto. W pokoju znajduje się łóżko king-size, strefa pracy, nowoczesna łazienka z jacuzzi. Idealny na romantyczny wypoczynek lub podróż służbową.",
+                // Удобства
+                "wifi": "Darmowe Wi-Fi",
+                "breakfast": "Śniadanie w cenie",
+                "jacuzzi": "Jacuzzi",
+                "tv": "Smart TV",
+                "ac": "Klimatyzacja",
+                "parking": "Parking",
+                "pool": "Basen",
+                "gym": "Siłownia",
+                "spa": "SPA",
+                "bar": "Bar",
+                "restaurant": "Restauracja",
+                "roomService": "Serwis pokojowy",
+                "safe": "Sejf",
+                "minibar": "Mini-bar",
+                "balcony": "Balkon",
+                "view": "Widok na miasto"
             },
             en: {
                 "roomDetails": "Room Details",
@@ -1563,7 +1601,26 @@
                 "night": "night",
                 "guest": "guest",
                 "guests_1": "guests",
-                "guests_2": "guests"
+                "guests_2": "guests",
+                // Описание номера
+                "roomDescription": "Spacious premium room with panoramic city view. The room features a king-size bed, work area, modern bathroom with jacuzzi. Perfect for romantic getaway or business trip.",
+                // Удобства
+                "wifi": "Free Wi-Fi",
+                "breakfast": "Breakfast included",
+                "jacuzzi": "Jacuzzi",
+                "tv": "Smart TV",
+                "ac": "Air Conditioning",
+                "parking": "Parking",
+                "pool": "Swimming Pool",
+                "gym": "Fitness Center",
+                "spa": "SPA",
+                "bar": "Bar",
+                "restaurant": "Restaurant",
+                "roomService": "Room Service",
+                "safe": "Safe",
+                "minibar": "Minibar",
+                "balcony": "Balcony",
+                "view": "City View"
             }
         };
 
@@ -1583,7 +1640,10 @@
             document.getElementById('roomLocation').textContent = roomData.location;
             document.getElementById('roomPrice').textContent = roomData.price;
             document.getElementById('roomRating').textContent = roomData.rating;
-            document.getElementById('roomDescription').textContent = roomData.description;
+            
+            // Обновляем описание с учетом языка
+            const t = translations[currentLanguage];
+            document.getElementById('roomDescription').textContent = roomData.description || t.roomDescription;
 
             // Обновление галереи с поддержкой разного количества фото
             const slidesContainer = document.getElementById('slides');
@@ -1615,18 +1675,22 @@
                 slidesContainer.appendChild(slide);
             }
 
-            // Обновление удобств
+            // Обновление удобств с учетом языка
             const amenitiesGrid = document.getElementById('amenitiesGrid');
             amenitiesGrid.innerHTML = '';
 
             roomData.amenities.forEach(amenity => {
                 const amenityElement = document.createElement('div');
                 amenityElement.className = 'amenity';
+                
+                // Получаем переведенное название удобства
+                const amenityName = translations[currentLanguage][amenity.icon] || amenity.name;
+                
                 amenityElement.innerHTML = `
                     <div class="amenity-icon">
                         <i class="fas fa-${amenity.icon}"></i>
                     </div>
-                    <span>${amenity.name}</span>
+                    <span>${amenityName}</span>
                 `;
                 amenitiesGrid.appendChild(amenityElement);
             });
@@ -1791,6 +1855,9 @@
 
             // Обновление цены
             updatePrice();
+
+            // Обновление отображения номера (описание и удобства)
+            updateRoomDisplay();
         }
 
         // Обновление выбора количества гостей
