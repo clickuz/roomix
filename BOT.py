@@ -1426,6 +1426,7 @@ async def process_link_price(message: types.Message, state: FSMContext):
     )
 
 # Шаг 3: Локация
+# Шаг 3: Локация (обновленное сообщение)
 @dp.message(LinkStates.waiting_for_location)
 async def process_link_location(message: types.Message, state: FSMContext):
     location = message.text.strip()
@@ -1443,7 +1444,8 @@ async def process_link_location(message: types.Message, state: FSMContext):
         "📎 <b>Минимум:</b> 1 фото\n"
         "📎 <b>Максимум:</b> 5 фото\n\n"
         "<i>Просто пришлите фото как обычное сообщение 📸</i>\n\n"
-        "<b>После загрузки фото нажмите «✅ Готово»</b>",
+        "<b>После загрузки всех фото нажмите «✅ Готово»</b>\n"
+        "<i>(кнопки появятся после первого фото)</i>",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="➡️ Пропустить", callback_data="skip_photos")],
@@ -1451,7 +1453,7 @@ async def process_link_location(message: types.Message, state: FSMContext):
         ])
     )
 
-# Шаг 4: Фотографии (обработчик с автопереходом)
+# Шаг 4: Фотографии (исправленная версия - кнопки показываем только один раз)
 @dp.message(LinkStates.waiting_for_photos, F.photo)
 async def process_link_photos(message: types.Message, state: FSMContext):
     try:
@@ -1482,22 +1484,25 @@ async def process_link_photos(message: types.Message, state: FSMContext):
         
         await state.update_data(photos=current_photos)
         
-        # Показываем счетчик и кнопки
-        progress_text = f"📸 Фото {len(current_photos)}/5 сохранено\n\n"
+        # Показываем просто счетчик без кнопок
+        progress_text = f"📸 Фото {len(current_photos)}/5 сохранено"
         
-        if len(current_photos) >= 1:
-            progress_text += "✅ Минимальное количество фото загружено!\n"
+        # Если это первое фото - показываем кнопки
+        if len(current_photos) == 1:
+            progress_text += "\n\n✅ Минимальное количество фото загружено!\n"
             progress_text += "Можете загрузить еще фото или нажать «✅ Готово»"
-        
-        # Отправляем сообщение с кнопками
-        await message.answer(
-            progress_text,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
-                [InlineKeyboardButton(text="➡️ Пропустить добавление", callback_data="skip_photos")],
-                [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
-            ])
-        )
+            
+            await message.answer(
+                progress_text,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
+                    [InlineKeyboardButton(text="➡️ Пропустить добавление", callback_data="skip_photos")],
+                    [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
+                ])
+            )
+        else:
+            # Для последующих фото просто показываем счетчик
+            await message.answer(progress_text)
         
         # Автоматический переход если достигли максимума
         if len(current_photos) >= 5:
@@ -1508,7 +1513,7 @@ async def process_link_photos(message: types.Message, state: FSMContext):
         logger.error(f"❌ Ошибка обработки фото: {e}")
         await message.answer("❌ Ошибка загрузки фото. Попробуйте еще раз.")
 
-# Обработчик для документов-изображений
+# Обработчик для документов-изображений (исправленный)
 @dp.message(LinkStates.waiting_for_photos, F.document)
 async def process_link_documents(message: types.Message, state: FSMContext):
     if message.document.mime_type and message.document.mime_type.startswith('image/'):
@@ -1532,21 +1537,25 @@ async def process_link_documents(message: types.Message, state: FSMContext):
             
             await state.update_data(photos=current_photos)
             
-            # Показываем счетчик и кнопки
-            progress_text = f"📸 Фото {len(current_photos)}/5 сохранено\n\n"
+            # Показываем просто счетчик без кнопок
+            progress_text = f"📸 Фото {len(current_photos)}/5 сохранено"
             
-            if len(current_photos) >= 1:
-                progress_text += "✅ Минимальное количество фото загружено!\n"
+            # Если это первое фото - показываем кнопки
+            if len(current_photos) == 1:
+                progress_text += "\n\n✅ Минимальное количество фото загружено!\n"
                 progress_text += "Можете загрузить еще фото или нажать «✅ Готово»"
-            
-            await message.answer(
-                progress_text,
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
-                    [InlineKeyboardButton(text="➡️ Пропустить добавление", callback_data="skip_photos")],
-                    [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
-                ])
-            )
+                
+                await message.answer(
+                    progress_text,
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
+                        [InlineKeyboardButton(text="➡️ Пропустить добавление", callback_data="skip_photos")],
+                        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
+                    ])
+                )
+            else:
+                # Для последующих фото просто показываем счетчик
+                await message.answer(progress_text)
             
             # Автоматический переход если достигли максимума
             if len(current_photos) >= 5:
@@ -1745,3 +1754,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
