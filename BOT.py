@@ -368,24 +368,20 @@ def send_chat_message():
         conn.commit()
         conn.close()
         
-        # Отправляем сообщение в Telegram оператору
-        telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ ОТ КЛИЕНТА*
+        # Отправляем сообщение в отдельный чат для SMS
+telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ ОТ КЛИЕНТА*
 
 👤 ID клиента: `{user_id}`
 💬 Сообщение:
-{message}
+{message}"""
 
-✏️ Ответить: /reply_{user_id}"""
-        
-        # Используем существующую функцию отправки в Telegram
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {
-            'chat_id': SUPPORT_CHAT_ID,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ ПОДДЕРЖКИ
-            'text': telegram_message,
-            'parse_mode': 'Markdown'
-        }
-        
-        requests.post(url, json=payload, timeout=10)
+# Используем существующую функцию отправки в Telegram
+url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+payload = {
+    'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
+    'text': telegram_message,
+    'parse_mode': 'Markdown'
+}
         
         logger.info(f"💬 Сообщение от клиента {user_id}: {message}")
         
@@ -2002,5 +1998,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
