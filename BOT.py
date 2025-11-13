@@ -1426,7 +1426,6 @@ async def process_link_price(message: types.Message, state: FSMContext):
     )
 
 # Шаг 3: Локация
-# Шаг 3: Локация (обновленное сообщение)
 @dp.message(LinkStates.waiting_for_location)
 async def process_link_location(message: types.Message, state: FSMContext):
     location = message.text.strip()
@@ -1672,16 +1671,19 @@ async def back_to_location(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "back_to_photos")
 async def back_to_photos(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(LinkStates.waiting_for_photos)
+    
+    # СБРАСЫВАЕМ список фото при возврате
     user_data = await state.get_data()
-    current_count = len(user_data.get('photos', []))
+    if 'photos' in user_data:
+        await state.update_data(photos=[])
     
     await callback.message.edit_text(
-        f"🖼️ <b>Шаг 4 из 5:</b> Пришлите фотографии номера\n\n"
-        f"📎 Текущее количество: {current_count}/5\n"
-        f"📎 Можно отправить несколько фото сразу\n"
-        f"📎 <b>Минимум:</b> 1 фото\n\n"
-        f"<i>Просто пришлите фото как обычное сообщение 📸</i>\n\n"
-        f"<b>После загрузки всех фото нажмите «✅ Готово»</b>",
+        "🖼️ <b>Шаг 4 из 5:</b> Пришлите фотографии номера\n\n"
+        "📎 Можно отправить несколько фото сразу\n"
+        "📎 <b>Минимум:</b> 1 фото\n"
+        "📎 <b>Максимум:</b> 5 фото\n\n"
+        "<i>Просто пришлите фото как обычное сообщение 📸</i>\n\n"
+        "<b>После загрузки всех фото нажмите «✅ Готово»</b>",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
@@ -1754,4 +1756,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
