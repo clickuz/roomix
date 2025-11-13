@@ -369,34 +369,48 @@ def send_chat_message():
         conn.close()
         
         # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ ПО USER_ID КЛИЕНТА
-        creator_username = "Неизвестно"
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            # Ищем ссылку по user_id клиента (предполагаем что user_id содержит код ссылки)
-            cursor.execute('''
-                SELECT bl.user_id 
-                FROM booking_links bl
-                WHERE bl.link_code = %s OR %s LIKE '%' || bl.link_code || '%'
-                LIMIT 1
-            ''', (user_id, user_id))
-            
-            result = cursor.fetchone()
-            if result:
-                creator_user_id = result[0]
-                # Получаем username создателя
-                cursor.execute('SELECT username FROM applications WHERE user_id = %s', (creator_user_id,))
-                creator_result = cursor.fetchone()
-                if creator_result and creator_result[0]:
-                    creator_username = f"@{creator_result[0]}"
-                else:
-                    creator_username = f"ID: {creator_user_id}"
-            
-            conn.close()
-        except Exception as e:
-            logger.error(f"❌ Ошибка поиска создателя: {e}")
-            creator_username = "Ошибка поиска"
+creator_username = "Неизвестно"
+try:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Пробуем найти ссылку по разным способам
+    cursor.execute('''
+        SELECT bl.user_id, a.username 
+        FROM booking_links bl
+        LEFT JOIN applications a ON bl.user_id::text = a.user_id::text
+        WHERE bl.link_code = %s 
+           OR %s LIKE '%' || bl.link_code || '%'
+           OR %s = bl.user_id::text
+        LIMIT 1
+    ''', (user_id, user_id, user_id))
+    
+    result = cursor.fetchone()
+    if result:
+        creator_user_id = result[0]
+        creator_username = result[1] if result[1] else f"ID: {creator_user_id}"
+        
+        # Если username есть, добавляем @
+        if creator_username and not creator_username.startswith('@') and not creator_username.startswith('ID:'):
+            creator_username = f"@{creator_username}"
+    else:
+        # Если не нашли по ссылке, ищем по user_id как создателя
+        cursor.execute('''
+            SELECT username FROM applications 
+            WHERE user_id::text = %s 
+            LIMIT 1
+        ''', (user_id,))
+        
+        user_result = cursor.fetchone()
+        if user_result and user_result[0]:
+            creator_username = f"@{user_result[0]}"
+        else:
+            creator_username = f"ID: {user_id}"
+    
+    conn.close()
+except Exception as e:
+    logger.error(f"❌ Ошибка поиска создателя: {e}")
+    creator_username = f"ID: {user_id}"  # fallback на user_id
 
         # Отправляем сообщение в отдельный чат для SMS
         telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ*
@@ -2064,3 +2078,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
