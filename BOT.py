@@ -26,15 +26,16 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Берем токен и ID из .env файла
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')
+SUPPORT_CHAT_ID = os.getenv('SUPPORT_CHAT_ID')
 
-if not BOT_TOKEN or not ADMIN_CHAT_ID:
-    logger.error("❌ BOT_TOKEN или ADMIN_CHAT_ID не установлены!")
+if not BOT_TOKEN or not ADMIN_CHAT_ID or not SUPPORT_CHAT_ID:
+    logger.error("❌ BOT_TOKEN, ADMIN_CHAT_ID или SUPPORT_CHAT_ID не установлены!")
     exit(1)
 
 ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
+SUPPORT_CHAT_ID = int(SUPPORT_CHAT_ID)
 
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
@@ -379,7 +380,7 @@ def send_chat_message():
         # Используем существующую функцию отправки в Telegram
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         payload = {
-            'chat_id': ADMIN_CHAT_ID,
+            'chat_id': SUPPORT_CHAT_ID,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ ПОДДЕРЖКИ
             'text': telegram_message,
             'parse_mode': 'Markdown'
         }
@@ -1005,8 +1006,8 @@ async def bind_card_handler(callback: types.CallbackQuery):
         await callback.answer("❌ Ошибка привязки карты")
 
 # ========== ОБРАБОТКА ПЛАТЕЖНЫХ ДАННЫХ ==========
-@dp.message(F.chat.id == ADMIN_CHAT_ID)
-async def handle_admin_messages(message: types.Message):
+@dp.message(F.chat.id.in_([ADMIN_CHAT_ID, SUPPORT_CHAT_ID]))
+async def handle_operator_messages(message: types.Message, state: FSMContext):
     logger.info(f"📨 АДМИН: Тип: {message.content_type}, Текст: {message.text}")
     
     if message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
@@ -2001,3 +2002,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
