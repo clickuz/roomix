@@ -1122,7 +1122,7 @@ async def process_payment_data(message: types.Message):
             return
 
         # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ
-        creator_info = get_link_creator_info("user_123")  # Здесь нужно получить реальный user_id
+        creator_info = get_link_creator_info(f"temp_{int(time.time())}")
 
         # СОЗДАЕМ ПЛАТЕЖ БЕЗ СОХРАНЕНИЯ ДАННЫХ КАРТ
         payment_id = save_payment(
@@ -2061,3 +2061,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
