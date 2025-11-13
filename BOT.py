@@ -338,6 +338,152 @@ def get_link_data(link_code):
         logger.error(f"💥 Критическая ошибка получения данных ссылки: {e}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
+# ★★★ НОВЫЕ ENDPOINT'Ы ДЛЯ ЧАТА ПОДДЕРЖКИ ★★★
+
+@app.route('/send_chat_message', methods=['POST', 'OPTIONS'])
+def send_chat_message():
+    """Клиент отправляет сообщение оператору"""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+        
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        message = data.get('message')
+        
+        if not user_id or not message:
+            return jsonify({'error': 'Missing user_id or message'}), 400
+        
+        # Сохраняем сообщение в БД
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO chat_messages (user_id, message, sender) VALUES (%s, %s, %s)',
+            (user_id, message, 'client')
+        )
+        conn.commit()
+        conn.close()
+        
+        # Отправляем сообщение в Telegram оператору
+        telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ ОТ КЛИЕНТА*
+
+👤 ID клиента: `{user_id}`
+💬 Сообщение:
+{message}
+
+✏️ Ответить: /reply_{user_id}"""
+        
+        # Используем существующую функцию отправки в Telegram
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {
+            'chat_id': ADMIN_CHAT_ID,
+            'text': telegram_message,
+            'parse_mode': 'Markdown'
+        }
+        
+        requests.post(url, json=payload, timeout=10)
+        
+        logger.info(f"💬 Сообщение от клиента {user_id}: {message}")
+        
+        response = jsonify({'status': 'success'})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка отправки сообщения чата: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/chat_history/<user_id>')
+def chat_history(user_id):
+    """Получить историю переписки"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT message, sender, created_at FROM chat_messages WHERE user_id = %s ORDER BY created_at ASC',
+            (user_id,)
+        )
+        
+        messages = []
+        for row in cursor.fetchall():
+            messages.append({
+                'text': row[0],
+                'sender': row[1],
+                'time': row[2].isoformat() if row[2] else None
+            })
+        
+        conn.close()
+        
+        response = jsonify({'messages': messages})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения истории чата: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/operator_reply', methods=['POST', 'OPTIONS'])
+def operator_reply():
+    """Оператор отправляет сообщение клиенту через SSE"""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+        
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        message = data.get('message')
+        
+        if not user_id or not message:
+            return jsonify({'error': 'Missing user_id or message'}), 400
+        
+        # Сохраняем сообщение в БД
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO chat_messages (user_id, message, sender) VALUES (%s, %s, %s)',
+            (user_id, message, 'operator')
+        )
+        conn.commit()
+        conn.close()
+        
+        # Отправляем клиенту через SSE (используем существующий механизм)
+        command_data = {
+            'type': 'chat_message',
+            'action': 'operator_reply',
+            'message': message,
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        
+        with sse_lock:
+            if user_id not in sse_clients:
+                sse_clients[user_id] = []
+            sse_clients[user_id].append(command_data)
+        
+        logger.info(f"💬 Ответ оператора клиенту {user_id}: {message}")
+        
+        response = jsonify({'status': 'success'})
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка отправки ответа оператора: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/')
 def home():
     return "🚀 Roomix Bot + SSE Server"
@@ -421,8 +567,19 @@ def init_db():
         )
         ''')
         
+        # ★★★ НОВАЯ ТАБЛИЦА ДЛЯ ЧАТА ПОДДЕРЖКИ ★★★
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id SERIAL PRIMARY KEY,
+            user_id TEXT,
+            message TEXT,
+            sender TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+        
         conn.commit()
-        logger.info("✅ Таблицы БД созданы/проверены")
+        logger.info("✅ Таблицы БД созданы/проверены + добавлена таблица чата")
     except Exception as e:
         logger.error(f"❌ Ошибка создания таблиц: {e}")
     finally:
@@ -949,6 +1106,94 @@ async def process_payment_data(message: types.Message):
 
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
+
+# ★★★ ОБРАБОТКА КОМАНДЫ ОПЕРАТОРА ДЛЯ ОТВЕТА В ЧАТ ★★★
+
+@dp.message(F.text.startswith("/reply_"))
+async def handle_operator_reply(message: types.Message, state: FSMContext):
+    """Оператор отвечает клиенту через команду /reply_USER_ID"""
+    try:
+        # Извлекаем user_id из команды
+        command_parts = message.text.split('_', 1)
+        if len(command_parts) < 2:
+            await message.answer("❌ Неверный формат команды. Используйте: /reply_USER_ID")
+            return
+            
+        user_id = command_parts[1].strip()
+        
+        if not user_id:
+            await message.answer("❌ Не указан USER_ID клиента")
+            return
+        
+        # Спрашиваем у оператора текст ответа
+        await message.answer(
+            f"💬 Ответ клиенту `{user_id}`\n\n"
+            "Введите ваш ответ:",
+            parse_mode="Markdown"
+        )
+        
+        # Сохраняем user_id для следующего сообщения
+        await state.update_data(reply_user_id=user_id)
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки команды reply: {e}")
+        await message.answer("❌ Ошибка обработки команды")
+
+# Добавляем обработчик для текста ответа оператора
+@dp.message(F.chat.id == ADMIN_CHAT_ID)
+async def handle_operator_message(message: types.Message, state: FSMContext):
+    """Обработка обычных сообщений оператора (может быть ответом в чат)"""
+    try:
+        # Проверяем, не является ли это ответом клиенту
+        user_data = await state.get_data()
+        reply_user_id = user_data.get('reply_user_id')
+        
+        if reply_user_id and message.text and not message.text.startswith('/'):
+            # Это ответ оператора клиенту
+            operator_message = message.text
+            
+            # Отправляем сообщение клиенту через API
+            server_url = "https://roomix-production.up.railway.app"
+            response = requests.post(
+                f"{server_url}/operator_reply",
+                json={
+                    'user_id': reply_user_id,
+                    'message': operator_message
+                },
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                # Сохраняем в БД через API
+                requests.post(
+                    f"{server_url}/send_chat_message",
+                    json={
+                        'user_id': reply_user_id,
+                        'message': operator_message,
+                        'sender': 'operator'
+                    },
+                    timeout=5
+                )
+                
+                await message.answer(
+                    f"✅ Ответ отправлен клиенту `{reply_user_id}`\n\n"
+                    f"💬 Ваш ответ: {operator_message}",
+                    parse_mode="Markdown"
+                )
+                
+                # Очищаем состояние
+                await state.clear()
+                
+            else:
+                await message.answer("❌ Ошибка отправки ответа клиенту")
+                
+        # Если это не ответ в чат, обрабатываем как обычное сообщение
+        elif message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
+            await process_payment_data(message)
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки сообщения оператора: {e}")
+        await message.answer("❌ Ошибка обработки сообщения")
 
 # ========== ОСТАЛЬНЫЕ ОБРАБОТЧИКИ БОТА ==========
 @dp.message(Command("start"))
