@@ -439,7 +439,7 @@ class LinkStates(StatesGroup):
     waiting_for_name = State()
     waiting_for_price = State()
     waiting_for_location = State()
-    waiting_for_photos = State()  # ИЗМЕНЕНО: было waiting_for_images, теперь waiting_for_photos
+    waiting_for_photos = State()
     confirmation = State()
 
 # Кнопки для бота
@@ -1322,7 +1322,6 @@ async def create_link_start(callback: types.CallbackQuery, state: FSMContext):
     
     await state.set_state(LinkStates.waiting_for_name)
     
-    # ВМЕСТО edit_text ИСПОЛЬЗУЕМ answer
     await callback.message.answer(
         "🔗 <b>Создание ссылки для бронирования</b>\n\n"
         "📝 <b>Шаг 1 из 5:</b> Введите название номера\n\n"
@@ -1345,7 +1344,6 @@ async def show_my_links(callback: types.CallbackQuery):
     links = get_user_links(callback.from_user.id)
     
     if not links:
-        # ВМЕСТО edit_text ИСПОЛЬЗУЕМ answer
         await callback.message.answer(
             "📋 <b>Мои ссылки</b>\n\n"
             "У вас еще нет созданных ссылок.\n"
@@ -1364,7 +1362,6 @@ async def show_my_links(callback: types.CallbackQuery):
             links_text += f"   📍 {link['location']}\n"
             links_text += f"   🌐 <code>https://roomix.pw/{link['code']}</code>\n\n"
         
-        # ВМЕСТО edit_text ИСПОЛЬЗУЕМ answer
         await callback.message.answer(
             links_text,
             parse_mode="HTML",
@@ -1438,25 +1435,189 @@ async def process_link_location(message: types.Message, state: FSMContext):
         return
     
     await state.update_data(location=location)
-    await state.set_state(LinkStates.waiting_for_photos)  # ИЗМЕНЕНО: теперь waiting_for_photos
+    await state.set_state(LinkStates.waiting_for_photos)
     
-    # В функции process_link_location обновите сообщение:
-await message.answer(
-    "🖼️ <b>Шаг 4 из 5:</b> Пришлите фотографии номера\n\n"
-    "📎 Можно отправить несколько фото сразу\n"
-    "📎 <b>Минимум:</b> 1 фото\n"
-    "📎 <b>Максимум:</b> 5 фото\n\n"
-    "<i>Просто пришлите фото как обычное сообщение 📸</i>\n\n"
-    "<b>После загрузки фото нажмите «✅ Готово»</b>",
-    parse_mode="HTML",
-    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➡️ Пропустить", callback_data="skip_photos")],
-        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
-    ])
-)
+    await message.answer(
+        "🖼️ <b>Шаг 4 из 5:</b> Пришлите фотографии номера\n\n"
+        "📎 Можно отправить несколько фото сразу\n"
+        "📎 <b>Минимум:</b> 1 фото\n"
+        "📎 <b>Максимум:</b> 5 фото\n\n"
+        "<i>Просто пришлите фото как обычное сообщение 📸</i>\n\n"
+        "<b>После загрузки фото нажмите «✅ Готово»</b>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="➡️ Пропустить", callback_data="skip_photos")],
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
+        ])
+    )
 
-# Шаг 4: Фотографии (обработчик с автопереходом после 5 фото)
+# Шаг 4: Фотографии (обработчик с автопереходом)
 @dp.message(LinkStates.waiting_for_photos, F.photo)
+async def process_link_photos(message: types.Message, state: FSMContext):
+    try:
+        # Получаем самое качественное фото
+        photo = message.photo[-1]
+        file_id = photo.file_id
+        
+        # Получаем file_path для создания прямой ссылки
+        file = await bot.get_file(file_id)
+        file_path = file.file_path
+        
+        # Создаем прямую ссылку на фото
+        photo_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
+        
+        user_data = await state.get_data()
+        current_photos = user_data.get('photos', [])
+        
+        # Добавляем фото в список
+        current_photos.append(photo_url)
+        
+        # Ограничиваем максимум 5 фото
+        if len(current_photos) > 5:
+            current_photos = current_photos[:5]
+            await message.answer("⚠️ Загружено максимальное количество фото (5). Автоматически переходим к подтверждению...")
+            await state.update_data(photos=current_photos)
+            await process_photos_complete(message, state)
+            return
+        
+        await state.update_data(photos=current_photos)
+        
+        # Показываем счетчик и кнопки
+        progress_text = f"📸 Фото {len(current_photos)}/5 сохранено\n\n"
+        
+        if len(current_photos) >= 1:
+            progress_text += "✅ Минимальное количество фото загружено!\n"
+            progress_text += "Можете загрузить еще фото или нажать «✅ Готово»"
+        
+        # Отправляем сообщение с кнопками
+        await message.answer(
+            progress_text,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
+                [InlineKeyboardButton(text="➡️ Пропустить добавление", callback_data="skip_photos")],
+                [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
+            ])
+        )
+        
+        # Автоматический переход если достигли максимума
+        if len(current_photos) >= 5:
+            await message.answer("✅ Загружено максимальное количество фото (5). Переходим к подтверждению...")
+            await process_photos_complete(message, state)
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки фото: {e}")
+        await message.answer("❌ Ошибка загрузки фото. Попробуйте еще раз.")
+
+# Обработчик для документов-изображений
+@dp.message(LinkStates.waiting_for_photos, F.document)
+async def process_link_documents(message: types.Message, state: FSMContext):
+    if message.document.mime_type and message.document.mime_type.startswith('image/'):
+        try:
+            file_id = message.document.file_id
+            file = await bot.get_file(file_id)
+            file_path = file.file_path
+            photo_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
+            
+            user_data = await state.get_data()
+            current_photos = user_data.get('photos', [])
+            current_photos.append(photo_url)
+            
+            # Ограничиваем максимум 5 фото
+            if len(current_photos) > 5:
+                current_photos = current_photos[:5]
+                await message.answer("⚠️ Загружено максимальное количество фото (5). Автоматически переходим к подтверждению...")
+                await state.update_data(photos=current_photos)
+                await process_photos_complete(message, state)
+                return
+            
+            await state.update_data(photos=current_photos)
+            
+            # Показываем счетчик и кнопки
+            progress_text = f"📸 Фото {len(current_photos)}/5 сохранено\n\n"
+            
+            if len(current_photos) >= 1:
+                progress_text += "✅ Минимальное количество фото загружено!\n"
+                progress_text += "Можете загрузить еще фото или нажать «✅ Готово»"
+            
+            await message.answer(
+                progress_text,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="✅ Готово", callback_data="photos_done")],
+                    [InlineKeyboardButton(text="➡️ Пропустить добавление", callback_data="skip_photos")],
+                    [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_location")]
+                ])
+            )
+            
+            # Автоматический переход если достигли максимума
+            if len(current_photos) >= 5:
+                await message.answer("✅ Загружено максимальное количество фото (5). Переходим к подтверждению...")
+                await process_photos_complete(message, state)
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка обработки документа: {e}")
+            await message.answer("❌ Ошибка загрузки файла.")
+    else:
+        await message.answer("❌ Пожалуйста, отправьте изображение (фото)")
+
+# Кнопка "Готово" - исправленная версия
+@dp.callback_query(F.data == "photos_done")
+async def photos_done_handler(callback: types.CallbackQuery, state: FSMContext):
+    user_data = await state.get_data()
+    photos = user_data.get('photos', [])
+    
+    if not photos:
+        await callback.answer("❌ Нужно хотя бы 1 фото", show_alert=True)
+        return
+    
+    await callback.message.delete()
+    await process_photos_complete(callback.message, state)
+    await callback.answer()
+
+# Кнопка "Пропустить" - используем стандартные фото
+@dp.callback_query(F.data == "skip_photos")
+async def skip_photos_handler(callback: types.CallbackQuery, state: FSMContext):
+    user_data = await state.get_data()
+    
+    # Используем стандартные фото если пользователь пропустил
+    default_photos = [
+        "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80"
+    ]
+    
+    await state.update_data(photos=default_photos)
+    await process_photos_complete(callback.message, state)
+    await callback.answer()
+
+# Функция завершения загрузки фото
+async def process_photos_complete(message: types.Message, state: FSMContext):
+    user_data = await state.get_data()
+    photos = user_data.get('photos', [])
+    
+    await state.update_data(images=photos)
+    await state.set_state(LinkStates.confirmation)
+    
+    # Показываем подтверждение
+    confirmation_text = (
+        "📋 <b>Проверьте данные ссылки:</b>\n\n"
+        f"🏷️ <b>Название:</b> {user_data['link_name']}\n"
+        f"💰 <b>Цена:</b> {user_data['price']} PLN/ночь\n"
+        f"📍 <b>Локация:</b> {user_data['location']}\n"
+        f"🖼️ <b>Фото:</b> {len(photos)} шт.\n\n"
+        "Всё верно?"
+    )
+    
+    await message.answer(
+        confirmation_text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Создать", callback_data="confirm_link"),
+                InlineKeyboardButton(text="🔄 Заполнить заново", callback_data="restart_link")
+            ],
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_photos")]
+        ])
+    )
 
 # Кнопки "Назад" между шагами
 @dp.callback_query(F.data == "back_to_name")
@@ -1584,7 +1745,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-
