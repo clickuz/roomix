@@ -1141,7 +1141,7 @@ async def handle_operator_reply(message: types.Message, state: FSMContext):
         await message.answer("❌ Ошибка обработки команды")
 
 # Добавляем обработчик для текста ответа оператора
-@dp.message(F.chat.id == ADMIN_CHAT_ID)
+@dp.message(F.chat.id.in_([ADMIN_CHAT_ID, SUPPORT_CHAT_ID]))
 async def handle_operator_message(message: types.Message, state: FSMContext):
     """Обработка обычных сообщений оператора (может быть ответом в чат)"""
     try:
@@ -2002,4 +2002,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
