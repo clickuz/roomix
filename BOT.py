@@ -369,19 +369,22 @@ def send_chat_message():
         conn.close()
         
         # Отправляем сообщение в отдельный чат для SMS
-telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ ОТ КЛИЕНТА*
+        telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ ОТ КЛИЕНТА*
 
 👤 ID клиента: `{user_id}`
 💬 Сообщение:
 {message}"""
 
-# Используем существующую функцию отправки в Telegram
-url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-payload = {
-    'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
-    'text': telegram_message,
-    'parse_mode': 'Markdown'
-}
+        # Используем существующую функцию отправки в Telegram
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {
+            'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
+            'text': telegram_message,
+            'parse_mode': 'Markdown'
+        }
+        
+        # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
+        requests.post(url, json=payload, timeout=10)
         
         logger.info(f"💬 Сообщение от клиента {user_id}: {message}")
         
@@ -394,7 +397,7 @@ payload = {
     except Exception as e:
         logger.error(f"❌ Ошибка отправки сообщения чата: {e}")
         return jsonify({'error': str(e)}), 500
-
+        
 @app.route('/chat_history/<user_id>')
 def chat_history(user_id):
     """Получить историю переписки"""
@@ -1998,6 +2001,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
