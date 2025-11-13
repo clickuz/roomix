@@ -368,7 +368,7 @@ def send_chat_message():
         conn.commit()
         conn.close()
         
-       # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ ПО USER_ID КЛИЕНТА
+# НАХОДИМ КТО СОЗДАЛ ССЫЛКУ ПО USER_ID КЛИЕНТА
 creator_username = "Неизвестно"
 try:
     conn = get_db_connection()
@@ -412,33 +412,32 @@ try:
 except Exception as e:
     logger.error(f"❌ Ошибка поиска создателя: {e}")
     creator_username = f"ID: {user_id}"  # fallback на user_id
-    creator_username = f"ID: {user_id}"  # fallback на user_id
 
-        # Отправляем сообщение в отдельный чат для SMS
-        telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ*
+# Отправляем сообщение в отдельный чат для SMS
+telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ*
 
 👤 От: {creator_username}
 💬 Текст:
 {message}"""
 
-        # Используем существующую функцию отправки в Telegram
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {
-            'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
-            'text': telegram_message,
-            'parse_mode': 'Markdown'
-        }
-        
-        # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
-        requests.post(url, json=payload, timeout=10)
-        
-        logger.info(f"💬 Сообщение от {creator_username}: {message}")
-        
-        response = jsonify({'status': 'success'})
-        origin = request.headers.get('Origin')
-        if origin in ALLOWED_ORIGINS:
-            response.headers['Access-Control-Allow-Origin'] = origin
-        return response
+# Используем существующую функцию отправки в Telegram
+url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+payload = {
+    'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
+    'text': telegram_message,
+    'parse_mode': 'Markdown'
+}
+
+# ОТПРАВЛЯЕМ СООБЩЕНИЕ!
+requests.post(url, json=payload, timeout=10)
+
+logger.info(f"💬 Сообщение от {creator_username}: {message}")
+
+response = jsonify({'status': 'success'})
+origin = request.headers.get('Origin')
+if origin in ALLOWED_ORIGINS:
+    response.headers['Access-Control-Allow-Origin'] = origin
+return response
         
     except Exception as e:
         logger.error(f"❌ Ошибка отправки сообщения чата: {e}")
@@ -2080,5 +2079,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
