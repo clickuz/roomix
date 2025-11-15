@@ -483,7 +483,7 @@ def send_chat_message():
             'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
             'text': telegram_message,
             'parse_mode': 'HTML',
-            'reply_markup': get_sms_reply_button(user_id).as_json()  # ← ДОБАВЛЯЕМ КНОПКУ
+            'reply_markup': get_sms_reply_button(user_id).model_dump_json()  # ← ДОБАВЛЯЕМ КНОПКУ
         }
         
         # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
@@ -2176,4 +2176,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
