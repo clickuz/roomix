@@ -477,18 +477,30 @@ def send_chat_message():
 💬 Текст:
 {message}"""
 
+        # Создаем клавиатуру вручную в формате JSON
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "💬 Ответить", "callback_data": f"reply_sms:{user_id}"}]
+            ]
+        }
+
         # Используем существующую функцию отправки в Telegram
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         payload = {
             'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
             'text': telegram_message,
             'parse_mode': 'HTML',
-            'reply_markup': get_sms_reply_button(user_id).model_dump_json()  # ← ДОБАВЛЯЕМ КНОПКУ
+            'reply_markup': reply_markup  # ← ПЕРЕДАЕМ СЛОВАРЬ
         }
         
         # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
         response = requests.post(url, json=payload, timeout=10)
-        logger.info(f"📤 SMS отправлено в чат с кнопкой ответа, статус: {response.status_code}")
+        result = response.json()
+        
+        if result.get('ok'):
+            logger.info(f"📤 SMS отправлено в чат с кнопкой ответа, message_id: {result['result']['message_id']}")
+        else:
+            logger.error(f"❌ Ошибка отправки SMS: {result}")
         
         logger.info(f"💬 Сообщение от {creator_username}: {message}")
         
@@ -2176,6 +2188,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
