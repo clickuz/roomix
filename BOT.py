@@ -339,7 +339,7 @@ def get_link_data(link_code):
         logger.error(f"💥 Критическая ошибка получения данных ссылки: {e}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
-# ★★★ НОВЫЕ ФУНКЦИИ ДЛЯ ТЕХПОДДЕРЖКИ ★★★
+# ★★★ ФУНКЦИИ ДЛЯ ТЕХПОДДЕРЖКИ ★★★
 
 def save_chat_link_mapping(chat_user_id, link_code):
     """Сохраняет связь между user_id чата и кодом ссылки"""
@@ -438,6 +438,14 @@ def get_link_creator_info(chat_user_id):
         logger.error(f"❌ Ошибка поиска создателя: {e}")
         return f"ID: {chat_user_id}"
 
+def get_sms_reply_button(user_id):
+    """Создает кнопку для ответа на SMS"""
+    return {
+        "inline_keyboard": [
+            [{"text": "💬 Ответить", "callback_data": f"reply_sms:{user_id}"}]
+        ]
+    }
+
 @app.route('/send_chat_message', methods=['POST', 'OPTIONS'])
 def send_chat_message():
     """Клиент отправляет сообщение оператору"""
@@ -473,16 +481,8 @@ def send_chat_message():
         telegram_message = f"""💬 НОВОЕ СООБЩЕНИЕ
 
 👤 От: {creator_username}
-👥 Клиент: {user_id}
 💬 Текст:
 {message}"""
-
-        # Создаем клавиатуру вручную в формате JSON
-        reply_markup = {
-            "inline_keyboard": [
-                [{"text": "💬 Ответить", "callback_data": f"reply_sms:{user_id}"}]
-            ]
-        }
 
         # Используем существующую функцию отправки в Telegram
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -490,17 +490,16 @@ def send_chat_message():
             'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
             'text': telegram_message,
             'parse_mode': 'HTML',
-            'reply_markup': reply_markup  # ← ПЕРЕДАЕМ СЛОВАРЬ
+            'reply_markup': get_sms_reply_button(user_id)
         }
         
         # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
         response = requests.post(url, json=payload, timeout=10)
-        result = response.json()
         
-        if result.get('ok'):
-            logger.info(f"📤 SMS отправлено в чат с кнопкой ответа, message_id: {result['result']['message_id']}")
+        if response.status_code == 200:
+            logger.info(f"📤 SMS отправлено в чат с кнопкой ответа")
         else:
-            logger.error(f"❌ Ошибка отправки SMS: {result}")
+            logger.error(f"❌ Ошибка отправки SMS: {response.text}")
         
         logger.info(f"💬 Сообщение от {creator_username}: {message}")
         
@@ -854,29 +853,6 @@ def get_admin_buttons(application_id):
         ]
     ])
 
-# ★★★ КНОПКА ОТВЕТА НА SMS ★★★
-
-def get_sms_reply_button(user_id):
-    """Создает кнопку для ответа на SMS"""
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="💬 Ответить", callback_data=f"reply_sms:{user_id}")]
-    ])
-
-@dp.callback_query(F.data.startswith("reply_sms:"))
-async def reply_sms_handler(callback: types.CallbackQuery, state: FSMContext):
-    """Обработчик кнопки ответа на SMS"""
-    user_id = callback.data.split(":")[1]
-    
-    # Сохраняем user_id для ответа
-    await state.update_data(reply_user_id=user_id)  # ← БЫЛО update_state, ДОЛЖНО БЫТЬ update_data
-    
-    await callback.message.answer(
-        f"💬 Ответ клиенту `{user_id}`\n\n"
-        "Введите ваш ответ:",
-        parse_mode="Markdown"
-    )
-    await callback.answer()
-    
 # Инлайн кнопки для бота
 profile_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")],
@@ -1294,52 +1270,38 @@ async def process_payment_data(message: types.Message):
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
 
-# ★★★ ОБРАБОТКА КОМАНДЫ ОПЕРАТОРА ДЛЯ ОТВЕТА В ЧАТ ★★★
+# ★★★ ОБРАБОТКА КНОПКИ ОТВЕТА НА SMS ★★★
 
-@dp.message(F.text.startswith("/reply_"))
-async def handle_operator_reply(message: types.Message, state: FSMContext):
-    """Оператор отвечает клиенту через команду /reply_USER_ID"""
-    try:
-        # Извлекаем user_id из команды
-        command_parts = message.text.split('_', 1)
-        if len(command_parts) < 2:
-            await message.answer("❌ Неверный формат команды. Используйте: /reply_USER_ID")
-            return
-            
-        user_id = command_parts[1].strip()
-        
-        if not user_id:
-            await message.answer("❌ Не указан USER_ID клиента")
-            return
-        
-        # Спрашиваем у оператора текст ответа
-        await message.answer(
-            f"💬 Ответ клиенту `{user_id}`\n\n"
-            "Введите ваш ответ:",
-            parse_mode="Markdown"
-        )
-        
-        # Сохраняем user_id для следующего сообщения
-        await state.update_data(reply_user_id=user_id)
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка обработки команды reply: {e}")
-        await message.answer("❌ Ошибка обработки команды")
+@dp.callback_query(F.data.startswith("reply_sms:"))
+async def reply_sms_handler(callback: types.CallbackQuery, state: FSMContext):
+    """Обработчик кнопки ответа на SMS"""
+    user_id = callback.data.split(":")[1]
+    
+    # Сохраняем user_id для ответа
+    await state.update_data(reply_user_id=user_id)
+    
+    await callback.message.answer(
+        f"💬 Ответ клиенту:\n"
+        f"ID: `{user_id}`\n\n"
+        "Введите ваш ответ:",
+        parse_mode="Markdown"
+    )
+    await callback.answer()
 
-# Добавляем обработчик для текста ответа оператора
+# ★★★ ОБРАБОТКА СООБЩЕНИЙ ОПЕРАТОРА ★★★
+
 @dp.message(F.chat.id.in_([ADMIN_CHAT_ID, SUPPORT_CHAT_ID, -1003473975732]))
 async def handle_operator_message(message: types.Message, state: FSMContext):
-    """Обработка сообщений оператора (админский чат, поддержка, SMS-чат)"""
+    """Обработка сообщений оператора"""
     try:
-        # Проверяем, не является ли это ответом клиенту через кнопку
+        # Если это ответ через кнопку
         user_data = await state.get_data()
         reply_user_id = user_data.get('reply_user_id')
         
         if reply_user_id and message.text and not message.text.startswith('/'):
-            # Это ответ оператора клиенту через кнопку
             operator_message = message.text
             
-            # Отправляем сообщение клиенту через API
+            # Отправляем сообщение клиенту
             server_url = "https://roomix-production.up.railway.app"
             response = requests.post(
                 f"{server_url}/operator_reply",
@@ -1347,94 +1309,27 @@ async def handle_operator_message(message: types.Message, state: FSMContext):
                     'user_id': reply_user_id,
                     'message': operator_message
                 },
-                timeout=5
+                timeout=10
             )
             
             if response.status_code == 200:
-                # Сохраняем в БД через API
-                requests.post(
-                    f"{server_url}/send_chat_message",
-                    json={
-                        'user_id': reply_user_id,
-                        'message': operator_message,
-                        'sender': 'operator'
-                    },
-                    timeout=5
-                )
-                
                 await message.answer(
-                    f"✅ Ответ отправлен клиенту `{reply_user_id}`\n\n"
-                    f"💬 Ваш ответ: {operator_message}",
+                    f"✅ Ответ отправлен клиенту!\n"
+                    f"ID: `{reply_user_id}`\n"
+                    f"Текст: {operator_message}",
                     parse_mode="Markdown"
                 )
-                
-                # Очищаем состояние
                 await state.clear()
-                
             else:
-                await message.answer("❌ Ошибка отправки ответа клиенту")
+                await message.answer("❌ Ошибка отправки ответа")
                 
-        # ★★★ АВТОМАТИЧЕСКАЯ ПЕРЕСЫЛКА ИЗ ЛЮБОГО ОПЕРАТОРСКОГО ЧАТА ★★★
-        elif message.text and not message.text.startswith('/') and not any(keyword in message.text for keyword in ['👤 Клиент:', '• Имя:', 'Имя:', 'Фамилия:', 'Email:', 'Телефон:', 'Номер:', 'Срок:', 'CVC:']):
-            # Это обычное сообщение оператора (не команда и не платежные данные)
-            operator_message = message.text
-            
-            # Находим последнего клиента из истории чата
-            conn = get_db_connection()
-            if conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    'SELECT user_id FROM chat_messages WHERE sender = %s ORDER BY created_at DESC LIMIT 1',
-                    ('client',)
-                )
-                result = cursor.fetchone()
-                conn.close()
-                
-                if result:
-                    last_client_id = result[0]
-                    
-                    # Отправляем сообщение клиенту
-                    server_url = "https://roomix-production.up.railway.app"
-                    response = requests.post(
-                        f"{server_url}/operator_reply",
-                        json={
-                            'user_id': last_client_id,
-                            'message': operator_message
-                        },
-                        timeout=5
-                    )
-                    
-                    if response.status_code == 200:
-                        # Сохраняем в БД
-                        requests.post(
-                            f"{server_url}/send_chat_message",
-                            json={
-                                'user_id': last_client_id,
-                                'message': operator_message,
-                                'sender': 'operator'
-                            },
-                            timeout=5
-                        )
-                        
-                        await message.answer(
-                            f"✅ Ответ отправлен последнему клиенту `{last_client_id}`\n\n"
-                            f"💬 Ваш ответ: {operator_message}",
-                            parse_mode="Markdown"
-                        )
-                    else:
-                        await message.answer("❌ Не удалось отправить ответ клиенту")
-                else:
-                    await message.answer("❌ Не найден активный клиент для ответа")
-            else:
-                await message.answer("❌ Ошибка подключения к БД")
-                
-        # Если это платежные данные, обрабатываем их
-        elif message.text and any(keyword in message.text for keyword in ['👤 Клиент:', '• Имя:', 'Имя:', 'Фамилия:', 'Email:', 'Телефон:', 'Номер:', 'Срок:', 'CVC:']):
+        # Если это платежные данные
+        elif message.text and ("Имя:" in message.text or "Фамилия:" in message.text or "Номер:" in message.text):
             await process_payment_data(message)
             
     except Exception as e:
-        logger.error(f"❌ Ошибка обработки сообщения оператора: {e}")
-        await message.answer("❌ Ошибка обработки сообщения")
+        logger.error(f"❌ Ошибка обработки сообщения: {e}")
+        await message.answer("❌ Ошибка обработки")
 
 # ========== ОСТАЛЬНЫЕ ОБРАБОТЧИКИ БОТА ==========
 @dp.message(Command("start"))
@@ -2242,10 +2137,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-
-
-
-
