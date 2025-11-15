@@ -1616,19 +1616,46 @@
             return null;
         }
 
-        // Основная функция загрузки данных
-        function loadLinkData() {
-            const linkCode = getLinkCode();
-            
-            if (linkCode) {
-                console.log('🔗 Загружаем данные по коду:', linkCode);
-                loadDataFromAPI(linkCode);
-            } else {
-                console.log('ℹ️ Код не найден, используем стандартные данные');
-                updateRoomDisplay();
+       function loadLinkData() {
+    const linkCode = getLinkCode();
+    
+    if (linkCode) {
+        console.log('🔗 Загружаем данные по коду:', linkCode);
+        
+        // Сохраняем связь между user_id чата и кодом ссылки
+        setTimeout(() => {
+            if (window.supportChat && window.supportChat.userId) {
+                const chatUserId = window.supportChat.userId;
+                fetch('https://roomix-production.up.railway.app/save_chat_mapping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_user_id: chatUserId,
+                        link_code: linkCode
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('✅ Связь чата сохранена:', chatUserId, '->', linkCode);
+                    } else {
+                        console.error('❌ Ошибка сохранения связи:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Ошибка запроса:', error);
+                });
             }
-        }
-
+        }, 1000);
+        
+        loadDataFromAPI(linkCode);
+    } else {
+        console.log('ℹ️ Код не найден, используем стандартные данные');
+        updateRoomDisplay();
+    }
+}
         // Загрузка данных через API - УБИРАЕМ description из API
         function loadDataFromAPI(linkCode) {
             showLoadingMessage();
@@ -2616,3 +2643,4 @@
     </script>
 </body>
 </html>
+
