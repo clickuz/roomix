@@ -868,7 +868,7 @@ async def reply_sms_handler(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.data.split(":")[1]
     
     # Сохраняем user_id для ответа
-    await state.update_data(reply_user_id=user_id)
+    await state.update_data(reply_user_id=user_id)  # ← БЫЛО update_state, ДОЛЖНО БЫТЬ update_data
     
     await callback.message.answer(
         f"💬 Ответ клиенту `{user_id}`\n\n"
@@ -876,7 +876,7 @@ async def reply_sms_handler(callback: types.CallbackQuery, state: FSMContext):
         parse_mode="Markdown"
     )
     await callback.answer()
-
+    
 # Инлайн кнопки для бота
 profile_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")],
@@ -2188,6 +2188,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
