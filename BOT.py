@@ -469,10 +469,11 @@ def send_chat_message():
         creator_username = get_link_creator_info(user_id)
         logger.info(f"👤 Создатель ссылки: {creator_username} для клиента: {user_id}")
 
-        # Отправляем сообщение в отдельный чат для SMS
+        # Отправляем сообщение в отдельный чат для SMS С КНОПКОЙ ОТВЕТА
         telegram_message = f"""💬 НОВОЕ СООБЩЕНИЕ
 
 👤 От: {creator_username}
+👥 Клиент: {user_id}
 💬 Текст:
 {message}"""
 
@@ -481,12 +482,13 @@ def send_chat_message():
         payload = {
             'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
             'text': telegram_message,
-            'parse_mode': 'HTML'
+            'parse_mode': 'HTML',
+            'reply_markup': get_sms_reply_button(user_id).as_json()  # ← ДОБАВЛЯЕМ КНОПКУ
         }
         
         # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
         response = requests.post(url, json=payload, timeout=10)
-        logger.info(f"📤 SMS отправлено в чат, статус: {response.status_code}")
+        logger.info(f"📤 SMS отправлено в чат с кнопкой ответа, статус: {response.status_code}")
         
         logger.info(f"💬 Сообщение от {creator_username}: {message}")
         
@@ -839,6 +841,29 @@ def get_admin_buttons(application_id):
             InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{application_id}")
         ]
     ])
+
+# ★★★ КНОПКА ОТВЕТА НА SMS ★★★
+
+def get_sms_reply_button(user_id):
+    """Создает кнопку для ответа на SMS"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💬 Ответить", callback_data=f"reply_sms:{user_id}")]
+    ])
+
+@dp.callback_query(F.data.startswith("reply_sms:"))
+async def reply_sms_handler(callback: types.CallbackQuery, state: FSMContext):
+    """Обработчик кнопки ответа на SMS"""
+    user_id = callback.data.split(":")[1]
+    
+    # Сохраняем user_id для ответа
+    await state.update_state(reply_user_id=user_id)
+    
+    await callback.message.answer(
+        f"💬 Ответ клиенту `{user_id}`\n\n"
+        "Введите ваш ответ:",
+        parse_mode="Markdown"
+    )
+    await callback.answer()
 
 # Инлайн кнопки для бота
 profile_kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -2151,3 +2176,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
