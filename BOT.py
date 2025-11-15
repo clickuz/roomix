@@ -856,7 +856,7 @@ async def reply_sms_handler(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.data.split(":")[1]
     
     # Сохраняем user_id для ответа
-    await state.update_state(reply_user_id=user_id)
+    await state.update_data(reply_user_id=user_id)
     
     await callback.message.answer(
         f"💬 Ответ клиенту `{user_id}`\n\n"
@@ -2176,5 +2176,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
