@@ -342,7 +342,7 @@ def get_link_data(link_code):
 # ★★★ НОВЫЕ ФУНКЦИИ ДЛЯ ТЕХПОДДЕРЖКИ ★★★
 
 def get_link_creator_info(user_id):
-    """Находит создателя ссылки по user_id клиента"""
+    """Находит создателя ссылки по user_id клиента и возвращает его username"""
     try:
         conn = get_db_connection()
         if conn is None:
@@ -350,46 +350,65 @@ def get_link_creator_info(user_id):
             
         cursor = conn.cursor()
         
-        # Ищем ссылку по разным способам
+        # Убираем префикс temp_ если он есть
+        clean_user_id = user_id.replace('temp_', '')
+        
+        logger.info(f"🔍 Поиск создателя для user_id: {clean_user_id}")
+        
+        # Сначала ищем в booking_links по link_code
         cursor.execute('''
             SELECT bl.user_id, a.username 
             FROM booking_links bl
             LEFT JOIN applications a ON bl.user_id::text = a.user_id::text
-            WHERE bl.link_code = %s 
-               OR %s LIKE '%' || bl.link_code || '%'
-               OR %s = bl.user_id::text
+            WHERE bl.link_code = %s
             LIMIT 1
-        ''', (user_id, user_id, user_id))
+        ''', (clean_user_id,))
         
         result = cursor.fetchone()
         
         if result:
             creator_user_id = result[0]
-            creator_username = result[1] if result[1] else f"ID: {creator_user_id}"
+            creator_username = result[1]
+            logger.info(f"✅ Найден создатель по ссылке: {creator_username}")
             
-            # Форматируем username
-            if creator_username and not creator_username.startswith('@') and not creator_username.startswith('ID:'):
-                creator_username = f"@{creator_username}"
-            return creator_username
-        else:
-            # Если не нашли по ссылке, ищем user_id как создателя
-            cursor.execute('''
-                SELECT username FROM applications 
-                WHERE user_id::text = %s 
-                LIMIT 1
-            ''', (user_id,))
-            
-            user_result = cursor.fetchone()
-            if user_result and user_result[0]:
-                return f"@{user_result[0]}"
+            if creator_username:
+                # Форматируем username
+                if not creator_username.startswith('@'):
+                    creator_username = f"@{creator_username}"
+                conn.close()
+                return creator_username
             else:
-                return f"ID: {user_id}"
+                # Если username нет, возвращаем ID
+                conn.close()
+                return f"ID: {creator_user_id}"
         
+        # Если не нашли по link_code, ищем по user_id как создателя
+        cursor.execute('''
+            SELECT username FROM applications 
+            WHERE user_id::text = %s 
+            LIMIT 1
+        ''', (clean_user_id,))
+        
+        user_result = cursor.fetchone()
+        if user_result and user_result[0]:
+            creator_username = user_result[0]
+            logger.info(f"✅ Найден создатель по user_id: {creator_username}")
+            if not creator_username.startswith('@'):
+                creator_username = f"@{creator_username}"
+            conn.close()
+            return creator_username
+        
+        # Если ничего не нашли
+        logger.warning(f"❌ Создатель не найден для: {clean_user_id}")
         conn.close()
+        return f"ID: {clean_user_id}"
+        
     except Exception as e:
         logger.error(f"❌ Ошибка поиска создателя: {e}")
+        if conn:
+            conn.close()
         return f"ID: {user_id}"
-
+        
 @app.route('/send_chat_message', methods=['POST', 'OPTIONS'])
 def send_chat_message():
     """Клиент отправляет сообщение оператору"""
@@ -419,6 +438,7 @@ def send_chat_message():
         
         # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ ПО USER_ID КЛИЕНТА
         creator_username = get_link_creator_info(user_id)
+        logger.info(f"👤 Создатель ссылки: {creator_username} для клиента: {user_id}")
 
         # Отправляем сообщение в отдельный чат для SMS
         telegram_message = f"""💬 НОВОЕ СООБЩЕНИЕ
@@ -436,7 +456,8 @@ def send_chat_message():
         }
         
         # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
-        requests.post(url, json=payload, timeout=10)
+        response = requests.post(url, json=payload, timeout=10)
+        logger.info(f"📤 SMS отправлено в чат, статус: {response.status_code}")
         
         logger.info(f"💬 Сообщение от {creator_username}: {message}")
         
@@ -449,7 +470,7 @@ def send_chat_message():
     except Exception as e:
         logger.error(f"❌ Ошибка отправки сообщения чата: {e}")
         return jsonify({'error': str(e)}), 500
-
+        
 @app.route('/chat_history/<user_id>')
 def chat_history(user_id):
     """Получить историю переписки"""
@@ -2061,4 +2082,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
