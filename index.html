@@ -1600,6 +1600,18 @@
             ]
         };
 
+        // Загрузка данных из ссылки
+        function loadLinkData() {
+            const linkCode = getLinkCode();
+            if (linkCode) {
+                console.log('🔗 Код ссылки:', linkCode);
+                loadDataFromAPI(linkCode);
+            } else {
+                console.log('ℹ️ Используем стандартный номер');
+                updateRoomDisplay();
+            }
+        }
+
         // Функция для получения кода из хеша
         function getLinkCode() {
             const hash = window.location.hash.substring(1);
@@ -1616,7 +1628,6 @@
             return null;
         }
 
-       loadLinkData()
         // Загрузка данных через API - УБИРАЕМ description из API
         function loadDataFromAPI(linkCode) {
             showLoadingMessage();
@@ -2604,5 +2615,3 @@
     </script>
 </body>
 </html>
-
-
