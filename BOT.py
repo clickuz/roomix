@@ -1331,12 +1331,12 @@ async def handle_operator_reply(message: types.Message, state: FSMContext):
 async def handle_operator_message(message: types.Message, state: FSMContext):
     """Обработка обычных сообщений оператора (может быть ответом в чат)"""
     try:
-        # Проверяем, не является ли это ответом клиенту
+        # Проверяем, не является ли это ответом клиенту через кнопку
         user_data = await state.get_data()
         reply_user_id = user_data.get('reply_user_id')
         
         if reply_user_id and message.text and not message.text.startswith('/'):
-            # Это ответ оператора клиенту
+            # Это ответ оператора клиенту через кнопку
             operator_message = message.text
             
             # Отправляем сообщение клиенту через API
@@ -1373,6 +1373,60 @@ async def handle_operator_message(message: types.Message, state: FSMContext):
                 
             else:
                 await message.answer("❌ Ошибка отправки ответа клиенту")
+                
+        # ★★★ АВТОМАТИЧЕСКАЯ ПЕРЕСЫЛКА ИЗ SMS-ЧАТА ★★★
+        elif message.chat.id == -1003473975732 and message.text and not message.text.startswith('/'):
+            # Это сообщение в SMS-чате, пересылаем его последнему активному клиенту
+            operator_message = message.text
+            
+            # Находим последнего клиента из истории чата
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT user_id FROM chat_messages WHERE sender = %s ORDER BY created_at DESC LIMIT 1',
+                    ('client',)
+                )
+                result = cursor.fetchone()
+                conn.close()
+                
+                if result:
+                    last_client_id = result[0]
+                    
+                    # Отправляем сообщение клиенту
+                    server_url = "https://roomix-production.up.railway.app"
+                    response = requests.post(
+                        f"{server_url}/operator_reply",
+                        json={
+                            'user_id': last_client_id,
+                            'message': operator_message
+                        },
+                        timeout=5
+                    )
+                    
+                    if response.status_code == 200:
+                        # Сохраняем в БД
+                        requests.post(
+                            f"{server_url}/send_chat_message",
+                            json={
+                                'user_id': last_client_id,
+                                'message': operator_message,
+                                'sender': 'operator'
+                            },
+                            timeout=5
+                        )
+                        
+                        await message.answer(
+                            f"✅ Ответ отправлен клиенту `{last_client_id}`\n\n"
+                            f"💬 Ваш ответ: {operator_message}",
+                            parse_mode="Markdown"
+                        )
+                    else:
+                        await message.answer("❌ Не удалось отправить ответ клиенту")
+                else:
+                    await message.answer("❌ Не найден активный клиент для ответа")
+            else:
+                await message.answer("❌ Ошибка подключения к БД")
                 
         # Если это не ответ в чат, обрабатываем как обычное сообщение
         elif message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
@@ -2188,6 +2242,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
