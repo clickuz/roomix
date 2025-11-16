@@ -1545,13 +1545,11 @@
 
     <!-- Чат поддержки -->
     <div class="support-chat">
-        <!-- Кнопка открытия чата -->
         <div class="chat-toggle" id="chatToggle">
             <i class="fas fa-comments"></i>
             <span class="chat-badge" id="chatBadge" style="display: none">1</span>
         </div>
 
-        <!-- Модальное окно чата -->
         <div class="chat-modal" id="chatModal">
             <div class="chat-header">
                 <div class="chat-title">
@@ -1579,7 +1577,7 @@
     </div>
 
     <script>
-        // Данные о номере - УБИРАЕМ description из roomData
+        // Данные о номере
         let roomData = {
             name: "Премиум Люкс с видом на город",
             location: "Варшава, Польша",
@@ -1628,7 +1626,7 @@
             return null;
         }
 
-        // Загрузка данных через API - УБИРАЕМ description из API
+        // Загрузка данных через API
         function loadDataFromAPI(linkCode) {
             showLoadingMessage();
             
@@ -1652,11 +1650,20 @@
                         throw new Error(data.error);
                     }
 
-                    // Обновляем данные комнаты - УБИРАЕМ description
+                    console.log('📦 Данные от API:', data);
+
+                    // Обновляем данные комнаты - ПОКАЗЫВАЕМ ТЭГ СОЗДАТЕЛЯ
                     if (data.link_name) roomData.name = data.link_name;
                     if (data.price) roomData.price = data.price;
                     if (data.country_city) roomData.location = data.country_city;
-                    // НЕ БЕРЕМ description из API
+                    
+                    // ДОБАВЛЯЕМ ТЭГ СОЗДАТЕЛЯ В ОПИСАНИЕ
+                    if (data.creator_tag) {
+                        const t = translations[currentLanguage];
+                        roomData.originalDescription = t.roomDescription;
+                        roomData.creatorTag = data.creator_tag;
+                    }
+                    
                     if (data.images && data.images.length > 0) {
                         roomData.images = data.images;
                     }
@@ -1754,7 +1761,7 @@
                 "guest": "гость",
                 "guests_1": "гостя",
                 "guests_2": "гостей",
-                // Описание номера - ТОЛЬКО В ПЕРЕВОДАХ
+                // Описание номера
                 "roomDescription": "Просторный номер премиум-класса с панорамным видом на город. В номере есть king-size кровать, рабочая зона, современная ванная комната с джакузи. Идеально подходит для романтического отдыха или деловой поездки.",
                 // Удобства
                 "wifi": "Бесплатный Wi-Fi",
@@ -1808,7 +1815,7 @@
                 "guest": "gość",
                 "guests_1": "gości",
                 "guests_2": "gości",
-                // Описание номера - ТОЛЬКО В ПЕРЕВОДАХ
+                // Описание номера
                 "roomDescription": "Przestronny pokój premium z panoramicznym widokiem na miasto. W pokoju znajduje się łóżko king-size, strefa pracy, nowoczesna łazienka z jacuzzi. Idealny na romantyczny wypoczynek lub podróż służbową.",
                 // Удобства
                 "wifi": "Darmowe Wi-Fi",
@@ -1862,7 +1869,7 @@
                 "guest": "guest",
                 "guests_1": "guests",
                 "guests_2": "guests",
-                // Описание номера - ТОЛЬКО В ПЕРЕВОДАХ
+                // Описание номера
                 "roomDescription": "Spacious premium room with panoramic city view. The room features a king-size bed, work area, modern bathroom with jacuzzi. Perfect for romantic getaway or business trip.",
                 // Удобства
                 "wifi": "Free Wi-Fi",
@@ -1894,9 +1901,15 @@
             document.getElementById('roomPrice').textContent = roomData.price;
             document.getElementById('roomRating').textContent = roomData.rating;
             
-            // ОПИСАНИЕ ТОЛЬКО ИЗ ПЕРЕВОДОВ
+            // ОПИСАНИЕ С ТЭГОМ СОЗДАТЕЛЯ
             const t = translations[currentLanguage];
-            document.getElementById('roomDescription').textContent = t.roomDescription;
+            let description = t.roomDescription;
+            
+            if (roomData.creatorTag) {
+                description += `\n\n🔗 Ссылка создана: @${roomData.creatorTag}`;
+            }
+            
+            document.getElementById('roomDescription').textContent = description;
 
             // Обновление галереи
             const slidesContainer = document.getElementById('slides');
@@ -2377,17 +2390,18 @@
             });
         }
 
-        // Чат поддержки
+        // Чат поддержки - УЛУЧШЕННАЯ ВЕРСИЯ
         class SupportChat {
             constructor() {
                 this.userId = this.generateUserId();
                 this.isConnected = false;
                 this.eventSource = null;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
                 this.init();
             }
 
             generateUserId() {
-                // Генерируем уникальный ID пользователя
                 let userId = sessionStorage.getItem('chatUserId');
                 if (!userId) {
                     userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -2436,6 +2450,10 @@
                 if (chatModal.classList.contains('active')) {
                     this.hideBadge();
                     this.scrollToBottom();
+                    // Фокус на поле ввода
+                    setTimeout(() => {
+                        document.getElementById('chatInput').focus();
+                    }, 300);
                 }
             }
 
@@ -2453,6 +2471,7 @@
                 // Добавляем сообщение в чат
                 this.addMessage(message, 'client');
                 chatInput.value = '';
+                chatInput.focus();
 
                 // Отправляем на сервер
                 try {
@@ -2463,16 +2482,20 @@
                         },
                         body: JSON.stringify({
                             user_id: this.userId,
-                            message: message
+                            message: message,
+                            timestamp: new Date().toISOString()
                         })
                     });
 
                     if (!response.ok) {
-                        throw new Error('Ошибка отправки сообщения');
+                        throw new Error(`HTTP ${response.status}`);
                     }
 
+                    const result = await response.json();
+                    console.log('✅ Сообщение отправлено:', result);
+
                 } catch (error) {
-                    console.error('Ошибка отправки сообщения:', error);
+                    console.error('❌ Ошибка отправки сообщения:', error);
                     this.addSystemMessage('Ошибка отправки сообщения. Попробуйте позже.');
                 }
             }
@@ -2508,6 +2531,7 @@
                 messageDiv.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
                 messageDiv.style.color = 'var(--primary)';
                 messageDiv.style.fontStyle = 'italic';
+                messageDiv.style.fontSize = '13px';
                 
                 messageDiv.innerHTML = `
                     <div class="message-text">${this.escapeHtml(text)}</div>
@@ -2519,57 +2543,84 @@
 
             async loadChatHistory() {
                 try {
+                    console.log('📥 Загрузка истории чата для:', this.userId);
                     const response = await fetch(`https://roomix-production.up.railway.app/chat_history/${this.userId}`);
                     
                     if (response.ok) {
                         const data = await response.json();
+                        console.log('📦 История чата:', data);
                         
                         if (data.messages && data.messages.length > 0) {
+                            // Сортируем сообщения по времени
+                            data.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                            
                             data.messages.forEach(msg => {
                                 this.addMessage(msg.text, msg.sender);
                             });
                         } else {
                             this.addSystemMessage('Добро пожаловать в чат поддержки! Чем можем помочь?');
                         }
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
                     }
                 } catch (error) {
-                    console.error('Ошибка загрузки истории чата:', error);
+                    console.error('❌ Ошибка загрузки истории чата:', error);
                     this.addSystemMessage('Добро пожаловать в чат поддержки! Чем можем помочь?');
                 }
             }
 
             connectSSE() {
                 try {
+                    console.log('🔗 Подключаем SSE...');
                     this.eventSource = new EventSource(`https://roomix-production.up.railway.app/sse/${this.userId}`);
                     
                     this.eventSource.onopen = () => {
-                        console.log('SSE подключен');
+                        console.log('✅ SSE подключен');
                         this.isConnected = true;
+                        this.reconnectAttempts = 0;
+                        this.addSystemMessage('Соединение установлено');
                     };
 
                     this.eventSource.onmessage = (event) => {
-                        const data = JSON.parse(event.data);
-                        
-                        if (data.type === 'chat_message') {
-                            this.addMessage(data.message, 'operator');
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log('📨 Получено SSE сообщение:', data);
+                            
+                            if (data.type === 'chat_message') {
+                                this.addMessage(data.message, 'operator');
+                            } else if (data.type === 'system') {
+                                this.addSystemMessage(data.message);
+                            }
+                        } catch (error) {
+                            console.error('❌ Ошибка парсинга SSE данных:', error);
                         }
                     };
 
                     this.eventSource.onerror = (error) => {
-                        console.error('SSE ошибка:', error);
+                        console.error('❌ SSE ошибка:', error);
                         this.isConnected = false;
                         
-                        // Переподключение через 5 секунд
-                        setTimeout(() => {
-                            if (this.eventSource) {
-                                this.eventSource.close();
-                            }
-                            this.connectSSE();
-                        }, 5000);
+                        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                            this.reconnectAttempts++;
+                            const delay = Math.min(1000 * this.reconnectAttempts, 10000);
+                            
+                            console.log(`🔄 Переподключение через ${delay}ms...`);
+                            this.addSystemMessage(`Переподключение... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+                            
+                            setTimeout(() => {
+                                if (this.eventSource) {
+                                    this.eventSource.close();
+                                }
+                                this.connectSSE();
+                            }, delay);
+                        } else {
+                            this.addSystemMessage('Соединение прервано. Обновите страницу.');
+                        }
                     };
 
                 } catch (error) {
-                    console.error('Ошибка подключения SSE:', error);
+                    console.error('❌ Ошибка подключения SSE:', error);
+                    this.addSystemMessage('Ошибка подключения к чату');
                 }
             }
 
@@ -2585,7 +2636,9 @@
 
             scrollToBottom() {
                 const chatMessages = document.getElementById('chatMessages');
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 100);
             }
 
             escapeHtml(text) {
